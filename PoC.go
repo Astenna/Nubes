@@ -1,9 +1,7 @@
 package main
 
 import (
-	"fmt"
-	//"github.com/aws/aws-lambda-go/lambda"
-	"github.com/Astenna/Thesis_PoC/FaaSLib"
+	f "github.com/Astenna/Thesis_PoC/faas/types"
 )
 
 func Handler() string {
@@ -13,6 +11,7 @@ func Handler() string {
 func main() {
 	//var t = beldilib.LambdaClient
 	//lambda.Start(Handler)
-	var test = new(FaaSLib.Reference[string])
-	fmt.Println(test.Id)
+	var test = new(f.Shop)
+	var user = test.Owner.Get()
+	var _ = user.Id
 }

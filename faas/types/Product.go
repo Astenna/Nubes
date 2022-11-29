@@ -1,9 +1,9 @@
-package Types
+package types
 
-type product struct {
+type Product struct {
 	id                int
 	name              string
 	quantityAvailable int
-	soldBy            shop
+	soldBy            Shop
 	price             float32
 }
