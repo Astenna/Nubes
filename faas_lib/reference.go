@@ -1,4 +1,4 @@
-package FaaSLib
+package faas_lib
 
 type Reference[T any] struct {
 	instance *T

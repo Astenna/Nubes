@@ -1,4 +1,4 @@
-package FaaSLib
+package faas_lib
 
 type Repository[T any] struct {
 }

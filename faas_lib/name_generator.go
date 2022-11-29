@@ -1,4 +1,4 @@
-package FaaSLib
+package faas_lib
 
 import (
 	"reflect"
