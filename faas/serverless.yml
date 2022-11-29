@@ -1,0 +1,35 @@
+service: PoC
+provider:
+  name: aws
+  runtime: go1.x
+  # Default memory size for functions (default: 1024MB)
+  memorySize: 1024
+  # Default timeout for functions (default: 6 seconds)
+  # Note: API Gateway has a maximum timeout of 30 seconds
+  #timeout: 60
+  # Use function versioning (enabled by default)
+  versionFunctions: false
+  # By default, one IAM Role is shared by all the Lambda functions in your service
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "dynamodb:*"
+      Resource:
+        - "*"
+
+package:
+  individually: true
+
+functions:
+  CreateUser:
+    handler: bin/create_user
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+  GetUser:
+    handler: bin/delete_user
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+  DeleteUser:
+    handler: bin/get_user
+    maximumRetryAttempts: 0
+    maximumEventAge: 60

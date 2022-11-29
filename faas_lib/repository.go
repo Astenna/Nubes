@@ -1,16 +1,62 @@
 package faas_lib
 
-type Repository[T any] struct {
-}
+import (
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"strconv"
+)
 
-func (Repository[T]) Create(objToInsert T) error {
+func Create(objToInsert Object) error {
+	var attributeVals, err = dynamodbattribute.MarshalMap(objToInsert)
+	if err != nil {
+		return err
+	}
+
+	input := &dynamodb.PutItemInput{
+		Item:      attributeVals,
+		TableName: aws.String(objToInsert.GetTableName()),
+	}
+	_, err = DBClient.PutItem(input)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (Repository[T]) Delete(id int) error {
-	return nil
+func Delete[T Object](id int) error {
+
+	input := &dynamodb.DeleteItemInput{
+		TableName: aws.String((*new(T)).GetTableName()),
+		Key: map[string]*dynamodb.AttributeValue{
+			"Id": {
+				N: aws.String(strconv.Itoa(id)),
+			},
+		},
+	}
+
+	_, err := DBClient.DeleteItem(input)
+	return err
 }
 
-func (Repository[T]) Get(id int) (*T, error) {
-	return new(T), nil
+func Get[T Object](id int) (*T, error) {
+
+	input := &dynamodb.GetItemInput{
+		TableName: aws.String((*new(T)).GetTableName()),
+		Key: map[string]*dynamodb.AttributeValue{
+			"Id": {
+				N: aws.String(strconv.Itoa(id)),
+			},
+		},
+	}
+
+	item, err := DBClient.GetItem(input)
+	if err != nil {
+		return nil, err
+	}
+
+	var parsedItem *T
+	err = dynamodbattribute.UnmarshalMap(item.Item, parsedItem)
+	return parsedItem, err
 }
