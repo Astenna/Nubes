@@ -56,7 +56,7 @@ func Get[T Object](id int) (*T, error) {
 		return nil, err
 	}
 
-	var parsedItem *T
+	var parsedItem = new(T)
 	err = dynamodbattribute.UnmarshalMap(item.Item, parsedItem)
 	return parsedItem, err
 }

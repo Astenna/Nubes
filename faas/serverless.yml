@@ -26,10 +26,10 @@ functions:
     maximumRetryAttempts: 0
     maximumEventAge: 60
   GetUser:
-    handler: bin/delete_user
+    handler: bin/get_user
     maximumRetryAttempts: 0
     maximumEventAge: 60
   DeleteUser:
-    handler: bin/get_user
+    handler: bin/delete_user
     maximumRetryAttempts: 0
     maximumEventAge: 60
