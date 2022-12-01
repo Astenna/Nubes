@@ -14,5 +14,10 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
-# JetBrains IDE 
+# IDEs 
 .idea/*
+.vscode/
+
+# generated files
+.serverless/*
+.aws-sam/*
