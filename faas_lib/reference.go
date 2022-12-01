@@ -1,12 +1,18 @@
 package faas_lib
 
-type Reference[T any] struct {
-	instance *T
+type Reference[T Object] struct {
+	instance *T `dynamodbav:"-"`
 	id       string
 }
 
-func NewReference(id string) *Reference[any] {
-	return &Reference[any]{id: id}
+func NewReference[T Object](id string) *Reference[T] {
+	if id != "" {
+		newObj := &Reference[T]{
+			id: (*new(T)).GetTypeName() + Separator + id,
+		}
+		return newObj
+	}
+	return nil
 }
 
 func (r Reference[T]) Get() T {

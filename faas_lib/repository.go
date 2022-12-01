@@ -15,7 +15,7 @@ func Create(objToInsert Object) error {
 
 	input := &dynamodb.PutItemInput{
 		Item:      attributeVals,
-		TableName: aws.String(objToInsert.GetTableName()),
+		TableName: aws.String(objToInsert.GetTypeName()),
 	}
 	_, err = DBClient.PutItem(input)
 	if err != nil {
@@ -28,7 +28,7 @@ func Create(objToInsert Object) error {
 func Delete[T Object](id int) error {
 
 	input := &dynamodb.DeleteItemInput{
-		TableName: aws.String((*new(T)).GetTableName()),
+		TableName: aws.String((*new(T)).GetTypeName()),
 		Key: map[string]*dynamodb.AttributeValue{
 			"Id": {
 				N: aws.String(strconv.Itoa(id)),
@@ -43,7 +43,7 @@ func Delete[T Object](id int) error {
 func Get[T Object](id int) (*T, error) {
 
 	input := &dynamodb.GetItemInput{
-		TableName: aws.String((*new(T)).GetTableName()),
+		TableName: aws.String((*new(T)).GetTypeName()),
 		Key: map[string]*dynamodb.AttributeValue{
 			"Id": {
 				N: aws.String(strconv.Itoa(id)),

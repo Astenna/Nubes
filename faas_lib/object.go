@@ -1,5 +1,7 @@
 package faas_lib
 
+var Separator = "::"
+
 type Object interface {
-	GetTableName() string
+	GetTypeName() string
 }

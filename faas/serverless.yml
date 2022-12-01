@@ -22,14 +22,22 @@ package:
 
 functions:
   CreateUser:
+    name: CreateUser
     handler: bin/create_user
     maximumRetryAttempts: 0
     maximumEventAge: 60
   GetUser:
+    name: GetUser
     handler: bin/get_user
     maximumRetryAttempts: 0
     maximumEventAge: 60
   DeleteUser:
+    name: DeleteUser
     handler: bin/delete_user
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+  CreateShop:
+    name: CreateShop
+    handler: bin/create_shop
     maximumRetryAttempts: 0
     maximumEventAge: 60

@@ -19,5 +19,5 @@
 .vscode/
 
 # generated files
-.serverless/*
+./faas/.serverless/*
 .aws-sam/*
