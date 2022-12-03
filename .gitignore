@@ -1,9 +1,11 @@
 # Binaries for programs and plugins
+*/bin
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
+
 
 # Test binary, built with `go test -c`
 *.test
@@ -19,5 +21,5 @@
 .vscode/
 
 # generated files
-./faas/.serverless/*
+*/.serverless/*
 .aws-sam/*
