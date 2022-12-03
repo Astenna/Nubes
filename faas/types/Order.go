@@ -1,12 +1,12 @@
 package types
 
 type Order struct {
-	id       int
-	buyer    User
-	products []OrderedProduct
+	Id       int
+	Buyer    User
+	Products []OrderedProduct
 }
 
 type OrderedProduct struct {
-	product  Product
-	quantity int
+	Product  Product
+	Quantity int
 }

@@ -2,6 +2,7 @@ package faas
 
 import (
 	"errors"
+
 	"github.com/Astenna/Thesis_PoC/faas/types"
 	lib "github.com/Astenna/Thesis_PoC/faas_lib"
 )
@@ -12,4 +13,8 @@ func CreateShop(shop types.Shop) error {
 	}
 
 	return lib.Create(shop)
+}
+
+func GetShop(id int) (*types.Shop, error) {
+	return lib.Get[types.Shop](id)
 }

@@ -41,3 +41,8 @@ functions:
     handler: bin/create_shop
     maximumRetryAttempts: 0
     maximumEventAge: 60
+  GetShop:
+    name: GetShop
+    handler: bin/get_shop
+    maximumRetryAttempts: 0
+    maximumEventAge: 60

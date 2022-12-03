@@ -1,9 +1,11 @@
 package types
 
+import "github.com/Astenna/Thesis_PoC/faas_lib"
+
 type Product struct {
-	id                int
-	name              string
-	quantityAvailable int
-	soldBy            Shop
-	price             float32
+	Id                int
+	Name              string
+	QuantityAvailable int
+	SoldBy            faas_lib.Reference[Shop]
+	Price             float32
 }

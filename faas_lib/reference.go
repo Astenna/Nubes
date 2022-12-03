@@ -2,13 +2,13 @@ package faas_lib
 
 type Reference[T Object] struct {
 	instance *T `dynamodbav:"-"`
-	id       string
+	Id       string
 }
 
 func NewReference[T Object](id string) *Reference[T] {
 	if id != "" {
 		newObj := &Reference[T]{
-			id: (*new(T)).GetTypeName() + Separator + id,
+			Id: id,
 		}
 		return newObj
 	}
