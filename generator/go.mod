@@ -1,4 +1,4 @@
-module generator
+module github.com/Astenna/Thesis_PoC/generator
 
 go 1.19
 

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"generator/cmd"
+	"github.com/Astenna/Thesis_PoC/generator/cmd"
 )
 
 func main() {

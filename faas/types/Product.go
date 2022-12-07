@@ -9,3 +9,7 @@ type Product struct {
 	SoldBy            faas_lib.Reference[Shop]
 	Price             float32
 }
+
+func (Product) GetTypeName() string {
+	return "Product"
+}

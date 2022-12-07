@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/Astenna/Thesis_PoC/generator/parser"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra-cli/cmd"
 )
@@ -19,6 +20,10 @@ var handlersCmd = &cobra.Command{
 		repositoriesPath, _ := cmd.Flags().GetString("repositories")
 		fmt.Println("typesPath: ", typesPath)
 		fmt.Println("repositoriesPath: ", repositoriesPath)
+
+		subPackage := "C:\\Users\\marek\\OneDrive\\master-thesis\\Thesis_PoC\\faas\\types"
+		parser.PrepareFunctions(subPackage)
+		//parser.ParseTypes(subPackage)
 	},
 }
 

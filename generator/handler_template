@@ -1,0 +1,13 @@
+package main
+
+{{.Imports}}
+
+{{.FunctionSignature}} {
+	{{.TypeInstantiation}}
+	{{.FunctionBody}}
+	{{.TypeWrite}}
+}
+
+func main() {
+	lambda.Start({{.HandlerName}})
+}
