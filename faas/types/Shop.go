@@ -16,8 +16,8 @@ func NewShop(ownerId string) *Shop {
 	return &Shop{Owner: faas_lib.NewReference[User](ownerId)}
 }
 
-func ChangeName(shop *Shop, name string) {
-	shop.Name = name
+func (s *Shop) ChangeName(name string) {
+	s.Name = name
 }
 
 func (s *Shop) ChangeOwner(ownerId string) {

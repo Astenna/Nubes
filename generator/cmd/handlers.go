@@ -22,7 +22,7 @@ var handlersCmd = &cobra.Command{
 		fmt.Println("repositoriesPath: ", repositoriesPath)
 
 		subPackage := "C:\\Users\\marek\\OneDrive\\master-thesis\\Thesis_PoC\\faas\\types"
-		parser.PrepareFunctions(subPackage)
+		parser.PrepareHandlerFunctions(subPackage)
 		//parser.ParseTypes(subPackage)
 	},
 }

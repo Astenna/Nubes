@@ -1,32 +1,36 @@
 package parser
 
 import (
+	"bytes"
 	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/printer"
 	"go/token"
+	"go/types"
 	"os"
+	"strings"
 )
 
 type HandlerFunc struct {
-	Imports           string
-	FunctionSignature string
-	TypeInstantiation string
-	FunctionBody      string
-	TypeWrite         string
+	Imports       string
+	Signature     string
+	Prolog        string
+	Body          string
+	Epilog        string
+	HandlerName   string
+	OwnerType     string
+	OwnerTypeName string
 }
 
 type TypeDeclaration struct {
 }
 
-func ParseTypes(path string) {
+func PrepareTypes(path string) {
 	set := token.NewFileSet()
 	packs, err := parser.ParseDir(set, path, nil, 0)
-	if err != nil {
-		fmt.Println("Failed to parse package:", err)
-		os.Exit(1)
-	}
+	AssertDirParsed(err)
+
 	structs := []*ast.StructType{}
 
 	for _, pack := range packs {
@@ -61,21 +65,14 @@ func ParseTypes(path string) {
 	}
 
 	for _, i := range detectedTypes {
-		fmt.Println()
-		fmt.Println("NEXT TYPE")
 		printer.Fprint(os.Stdout, set, i)
-		// printer.Fprint(os.Stdout, set, i.Fields.List[0].Type)
-		// printer.Fprint(os.Stdout, set, i.Fields.List[0].Names[0].Name)
 	}
 }
 
-func PrepareFunctions(path string) []HandlerFunc {
+func PrepareHandlerFunctions(path string) []HandlerFunc {
 	set := token.NewFileSet()
 	packs, err := parser.ParseDir(set, path, nil, 0)
-	if err != nil {
-		fmt.Println("Failed to parse package:", err)
-		os.Exit(1)
-	}
+	AssertDirParsed(err)
 
 	funcs := []*ast.FuncDecl{}
 	for _, pack := range packs {
@@ -88,28 +85,38 @@ func PrepareFunctions(path string) []HandlerFunc {
 		}
 	}
 
-	for _, i := range funcs {
-		i.Name.Name = i.Name.Name + "_MODIFIED"
-		fmt.Println()
-		fmt.Println("NEXT FUNC")
-		fmt.Println("RECEIVER")
-		fmt.Println()
-		if i.Recv == nil {
-			fmt.Println("Receiver was null")
-		} else {
-			printer.Fprint(os.Stdout, set, i.Recv.List[0].Type)
-			if i.Recv.List[0].Names != nil {
-				printer.Fprint(os.Stdout, set, i.Recv.List[0].Names[0].Name)
-				fmt.Println(i.Recv.List[0].Names[0].Name)
-				name := i.Recv.List[0].Names[0].Name
-				_ = name
-				fmt.Println()
-			} else {
-				fmt.Println("Names was null")
-			}
+	handlerFuncs := []HandlerFunc{}
+	for _, f := range funcs {
+		if f.Recv == nil || f.Name.Name == "GetTypeName" {
+			continue
 		}
-		fmt.Println()
-		//printer.Fprint(os.Stdout, set, i)
+
+		f.Name.Name = f.Name.Name + "Handler"
+		newHandler := HandlerFunc{
+			HandlerName: f.Name.Name,
+			OwnerType:   types.ExprString(f.Recv.List[0].Type),
+			Signature:   "func " + f.Name.Name + types.ExprString(f.Type),
+		}
+
+		if f.Recv.List[0].Names != nil {
+			newHandler.OwnerTypeName = f.Recv.List[0].Names[0].Name
+		}
+		f.Recv = nil
+
+		buf := new(bytes.Buffer)
+		printer.Fprint(buf, set, f.Body)
+		newHandler.Body = strings.Trim(buf.String(), "{}")
+		newHandler.Prolog = "lib.Get[types.Shop](id)"     // TODO
+		newHandler.Epilog = "lib.Write[types.Shop](shop)" // TODO
+
+		handlerFuncs = append(handlerFuncs, newHandler)
 	}
-	return nil
+	return handlerFuncs
+}
+
+func AssertDirParsed(err error) {
+	if err != nil {
+		fmt.Println("Failed to parse files in the directory", err)
+		os.Exit(1)
+	}
 }

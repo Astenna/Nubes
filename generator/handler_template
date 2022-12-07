@@ -1,11 +1,16 @@
 package main
 
-{{.Imports}}
+import (
+	"github.com/Astenna/Thesis_PoC/faas_lib"
+	"github.com/aws/aws-lambda-go/lambda"
+	{{.Imports}}
+)
+
 
 {{.FunctionSignature}} {
-	{{.TypeInstantiation}}
+	{{.Prolog}}
 	{{.FunctionBody}}
-	{{.TypeWrite}}
+	{{.Epilog}}
 }
 
 func main() {
