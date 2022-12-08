@@ -13,14 +13,12 @@ import (
 )
 
 type HandlerFunc struct {
-	Imports       string
-	Signature     string
-	Prolog        string
-	Body          string
-	Epilog        string
-	HandlerName   string
-	OwnerType     string
-	OwnerTypeName string
+	Imports     string
+	Signature   string
+	Prolog      string
+	Body        string
+	Epilog      string
+	HandlerName string
 }
 
 type TypeDeclaration struct {
@@ -91,23 +89,37 @@ func PrepareHandlerFunctions(path string) []HandlerFunc {
 			continue
 		}
 
+		signature := "(id string, " + strings.TrimPrefix(types.ExprString(f.Type), "func(")
+
 		f.Name.Name = f.Name.Name + "Handler"
 		newHandler := HandlerFunc{
 			HandlerName: f.Name.Name,
-			OwnerType:   types.ExprString(f.Recv.List[0].Type),
-			Signature:   "func " + f.Name.Name + types.ExprString(f.Type),
+			Signature:   "func " + f.Name.Name + signature,
 		}
 
 		if f.Recv.List[0].Names != nil {
-			newHandler.OwnerTypeName = f.Recv.List[0].Names[0].Name
+			ownerTypeName := f.Recv.List[0].Names[0].Name
+			ownerType := types.ExprString(f.Recv.List[0].Type)
+			returnValues := f.Type.Results
+
+			if returnValues == nil {
+				newHandler.Signature = newHandler.Signature + "error"
+				newHandler.Prolog = ownerTypeName + ", err := lib.Get[" + ownerType + `](id)
+				if err != nil {
+					return err
+				}
+				`
+
+				newHandler.Epilog = "lib.Insert[" + ownerType + "](" + ownerTypeName + `)
+				return nil`
+			}
+
 		}
 		f.Recv = nil
 
 		buf := new(bytes.Buffer)
 		printer.Fprint(buf, set, f.Body)
 		newHandler.Body = strings.Trim(buf.String(), "{}")
-		newHandler.Prolog = "lib.Get[types.Shop](id)"     // TODO
-		newHandler.Epilog = "lib.Write[types.Shop](shop)" // TODO
 
 		handlerFuncs = append(handlerFuncs, newHandler)
 	}

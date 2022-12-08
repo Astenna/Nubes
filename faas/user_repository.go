@@ -9,7 +9,7 @@ import (
 
 func CreateUser(user types.User) error {
 	if user.LastName != "" && user.FirstName != "" {
-		err := lib.Create(&user)
+		err := lib.Insert(&user)
 
 		if err != nil {
 			return errors.New("failed to create user")
@@ -20,11 +20,11 @@ func CreateUser(user types.User) error {
 	return errors.New("the fields FirstName and LastName can not be empty")
 }
 
-func DeleteUser(id int) error {
+func DeleteUser(id string) error {
 	err := lib.Delete[types.User](id)
 	return err
 }
 
-func GetUser(id int) (*types.User, error) {
+func GetUser(id string) (*types.User, error) {
 	return lib.Get[types.User](id)
 }

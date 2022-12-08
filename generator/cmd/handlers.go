@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"text/template"
 
 	"github.com/Astenna/Thesis_PoC/generator/parser"
 	"github.com/spf13/cobra"
@@ -22,8 +24,17 @@ var handlersCmd = &cobra.Command{
 		fmt.Println("repositoriesPath: ", repositoriesPath)
 
 		subPackage := "C:\\Users\\marek\\OneDrive\\master-thesis\\Thesis_PoC\\faas\\types"
-		parser.PrepareHandlerFunctions(subPackage)
+		functions := parser.PrepareHandlerFunctions(subPackage)
 		//parser.ParseTypes(subPackage)
+
+		templ, _ := template.ParseFiles("handler_template.tmpl")
+		file, _ := os.Create("test.go")
+
+		err := templ.Execute(file, functions[0])
+		if err != nil {
+			fmt.Println(err)
+		}
+		defer file.Close()
 	},
 }
 
@@ -32,9 +43,11 @@ func init() {
 
 	var typesPath string
 	var repositoriesPath string
+	var handlersPath string
 
 	handlersCmd.Flags().StringVarP(&typesPath, "types", "t", ".", "path to directory with types")
 	handlersCmd.Flags().StringVarP(&repositoriesPath, "repositories", "r", ".", "path to directory with repositories")
+	handlersCmd.Flags().StringVarP(&handlersPath, "output", "o", ".", "path where directory with handlers will be created")
 
 	cmd.Execute()
 }
