@@ -4,10 +4,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-	"strconv"
 )
 
-func Create(objToInsert Object) error {
+func Insert(objToInsert Object) error {
 	var attributeVals, err = dynamodbattribute.MarshalMap(objToInsert)
 	if err != nil {
 		return err
@@ -25,13 +24,13 @@ func Create(objToInsert Object) error {
 	return nil
 }
 
-func Delete[T Object](id int) error {
+func Delete[T Object](id string) error {
 
 	input := &dynamodb.DeleteItemInput{
 		TableName: aws.String((*new(T)).GetTypeName()),
 		Key: map[string]*dynamodb.AttributeValue{
 			"Id": {
-				N: aws.String(strconv.Itoa(id)),
+				S: aws.String(id),
 			},
 		},
 	}
@@ -40,13 +39,13 @@ func Delete[T Object](id int) error {
 	return err
 }
 
-func Get[T Object](id int) (*T, error) {
+func Get[T Object](id string) (*T, error) {
 
 	input := &dynamodb.GetItemInput{
 		TableName: aws.String((*new(T)).GetTypeName()),
 		Key: map[string]*dynamodb.AttributeValue{
 			"Id": {
-				N: aws.String(strconv.Itoa(id)),
+				S: aws.String(id),
 			},
 		},
 	}

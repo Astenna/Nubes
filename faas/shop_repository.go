@@ -12,9 +12,9 @@ func CreateShop(shop types.Shop) error {
 		return errors.New("shop name can not be empty")
 	}
 
-	return lib.Create(shop)
+	return lib.Insert(shop)
 }
 
-func GetShop(id int) (*types.Shop, error) {
+func GetShop(id string) (*types.Shop, error) {
 	return lib.Get[types.Shop](id)
 }

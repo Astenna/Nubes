@@ -6,7 +6,7 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 )
 
-func Handler5(id int) (types.Shop, error) {
+func Handler5(id string) (types.Shop, error) {
 	shop, err := faas.GetShop(id)
 	return *shop, err
 }
