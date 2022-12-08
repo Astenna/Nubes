@@ -12,15 +12,16 @@ import (
 )
 
 type HandlerFunc struct {
+	OrginalPackage       string
 	Imports              string
 	Signature            string
-	Prolog               string
+	OwnerVariableName    string
+	OwnerType            string
 	ReturnFromInvocation string
 	Invocation           string
-	Epilog               string
 	HandlerName          string
-	ReturnValues         string
 	Stateless            bool
+	OptionalReturnVar    string
 }
 
 type TypeDeclaration struct {
@@ -74,87 +75,89 @@ func PrepareHandlerFunctions(path string) []HandlerFunc {
 	packs, err := parser.ParseDir(set, path, nil, 0)
 	AssertDirParsed(err)
 
-	funcs := []*ast.FuncDecl{}
-	for _, pack := range packs {
+	funcsMap := make(map[string][]*ast.FuncDecl)
+
+	for packageName, pack := range packs {
 		for _, f := range pack.Files {
 			for _, d := range f.Decls {
 				if fn, isFn := d.(*ast.FuncDecl); isFn {
-					funcs = append(funcs, fn)
+
+					if funcsMap[packageName] == nil {
+						funcsMap[packageName] = []*ast.FuncDecl{}
+					}
+					funcsMap[packageName] = append(funcsMap[packageName], fn)
 				}
 			}
 		}
 	}
 
 	handlerFuncs := []HandlerFunc{}
-	for _, f := range funcs {
-		if f.Recv == nil || f.Name.Name == "GetTypeName" {
-			continue
-		}
-
-		signature := strings.SplitAfter("(id string, "+strings.TrimPrefix(types.ExprString(f.Type), "func("), ")")[0]
-		newHandler := HandlerFunc{
-			HandlerName: f.Name.Name + "Handler",
-			Signature:   "func " + f.Name.Name + "Handler" + signature,
-		}
-
-		// 4 cases:
-		// C1: no return parameters
-		// C2: 1 return: error
-		// C3: 1 return: non-error
-		// C4: 2 return: non-error, error
-		errorTypeFound := false
-		if f.Type.Results == nil {
-			// C1
-			newHandler.Signature += " error"
-			newHandler.ReturnValues = "err"
-		} else {
-			errorTypeFound = types.ExprString(f.Type.Results.List[len(f.Type.Results.List)-1].Type) == "error"
-			if !errorTypeFound && len(f.Type.Results.List) >= 1 {
-				fmt.Println("Maximum allowed number of non-error return parameters is 1. Handler generation for " + f.Name.Name + "skipped")
+	for packageName, funcs := range funcsMap {
+		for _, f := range funcs {
+			if f.Recv == nil || f.Name.Name == "GetTypeName" {
 				continue
-			} else if !errorTypeFound {
-				// C3
-				newHandler.Signature += "(" + types.ExprString(f.Type.Results.List[0].Type) + ", error)"
-				newHandler.ReturnFromInvocation = "result :="
-				newHandler.ReturnValues = "result, err"
+			}
+
+			signature := strings.SplitAfter("(id string, "+strings.TrimPrefix(types.ExprString(f.Type), "func("), ")")[0]
+			newHandler := HandlerFunc{
+				OrginalPackage: packageName,
+				HandlerName:    f.Name.Name + "Handler",
+				Signature:      "func " + f.Name.Name + "Handler" + signature,
+			}
+
+			// 4 cases:
+			// C1: no return parameters
+			// C2: 1 return: error
+			// C3: 1 return: non-error
+			// C4: 2 return: non-error, error
+			errorTypeFound := false
+			if f.Type.Results == nil {
+				// C1
+				newHandler.Signature += " error"
 			} else {
-				if len(f.Type.Results.List) == 1 {
-					// C2
-					newHandler.Signature += " error"
-					newHandler.ReturnFromInvocation = "err :="
-					newHandler.ReturnValues = "err"
+				errorTypeFound = types.ExprString(f.Type.Results.List[len(f.Type.Results.List)-1].Type) == "error"
+				if !errorTypeFound && len(f.Type.Results.List) >= 1 {
+					fmt.Println("Maximum allowed number of non-error return parameters is 1. Handler generation for " + f.Name.Name + "skipped")
+					continue
+				} else if !errorTypeFound {
+					// C3
+					newHandler.Signature += "(" + types.ExprString(f.Type.Results.List[0].Type) + ", error)"
+					newHandler.ReturnFromInvocation = "result :="
+					newHandler.OptionalReturnVar = "result"
 				} else {
-					// C4
-					newHandler.Signature += "(" + types.ExprString(f.Type.Results.List[0].Type) + " ,error)"
-					newHandler.ReturnFromInvocation = "result, err :="
-					newHandler.ReturnValues = "result, err"
+					if len(f.Type.Results.List) == 1 {
+						// C2
+						newHandler.Signature += " error"
+						newHandler.ReturnFromInvocation = "err :="
+					} else {
+						// C4
+						newHandler.Signature += "(" + types.ExprString(f.Type.Results.List[0].Type) + " ,error)"
+						newHandler.ReturnFromInvocation = "result, err :="
+						newHandler.OptionalReturnVar = "result"
+					}
 				}
 			}
-		}
-		_ = errorTypeFound
+			_ = errorTypeFound
 
-		ownerType := types.ExprString(f.Recv.List[0].Type)
-		var ownerTypeName string
-		if f.Recv.List[0].Names == nil {
-			// stateless method, instance will be created just to invoke the method
-			newHandler.Stateless = true
-			ownerTypeName = "typeInstance"
-			newHandler.Prolog = ownerTypeName + " := new(" + ownerType + ")"
-		} else {
-			newHandler.Stateless = false
-			// stateful method, create instance to invoke the method and then save state changes
-			ownerTypeName = f.Recv.List[0].Names[0].Name
-			newHandler.Epilog = "lib.Insert[" + ownerType + "](" + ownerTypeName + ")"
-			newHandler.Prolog = ownerTypeName + ", err := lib.Get[" + ownerType + `](id)
-			if err != nil {
-
+			newHandler.OwnerType = strings.TrimPrefix(types.ExprString(f.Recv.List[0].Type), "*")
+			var ownerTypeName string
+			if f.Recv.List[0].Names == nil {
+				// stateless method, instance will be created just to invoke the method
+				newHandler.Stateless = true
+				newHandler.OwnerVariableName = "typeInstance"
+				ownerTypeName = "typeInstance"
+			} else {
+				newHandler.Stateless = false
+				// stateful method, create instance to invoke the method and then save state changes
+				ownerTypeName = f.Recv.List[0].Names[0].Name
+				newHandler.OwnerVariableName = f.Recv.List[0].Names[0].Name
 			}
-			`
-		}
-		newHandler.Invocation = ownerTypeName + "." + f.Name.Name + "(" + GetPareterNames(f.Type.Params) + ")"
+			newHandler.Invocation = ownerTypeName + "." + f.Name.Name + "(" + GetPareterNames(f.Type.Params) + ")"
 
-		handlerFuncs = append(handlerFuncs, newHandler)
+			handlerFuncs = append(handlerFuncs, newHandler)
+		}
 	}
+
 	return handlerFuncs
 }
 

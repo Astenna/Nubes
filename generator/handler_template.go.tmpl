@@ -1,0 +1,33 @@
+package main
+
+import (
+	{{if eq false .Stateless}} 
+	lib "github.com/Astenna/Thesis_PoC/faas_lib" 
+	{{end}}
+	"github.com/aws/aws-lambda-go/lambda"
+	org {{.OrginalPackage}}
+	{{.Imports}}
+)
+
+{{.Signature}} {
+	{{if eq true .Stateless}} 
+	{{.OwnerVariableName}} := new(org.{{.OwnerType}}) 
+	{{else}} 
+	{{.OwnerVariableName}}, err := lib.Get[org.{{.OwnerType}}](id)
+	if err != nil {
+		return {{if .OptionalReturnVar}} nil, {{end}} err
+	}
+	{{end}}
+
+	{{.ReturnFromInvocation}}{{.Invocation}}
+
+	{{if eq false .Stateless}}
+	err = lib.Insert[org.{{.OwnerType}}]({{.OwnerVariableName}})
+	{{end}}
+
+	return {{if .OptionalReturnVar}} {{.OptionalReturnVar}}, {{end}} err
+}
+
+func main() {
+	lambda.Start({{.HandlerName}})
+}

@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"text/template"
 
@@ -17,10 +18,9 @@ var handlersCmd = &cobra.Command{
 	Long:  `Generates handlers for AWS lambda deployment based on types and repositories indicated by the path`,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("handlers called!")
-
 		typesPath, _ := cmd.Flags().GetString("types")
 		repositoriesPath, _ := cmd.Flags().GetString("repositories")
+		handlersPath, _ := cmd.Flags().GetString("output")
 		fmt.Println("typesPath: ", typesPath)
 		fmt.Println("repositoriesPath: ", repositoriesPath)
 
@@ -28,12 +28,17 @@ var handlersCmd = &cobra.Command{
 		functions := parser.PrepareHandlerFunctions(subPackage)
 		//parser.ParseTypes(subPackage)
 
-		templ, _ := template.ParseFiles("handler_template.tmpl")
+		templ, _ := template.ParseFiles("handler_template.go.tmpl")
+
+		absPath, _ := filepath.Abs(filepath.Join(handlersPath, "handler_testing"))
+		os.MkdirAll(absPath, 0777)
 
 		for i, f := range functions {
-			file, _ := os.Create("test" + strconv.Itoa(i) + ".go")
-
-			err := templ.Execute(file, f)
+			file, err := os.Create(filepath.Join(absPath, "test"+strconv.Itoa(i)+".go"))
+			if err != nil {
+				fmt.Println(err)
+			}
+			err = templ.Execute(file, f)
 			if err != nil {
 				fmt.Println(err)
 			}
