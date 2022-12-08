@@ -20,6 +20,22 @@ func (s *Shop) ChangeName(name string) {
 	s.Name = name
 }
 
-func (s *Shop) ChangeOwner(ownerId string) {
+func (s *Shop) ChangeOwnerNoReturnValue(ownerId string) {
 	s.Owner = faas_lib.NewReference[User](ownerId)
+}
+
+func (s *Shop) ChangeOwner(ownerId string) Shop {
+	s.Owner = faas_lib.NewReference[User](ownerId)
+	return *s
+}
+
+func (s *Shop) ChangeOwnerWithError(ownerId string) (Shop, error) {
+	s.Owner = faas_lib.NewReference[User](ownerId)
+	return *s, nil
+}
+
+func (*Shop) SideEffectsMethod(ownerId string) error {
+	_ = "very boring code"
+
+	return nil
 }

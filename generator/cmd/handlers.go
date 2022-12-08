@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"text/template"
 
 	"github.com/Astenna/Thesis_PoC/generator/parser"
@@ -28,13 +29,17 @@ var handlersCmd = &cobra.Command{
 		//parser.ParseTypes(subPackage)
 
 		templ, _ := template.ParseFiles("handler_template.tmpl")
-		file, _ := os.Create("test.go")
 
-		err := templ.Execute(file, functions[0])
-		if err != nil {
-			fmt.Println(err)
+		for i, f := range functions {
+			file, _ := os.Create("test" + strconv.Itoa(i) + ".go")
+
+			err := templ.Execute(file, f)
+			if err != nil {
+				fmt.Println(err)
+			}
+			defer file.Close()
 		}
-		defer file.Close()
+
 	},
 }
 

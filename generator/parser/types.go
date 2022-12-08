@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"bytes"
 	"fmt"
 	"go/ast"
 	"go/parser"
@@ -13,12 +12,15 @@ import (
 )
 
 type HandlerFunc struct {
-	Imports     string
-	Signature   string
-	Prolog      string
-	Body        string
-	Epilog      string
-	HandlerName string
+	Imports              string
+	Signature            string
+	Prolog               string
+	ReturnFromInvocation string
+	Invocation           string
+	Epilog               string
+	HandlerName          string
+	ReturnValues         string
+	Stateless            bool
 }
 
 type TypeDeclaration struct {
@@ -89,41 +91,81 @@ func PrepareHandlerFunctions(path string) []HandlerFunc {
 			continue
 		}
 
-		signature := "(id string, " + strings.TrimPrefix(types.ExprString(f.Type), "func(")
-
-		f.Name.Name = f.Name.Name + "Handler"
+		signature := strings.SplitAfter("(id string, "+strings.TrimPrefix(types.ExprString(f.Type), "func("), ")")[0]
 		newHandler := HandlerFunc{
-			HandlerName: f.Name.Name,
-			Signature:   "func " + f.Name.Name + signature,
+			HandlerName: f.Name.Name + "Handler",
+			Signature:   "func " + f.Name.Name + "Handler" + signature,
 		}
 
-		if f.Recv.List[0].Names != nil {
-			ownerTypeName := f.Recv.List[0].Names[0].Name
-			ownerType := types.ExprString(f.Recv.List[0].Type)
-			returnValues := f.Type.Results
-
-			if returnValues == nil {
-				newHandler.Signature = newHandler.Signature + "error"
-				newHandler.Prolog = ownerTypeName + ", err := lib.Get[" + ownerType + `](id)
-				if err != nil {
-					return err
+		// 4 cases:
+		// C1: no return parameters
+		// C2: 1 return: error
+		// C3: 1 return: non-error
+		// C4: 2 return: non-error, error
+		errorTypeFound := false
+		if f.Type.Results == nil {
+			// C1
+			newHandler.Signature += " error"
+			newHandler.ReturnValues = "err"
+		} else {
+			errorTypeFound = types.ExprString(f.Type.Results.List[len(f.Type.Results.List)-1].Type) == "error"
+			if !errorTypeFound && len(f.Type.Results.List) >= 1 {
+				fmt.Println("Maximum allowed number of non-error return parameters is 1. Handler generation for " + f.Name.Name + "skipped")
+				continue
+			} else if !errorTypeFound {
+				// C3
+				newHandler.Signature += "(" + types.ExprString(f.Type.Results.List[0].Type) + ", error)"
+				newHandler.ReturnFromInvocation = "result :="
+				newHandler.ReturnValues = "result, err"
+			} else {
+				if len(f.Type.Results.List) == 1 {
+					// C2
+					newHandler.Signature += " error"
+					newHandler.ReturnFromInvocation = "err :="
+					newHandler.ReturnValues = "err"
+				} else {
+					// C4
+					newHandler.Signature += "(" + types.ExprString(f.Type.Results.List[0].Type) + " ,error)"
+					newHandler.ReturnFromInvocation = "result, err :="
+					newHandler.ReturnValues = "result, err"
 				}
-				`
-
-				newHandler.Epilog = "lib.Insert[" + ownerType + "](" + ownerTypeName + `)
-				return nil`
 			}
-
 		}
-		f.Recv = nil
+		_ = errorTypeFound
 
-		buf := new(bytes.Buffer)
-		printer.Fprint(buf, set, f.Body)
-		newHandler.Body = strings.Trim(buf.String(), "{}")
+		ownerType := types.ExprString(f.Recv.List[0].Type)
+		var ownerTypeName string
+		if f.Recv.List[0].Names == nil {
+			// stateless method, instance will be created just to invoke the method
+			newHandler.Stateless = true
+			ownerTypeName = "typeInstance"
+			newHandler.Prolog = ownerTypeName + " := new(" + ownerType + ")"
+		} else {
+			newHandler.Stateless = false
+			// stateful method, create instance to invoke the method and then save state changes
+			ownerTypeName = f.Recv.List[0].Names[0].Name
+			newHandler.Epilog = "lib.Insert[" + ownerType + "](" + ownerTypeName + ")"
+			newHandler.Prolog = ownerTypeName + ", err := lib.Get[" + ownerType + `](id)
+			if err != nil {
+
+			}
+			`
+		}
+		newHandler.Invocation = ownerTypeName + "." + f.Name.Name + "(" + GetPareterNames(f.Type.Params) + ")"
 
 		handlerFuncs = append(handlerFuncs, newHandler)
 	}
 	return handlerFuncs
+}
+
+func GetPareterNames(params *ast.FieldList) string {
+	var names []string
+	for _, param := range params.List {
+		for _, name := range param.Names {
+			names = append(names, name.Name)
+		}
+	}
+	return strings.Join(names, ", ")
 }
 
 func AssertDirParsed(err error) {
