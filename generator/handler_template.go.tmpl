@@ -5,26 +5,23 @@ import (
 	lib "github.com/Astenna/Thesis_PoC/faas_lib" 
 	{{end}}
 	"github.com/aws/aws-lambda-go/lambda"
-	org {{.OrginalPackage}}
+	{{.OrginalPackageAlias}} "{{.OrginalPackage}}"
 	{{.Imports}}
 )
 
 {{.Signature}} {
 	{{if eq true .Stateless}} 
-	{{.OwnerVariableName}} := new(org.{{.OwnerType}}) 
+	{{.OwnerVariableName}} := new({{.OrginalPackageAlias}}.{{.OwnerType}}) 
 	{{else}} 
-	{{.OwnerVariableName}}, err := lib.Get[org.{{.OwnerType}}](id)
+	{{.OwnerVariableName}}, err := lib.Get[{{.OrginalPackageAlias}}.{{.OwnerType}}](id)
 	if err != nil {
 		return {{if .OptionalReturnVar}} nil, {{end}} err
 	}
 	{{end}}
-
 	{{.ReturnFromInvocation}}{{.Invocation}}
-
 	{{if eq false .Stateless}}
-	err = lib.Insert[org.{{.OwnerType}}]({{.OwnerVariableName}})
+	err = lib.Insert({{.OwnerVariableName}})
 	{{end}}
-
 	return {{if .OptionalReturnVar}} {{.OptionalReturnVar}}, {{end}} err
 }
 

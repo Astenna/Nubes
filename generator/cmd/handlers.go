@@ -21,20 +21,17 @@ var handlersCmd = &cobra.Command{
 		typesPath, _ := cmd.Flags().GetString("types")
 		repositoriesPath, _ := cmd.Flags().GetString("repositories")
 		handlersPath, _ := cmd.Flags().GetString("output")
-		fmt.Println("typesPath: ", typesPath)
-		fmt.Println("repositoriesPath: ", repositoriesPath)
+		moduleName, _ := cmd.Flags().GetString("module")
+		_ = repositoriesPath
 
-		subPackage := "C:\\Users\\marek\\OneDrive\\master-thesis\\Thesis_PoC\\faas\\types"
-		functions := parser.PrepareHandlerFunctions(subPackage)
-		//parser.ParseTypes(subPackage)
-
+		functions := parser.PrepareHandlersFromMethods(MakePathAbosoluteOrExitOnError(typesPath), moduleName)
 		templ, _ := template.ParseFiles("handler_template.go.tmpl")
 
-		absPath, _ := filepath.Abs(filepath.Join(handlersPath, "handler_testing"))
-		os.MkdirAll(absPath, 0777)
+		handlersDirectoryPath := MakePathAbosoluteOrExitOnError(filepath.Join(handlersPath, "handler_testing"))
+		os.MkdirAll(handlersDirectoryPath, 0777)
 
 		for i, f := range functions {
-			file, err := os.Create(filepath.Join(absPath, "test"+strconv.Itoa(i)+".go"))
+			file, err := os.Create(filepath.Join(handlersDirectoryPath, "test"+strconv.Itoa(i)+".go"))
 			if err != nil {
 				fmt.Println(err)
 			}
@@ -44,7 +41,6 @@ var handlersCmd = &cobra.Command{
 			}
 			defer file.Close()
 		}
-
 	},
 }
 
@@ -54,10 +50,22 @@ func init() {
 	var typesPath string
 	var repositoriesPath string
 	var handlersPath string
+	var moduleName string
 
 	handlersCmd.Flags().StringVarP(&typesPath, "types", "t", ".", "path to directory with types")
 	handlersCmd.Flags().StringVarP(&repositoriesPath, "repositories", "r", ".", "path to directory with repositories")
 	handlersCmd.Flags().StringVarP(&handlersPath, "output", "o", ".", "path where directory with handlers will be created")
+	handlersCmd.Flags().StringVarP(&moduleName, "module", "m", ".", "module name of the source project")
 
 	cmd.Execute()
+}
+
+func MakePathAbosoluteOrExitOnError(path string) string {
+	absPath, err := filepath.Abs(path)
+
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	return absPath
 }
