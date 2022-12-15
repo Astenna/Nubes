@@ -56,7 +56,8 @@ func PrepareHandlersFromMethods(path string, moduleName string) []HandlerFunc {
 				continue
 			}
 
-			parametersList := strings.SplitAfter("(id string, "+strings.TrimPrefix(types.ExprString(f.Type), "func("), ")")[0]
+			parametersList := "(" + HandlerInputParameterName + " " + HandlerInputParameterType + ")"
+			//strings.SplitAfter("(id string, "+strings.TrimPrefix(types.ExprString(f.Type), "func("), ")")[0]
 			newHandler := HandlerFunc{
 				OrginalPackage:      moduleName + "/" + packageName,
 				OrginalPackageAlias: OrginalPackageAlias,
@@ -110,7 +111,13 @@ func PrepareHandlersFromMethods(path string, moduleName string) []HandlerFunc {
 				ownerTypeName = f.Recv.List[0].Names[0].Name
 				newHandler.OwnerVariableName = f.Recv.List[0].Names[0].Name
 			}
-			newHandler.Invocation = ownerTypeName + "." + f.Name.Name + "(" + GetPareterNames(f.Type.Params) + ")"
+
+			parameters, err := GetOrginalFunctionParameters(f.Type.Params)
+			if err != nil {
+				fmt.Println("Maximum allowed number of parameters is 1. Handler generation for " + f.Name.Name + "skipped")
+				continue
+			}
+			newHandler.Invocation = ownerTypeName + "." + f.Name.Name + "(" + parameters + ")"
 
 			handlerFuncs = append(handlerFuncs, newHandler)
 		}
@@ -119,19 +126,19 @@ func PrepareHandlersFromMethods(path string, moduleName string) []HandlerFunc {
 	return handlerFuncs
 }
 
-func GetPareterNames(params *ast.FieldList) string {
-	var names []string
-	for _, param := range params.List {
-		for _, name := range param.Names {
-			names = append(names, name.Name)
-		}
+func GetOrginalFunctionParameters(params *ast.FieldList) (string, error) {
+	if params.List == nil || len(params.List) == 0 {
+		return "", nil
+	} else if len(params.List) > 1 {
+		return "", fmt.Errorf("maximum allowed number of parameters is 1")
 	}
-	return strings.Join(names, ", ")
+
+	return HandlerInputParameterName + "." + HandlerInputEmbededOrginalFunctionParameterName + ".(" + types.ExprString(params.List[0].Type) + ")", nil
 }
 
 func AssertDirParsed(err error) {
 	if err != nil {
-		fmt.Println("Failed to parse files in the directory", err)
+		fmt.Println("Failed to parse files in the directory: %w", err)
 		os.Exit(1)
 	}
 }

@@ -1,9 +1,11 @@
 package types
 
-import "github.com/Astenna/Thesis_PoC/faas_lib"
+import (
+	"github.com/Astenna/Thesis_PoC/faas_lib"
+)
 
 type Shop struct {
-	Id    int
+	Id    string
 	Name  string
 	Owner *faas_lib.Reference[User]
 }
@@ -34,7 +36,7 @@ func (s *Shop) ChangeOwnerWithError(ownerId string) (Shop, error) {
 	return *s, nil
 }
 
-func (*Shop) SideEffectsMethod(ownerId string) error {
+func (*Shop) SideEffectsMethod() error {
 	_ = "very boring code"
 
 	return nil
