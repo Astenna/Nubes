@@ -1,9 +1,7 @@
 package main
 
 import (
-	{{if eq false .Stateless}} 
 	lib "github.com/Astenna/Thesis_PoC/faas_lib" 
-	{{end}}
 	"github.com/aws/aws-lambda-go/lambda"
 	{{.OrginalPackageAlias}} "{{.OrginalPackage}}"
 	{{.Imports}}
@@ -13,7 +11,7 @@ import (
 	{{if eq true .Stateless}} 
 	{{.OwnerVariableName}} := new({{.OrginalPackageAlias}}.{{.OwnerType}}) 
 	{{else}} 
-	{{.OwnerVariableName}}, err := lib.Get[{{.OrginalPackageAlias}}.{{.OwnerType}}](id)
+	{{.OwnerVariableName}}, err := lib.Get[{{.OrginalPackageAlias}}.{{.OwnerType}}](input.Id)
 	if err != nil {
 		return {{if .OptionalReturnVar}} nil, {{end}} err
 	}

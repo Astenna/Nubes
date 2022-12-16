@@ -33,21 +33,8 @@ func PrepareHandlersFromMethods(path string, moduleName string) []HandlerFunc {
 	packs, err := parser.ParseDir(set, path, nil, 0)
 	AssertDirParsed(err)
 
-	funcsMap := make(map[string][]*ast.FuncDecl)
-
-	for packageName, pack := range packs {
-		for _, f := range pack.Files {
-			for _, d := range f.Decls {
-				if fn, isFn := d.(*ast.FuncDecl); isFn {
-
-					if funcsMap[packageName] == nil {
-						funcsMap[packageName] = []*ast.FuncDecl{}
-					}
-					funcsMap[packageName] = append(funcsMap[packageName], fn)
-				}
-			}
-		}
-	}
+	isTypeNobject := GetNobjectsDefinedInPack(packs)
+	funcsMap := GetPackageFunctionMap(packs)
 
 	handlerFuncs := []HandlerFunc{}
 	for packageName, funcs := range funcsMap {
@@ -56,13 +43,18 @@ func PrepareHandlersFromMethods(path string, moduleName string) []HandlerFunc {
 				continue
 			}
 
-			parametersList := "(" + HandlerInputParameterName + " " + HandlerInputParameterType + ")"
-			//strings.SplitAfter("(id string, "+strings.TrimPrefix(types.ExprString(f.Type), "func("), ")")[0]
+			ownerType := strings.TrimPrefix(types.ExprString(f.Recv.List[0].Type), "*")
+			if !isTypeNobject[ownerType] {
+				fmt.Println("Member type does not implement Nobject interface. Handler generation for " + f.Name.Name + "skipped")
+				continue
+			}
+
 			newHandler := HandlerFunc{
 				OrginalPackage:      moduleName + "/" + packageName,
 				OrginalPackageAlias: OrginalPackageAlias,
 				HandlerName:         f.Name.Name + HandlerSuffix,
-				Signature:           "func " + f.Name.Name + HandlerSuffix + parametersList,
+				Signature:           "func " + f.Name.Name + HandlerSuffix + HandlerParameters,
+				OwnerType:           ownerType,
 			}
 
 			// 4 cases:
@@ -81,7 +73,11 @@ func PrepareHandlersFromMethods(path string, moduleName string) []HandlerFunc {
 					continue
 				} else if !errorTypeFound {
 					// C3
-					newHandler.Signature += "(" + newHandler.OrginalPackageAlias + "." + types.ExprString(f.Type.Results.List[0].Type) + ", error)"
+					if isTypeNobject[types.ExprString(f.Type.Results.List[0].Type)] {
+						newHandler.Signature += "(" + newHandler.OrginalPackageAlias + "." + types.ExprString(f.Type.Results.List[0].Type) + ", error)"
+					} else {
+						newHandler.Signature += "(" + types.ExprString(f.Type.Results.List[0].Type) + ", error)"
+					}
 					newHandler.ReturnFromInvocation = "result :="
 					newHandler.OptionalReturnVar = "result"
 				} else {
@@ -91,14 +87,18 @@ func PrepareHandlersFromMethods(path string, moduleName string) []HandlerFunc {
 						newHandler.ReturnFromInvocation = "err :="
 					} else {
 						// C4
-						newHandler.Signature += "(" + newHandler.OrginalPackageAlias + "." + types.ExprString(f.Type.Results.List[0].Type) + " ,error)"
+						if isTypeNobject[types.ExprString(f.Type.Results.List[0].Type)] {
+
+							newHandler.Signature += "(" + newHandler.OrginalPackageAlias + "." + types.ExprString(f.Type.Results.List[0].Type) + " ,error)"
+						} else {
+							newHandler.Signature += "(" + newHandler.OrginalPackageAlias + "." + types.ExprString(f.Type.Results.List[0].Type) + " ,error)"
+						}
 						newHandler.ReturnFromInvocation = "result, err :="
 						newHandler.OptionalReturnVar = "result"
 					}
 				}
 			}
 
-			newHandler.OwnerType = strings.TrimPrefix(types.ExprString(f.Recv.List[0].Type), "*")
 			var ownerTypeName string
 			if f.Recv.List[0].Names == nil {
 				// stateless method, instance will be created just to invoke the method
@@ -124,6 +124,45 @@ func PrepareHandlersFromMethods(path string, moduleName string) []HandlerFunc {
 	}
 
 	return handlerFuncs
+}
+
+func GetPackageFunctionMap(packs map[string]*ast.Package) map[string][]*ast.FuncDecl {
+	funcsMap := make(map[string][]*ast.FuncDecl)
+
+	for packageName, pack := range packs {
+		for _, f := range pack.Files {
+			for _, d := range f.Decls {
+				if fn, isFn := d.(*ast.FuncDecl); isFn {
+
+					if funcsMap[packageName] == nil {
+						funcsMap[packageName] = []*ast.FuncDecl{}
+					}
+					funcsMap[packageName] = append(funcsMap[packageName], fn)
+				}
+			}
+		}
+	}
+
+	return funcsMap
+}
+
+func GetNobjectsDefinedInPack(packs map[string]*ast.Package) map[string]bool {
+	isTypeNobject := make(map[string]bool)
+
+	for _, pack := range packs {
+		for _, f := range pack.Files {
+			for _, d := range f.Decls {
+				if fn, isFn := d.(*ast.FuncDecl); isFn {
+					if fn.Recv != nil && fn.Name.Name == GetTypeName {
+						ownerType := types.ExprString(fn.Recv.List[0].Type)
+						isTypeNobject[ownerType] = true
+					}
+				}
+			}
+		}
+	}
+
+	return isTypeNobject
 }
 
 func GetOrginalFunctionParameters(params *ast.FieldList) (string, error) {
