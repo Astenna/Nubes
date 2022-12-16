@@ -22,6 +22,7 @@ type HandlerFunc struct {
 	HandlerName          string
 	Stateless            bool
 	OptionalReturnVar    string
+	OptionalReturnType   string
 }
 
 func PrepareHandlersFromFunctions(path string, moduleName string) []HandlerFunc {
@@ -71,30 +72,29 @@ func PrepareHandlersFromMethods(path string, moduleName string) []HandlerFunc {
 				if !errorTypeFound && len(f.Type.Results.List) > 1 {
 					fmt.Println("Maximum allowed number of non-error return parameters is 1. Handler generation for " + f.Name.Name + "skipped")
 					continue
-				} else if !errorTypeFound {
-					// C3
-					if isTypeNobject[types.ExprString(f.Type.Results.List[0].Type)] {
-						newHandler.Signature += "(" + newHandler.OrginalPackageAlias + "." + types.ExprString(f.Type.Results.List[0].Type) + ", error)"
-					} else {
-						newHandler.Signature += "(" + types.ExprString(f.Type.Results.List[0].Type) + ", error)"
-					}
-					newHandler.ReturnFromInvocation = "result :="
-					newHandler.OptionalReturnVar = "result"
 				} else {
-					if len(f.Type.Results.List) == 1 {
-						// C2
-						newHandler.Signature += " error"
-						newHandler.ReturnFromInvocation = "err :="
-					} else {
-						// C4
-						if isTypeNobject[types.ExprString(f.Type.Results.List[0].Type)] {
 
-							newHandler.Signature += "(" + newHandler.OrginalPackageAlias + "." + types.ExprString(f.Type.Results.List[0].Type) + " ,error)"
-						} else {
-							newHandler.Signature += "(" + newHandler.OrginalPackageAlias + "." + types.ExprString(f.Type.Results.List[0].Type) + " ,error)"
-						}
-						newHandler.ReturnFromInvocation = "result, err :="
+					newHandler.OptionalReturnType = types.ExprString(f.Type.Results.List[0].Type)
+					if isTypeNobject[newHandler.OptionalReturnType] {
+						newHandler.OptionalReturnType = newHandler.OrginalPackageAlias + "." + newHandler.OptionalReturnType
+					}
+
+					if !errorTypeFound {
+						// C3
+						newHandler.Signature += "(" + newHandler.OptionalReturnType + ", error)"
+						newHandler.ReturnFromInvocation = "result :="
 						newHandler.OptionalReturnVar = "result"
+					} else {
+						if len(f.Type.Results.List) == 1 {
+							// C2
+							newHandler.Signature += " error"
+							newHandler.ReturnFromInvocation = "err :="
+						} else {
+							// C4
+							newHandler.Signature += "(" + newHandler.OptionalReturnType + " ,error)"
+							newHandler.ReturnFromInvocation = "result, err :="
+							newHandler.OptionalReturnVar = "result"
+						}
 					}
 				}
 			}

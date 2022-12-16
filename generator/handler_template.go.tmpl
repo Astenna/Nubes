@@ -13,7 +13,7 @@ import (
 	{{else}} 
 	{{.OwnerVariableName}}, err := lib.Get[{{.OrginalPackageAlias}}.{{.OwnerType}}](input.Id)
 	if err != nil {
-		return {{if .OptionalReturnVar}} nil, {{end}} err
+		return {{if .OptionalReturnVar}} *new({{.OptionalReturnType}}), {{end}} err
 	}
 	{{end}}
 	{{.ReturnFromInvocation}}{{.Invocation}}
