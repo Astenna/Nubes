@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/Astenna/Thesis_PoC/generator/parser"
+	"github.com/Astenna/Nubes/generator/parser"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra-cli/cmd"
 )
