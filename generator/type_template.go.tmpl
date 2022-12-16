@@ -1,0 +1,12 @@
+package {{.PackageName}}
+
+import (
+    {{.Imports}}
+)
+
+{{.StructDefinition}}
+
+{{range .MemberFunctions}}
+     func {{.Name}}({{.Parameters}})
+{{end}}
+
