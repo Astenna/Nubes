@@ -1,3 +1,3 @@
-module github.com/Astenna/Thesis_PoC
+module github.com/Astenna/Nubes
 
 go 1.19

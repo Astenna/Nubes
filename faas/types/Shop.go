@@ -1,13 +1,14 @@
 package types
 
 import (
-	"github.com/Astenna/Thesis_PoC/faas_lib"
+	"github.com/Astenna/Nubes/faas/test"
+	"github.com/Astenna/Nubes/lib"
 )
 
 type Shop struct {
 	Id    string
 	Name  string
-	Owner *faas_lib.Reference[User]
+	Owner *lib.Reference[User]
 }
 
 func (Shop) GetTypeName() string {
@@ -15,7 +16,7 @@ func (Shop) GetTypeName() string {
 }
 
 func NewShop(ownerId string) *Shop {
-	return &Shop{Owner: faas_lib.NewReference[User](ownerId)}
+	return &Shop{Owner: lib.NewReference[User](ownerId)}
 }
 
 func (s *Shop) ChangeName(name string) {
@@ -23,17 +24,17 @@ func (s *Shop) ChangeName(name string) {
 }
 
 func (s *Shop) ChangeOwnerNoReturnValue(ownerId string) {
-	s.Owner = faas_lib.NewReference[User](ownerId)
+	s.Owner = lib.NewReference[User](ownerId)
 }
 
-func (s *Shop) ChangeOwner(ownerId string) Shop {
-	s.Owner = faas_lib.NewReference[User](ownerId)
-	return *s
+func (s *Shop) ChangeOwner(ownerId string) test.Test {
+	s.Owner = lib.NewReference[User](ownerId)
+	return *new(test.Test)
 }
 
-func (s *Shop) ChangeOwnerWithError(ownerId string) (Shop, error) {
-	s.Owner = faas_lib.NewReference[User](ownerId)
-	return *s, nil
+func (s *Shop) ChangeOwnerWithError(ownerId string) (Product, error) {
+	s.Owner = lib.NewReference[User](ownerId)
+	return *new(Product), nil
 }
 
 func (*Shop) SideEffectsMethod() error {

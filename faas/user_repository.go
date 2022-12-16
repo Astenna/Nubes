@@ -3,8 +3,8 @@ package faas
 import (
 	"errors"
 
-	"github.com/Astenna/Thesis_PoC/faas/types"
-	lib "github.com/Astenna/Thesis_PoC/faas_lib"
+	"github.com/Astenna/Nubes/faas/types"
+	lib "github.com/Astenna/Nubes/lib"
 )
 
 func CreateUser(user types.User) error {

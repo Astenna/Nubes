@@ -1,10 +1,10 @@
-module github.com/Astenna/Thesis_PoC/faas
+module github.com/Astenna/Nubes/faas
 
 go 1.19
 
-replace github.com/Astenna/Thesis_PoC/faas_lib v0.0.0 => ../faas_lib
+replace github.com/Astenna/Nubes/lib v0.0.0 => ../lib
 
-require github.com/Astenna/Thesis_PoC/faas_lib v0.0.0
+require github.com/Astenna/Nubes/lib v0.0.0
 
 require (
 	github.com/aws/aws-lambda-go v1.35.0

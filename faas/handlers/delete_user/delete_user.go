@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/Astenna/Thesis_PoC/faas"
+	"github.com/Astenna/Nubes/faas"
 	"github.com/aws/aws-lambda-go/lambda"
 )
 
