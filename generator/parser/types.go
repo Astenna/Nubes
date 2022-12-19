@@ -9,14 +9,15 @@ import (
 	"os"
 )
 
-func GetNobjectsDefinedInPack(path string) map[string]struct{} {
+func GetNobjectsDefinedInPack(path string, moduleName string) (map[string]struct{}, string) {
 	set := token.NewFileSet()
 	packs, err := parser.ParseDir(set, path, nil, 0)
 	AssertDirParsed(err)
 
 	nobjectTypes := make(map[string]struct{})
 
-	for _, pack := range packs {
+	var packageName string
+	for pckgName, pack := range packs {
 		for _, f := range pack.Files {
 			for _, d := range f.Decls {
 				if fn, isFn := d.(*ast.FuncDecl); isFn {
@@ -27,9 +28,10 @@ func GetNobjectsDefinedInPack(path string) map[string]struct{} {
 				}
 			}
 		}
+		packageName = pckgName
 	}
 
-	return nobjectTypes
+	return nobjectTypes, moduleName + "/" + packageName
 }
 
 func AssertDirParsed(err error) {

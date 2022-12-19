@@ -22,12 +22,15 @@ var handlersCmd = &cobra.Command{
 		generationDestination, _ := cmd.Flags().GetString("output")
 		moduleName, _ := cmd.Flags().GetString("module")
 
-		nobjectTypes := parser.GetNobjectsDefinedInPack(typesPath)
-		functions := parser.PrepareStateChangingHandlers(MakePathAbosoluteOrExitOnError(typesPath), moduleName, nobjectTypes)
-		repositoryFunctions := parser.PrepareRepositoriesHandlers(MakePathAbosoluteOrExitOnError(repositoriesPath), moduleName, nobjectTypes)
+		typesPath = MakePathAbosoluteOrExitOnError(typesPath)
+		repositoriesPath = MakePathAbosoluteOrExitOnError(repositoriesPath)
 
-		GenerateStateChangingHandlers(generationDestination, functions)
-		GenerateRepositoriesHandlers(generationDestination, repositoryFunctions)
+		nobjectTypes, nobjectsImportPath := parser.GetNobjectsDefinedInPack(typesPath, moduleName)
+		stateChangingFuncs := parser.ParseStateChangingHandlers(typesPath, nobjectsImportPath, nobjectTypes)
+		customRepoFuncs, defaultRepoFuncs := parser.ParseRepoHandlers(repositoriesPath, nobjectsImportPath, nobjectTypes)
+
+		GenerateStateChangingHandlers(generationDestination, stateChangingFuncs)
+		GenerateRepositoriesHandlers(generationDestination, customRepoFuncs, defaultRepoFuncs)
 	},
 }
 
@@ -47,7 +50,7 @@ func init() {
 	cmd.Execute()
 }
 
-func GenerateStateChangingHandlers(path string, functions []parser.HandlerFunc) {
+func GenerateStateChangingHandlers(path string, functions []parser.StateChangingHandler) {
 	templ := ParseOrExitOnError("templates/handler_template.go.tmpl")
 	generationDestPath := MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "state-changes"))
 	os.MkdirAll(generationDestPath, 0777)
@@ -65,17 +68,41 @@ func GenerateStateChangingHandlers(path string, functions []parser.HandlerFunc) 
 	}
 }
 
-func GenerateRepositoriesHandlers(path string, functions []parser.RepositoryCustomHandlerFunc) {
+func GenerateRepositoriesHandlers(path string, customFuncs []parser.CustomRepoHandler, defaultFuncs []parser.DefaultRepoHandler) {
 	templ := ParseOrExitOnError("templates/custom_repo_template.go.tmpl")
 	repositoriesDirectoryPath := MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "repositories"))
 	os.MkdirAll(repositoriesDirectoryPath, 0777)
 
-	for _, f := range functions {
+	for _, f := range customFuncs {
 		file, err := os.Create(filepath.Join(repositoriesDirectoryPath, f.OperationName+f.TypeName+".go"))
 		if err != nil {
 			fmt.Println(err)
 		}
 		err = templ.Execute(file, f)
+		if err != nil {
+			fmt.Println(err)
+		}
+		defer file.Close()
+	}
+
+	getTempl := ParseOrExitOnError("templates/get_repo_template.go.tmpl")
+	createTempl := ParseOrExitOnError("templates/create_repo_template.go.tmpl")
+	deleteTempl := ParseOrExitOnError("templates/delete_repo_template.go.tmpl")
+	for _, f := range defaultFuncs {
+		file, err := os.Create(filepath.Join(repositoriesDirectoryPath, f.OperationName+f.TypeName+".go"))
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		switch {
+		case f.OperationName == parser.GetPrefix:
+			err = getTempl.Execute(file, f)
+		case f.OperationName == parser.CreatePrefix:
+			err = createTempl.Execute(file, f)
+		case f.OperationName == parser.DeletePrefix:
+			err = deleteTempl.Execute(file, f)
+		}
+
 		if err != nil {
 			fmt.Println(err)
 		}

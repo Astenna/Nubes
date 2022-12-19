@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-type HandlerFunc struct {
+type StateChangingHandler struct {
 	OrginalPackage       string
 	OrginalPackageAlias  string
 	Imports              string
@@ -27,12 +27,14 @@ type HandlerFunc struct {
 	OptionalReturnType   string
 }
 
-type RepositoryHandlerFunc struct {
-	TypeName      string
-	OperationName string
+type DefaultRepoHandler struct {
+	TypesPackageAlias string
+	TypesPackagePath  string
+	TypeName          string
+	OperationName     string
 }
 
-type RepositoryCustomHandlerFunc struct {
+type CustomRepoHandler struct {
 	Imports       string
 	OperationName string
 	TypeName      string
@@ -42,24 +44,23 @@ type RepositoryCustomHandlerFunc struct {
 }
 
 type detectedFunction struct {
-	Function    *ast.FuncDecl
-	PackageName string
-	Imports     []*ast.ImportSpec
+	Function *ast.FuncDecl
+	Imports  []*ast.ImportSpec
 }
 
-func PrepareRepositoriesHandlers(path string, moduleName string, nobjectTypes map[string]struct{}) []RepositoryCustomHandlerFunc {
+func ParseRepoHandlers(path string, nobjectsImportPath string, nobjectTypes map[string]struct{}) ([]CustomRepoHandler, []DefaultRepoHandler) {
 	set := token.NewFileSet()
 	packs, err := parser.ParseDir(set, path, nil, 0)
 	AssertDirParsed(err)
 
-	functions := GetPackageFunctions(packs)
+	functions := GetPackageFuncs(packs)
 
 	isNoObjectMethodDefined := make(map[string]map[string]bool, len(nobjectTypes))
 	for i := range nobjectTypes {
 		isNoObjectMethodDefined[i] = map[string]bool{GetPrefix: false, CreatePrefix: false, DeletePrefix: false}
 	}
 
-	repositoryHandlerFuncs := []RepositoryCustomHandlerFunc{}
+	repoCustomFuncs := []CustomRepoHandler{}
 	for _, detectedFunction := range functions {
 		f := detectedFunction.Function
 		var methodType string
@@ -77,7 +78,7 @@ func PrepareRepositoriesHandlers(path string, moduleName string, nobjectTypes ma
 
 		for typeName := range nobjectTypes {
 			if strings.HasSuffix(f.Name.Name, typeName) {
-				params, err := GetCustomRepositoryFunctionParameters(f.Type.Params)
+				params, err := GetCustomRepoFuncParams(f.Type.Params)
 				if err != nil {
 					fmt.Println("faas handler " + f.Name.Name + " custom definition replaced with default definition")
 					continue
@@ -96,7 +97,7 @@ func PrepareRepositoriesHandlers(path string, moduleName string, nobjectTypes ma
 				}
 
 				isNoObjectMethodDefined[typeName][methodType] = true
-				repositoryHandlerFuncs = append(repositoryHandlerFuncs, RepositoryCustomHandlerFunc{
+				repoCustomFuncs = append(repoCustomFuncs, CustomRepoHandler{
 					OperationName: methodType,
 					TypeName:      typeName,
 					Parameters:    params,
@@ -108,17 +109,37 @@ func PrepareRepositoriesHandlers(path string, moduleName string, nobjectTypes ma
 		}
 	}
 
-	return repositoryHandlerFuncs
+	repoDefaultFuncs := GetDefaultRepoHandler(isNoObjectMethodDefined, nobjectsImportPath)
+	return repoCustomFuncs, repoDefaultFuncs
 }
 
-func PrepareStateChangingHandlers(path string, moduleName string, nobjectTypes map[string]struct{}) []HandlerFunc {
+func GetDefaultRepoHandler(isNoObjectMethodDefined map[string]map[string]bool, nobjectsImportPath string) []DefaultRepoHandler {
+	var defaultFuncs []DefaultRepoHandler
+
+	for typeName, typeMethodsMap := range isNoObjectMethodDefined {
+		for method, isCustom := range typeMethodsMap {
+			if !isCustom {
+				defaultFuncs = append(defaultFuncs, DefaultRepoHandler{
+					TypesPackageAlias: OrginalPackageAlias,
+					TypesPackagePath:  nobjectsImportPath,
+					TypeName:          typeName,
+					OperationName:     method,
+				})
+			}
+		}
+	}
+
+	return defaultFuncs
+}
+
+func ParseStateChangingHandlers(path string, nobjectsImportPath string, nobjectTypes map[string]struct{}) []StateChangingHandler {
 	set := token.NewFileSet()
 	packs, err := parser.ParseDir(set, path, nil, 0)
 	AssertDirParsed(err)
 
-	functions := GetPackageFunctions(packs)
+	functions := GetPackageFuncs(packs)
 
-	handlerFuncs := []HandlerFunc{}
+	handlerFuncs := []StateChangingHandler{}
 	for _, detectedFunction := range functions {
 		f := detectedFunction.Function
 		if f.Recv == nil || f.Name.Name == GetTypeName {
@@ -131,8 +152,8 @@ func PrepareStateChangingHandlers(path string, moduleName string, nobjectTypes m
 			continue
 		}
 
-		newHandler := HandlerFunc{
-			OrginalPackage:      moduleName + "/" + detectedFunction.PackageName,
+		newHandler := StateChangingHandler{
+			OrginalPackage:      nobjectsImportPath,
 			OrginalPackageAlias: OrginalPackageAlias,
 			HandlerName:         f.Name.Name + HandlerSuffix,
 			Signature:           "func " + f.Name.Name + HandlerSuffix + HandlerParameters,
@@ -194,7 +215,7 @@ func PrepareStateChangingHandlers(path string, moduleName string, nobjectTypes m
 			newHandler.OwnerVariableName = f.Recv.List[0].Names[0].Name
 		}
 
-		parameters, err := GetStateChangingFunctionParameters(f.Type.Params)
+		parameters, err := GetStateChangingFuncParams(f.Type.Params)
 		if err != nil {
 			fmt.Println("Maximum allowed number of parameters is 1. Handler generation for " + f.Name.Name + "skipped")
 			continue
@@ -207,17 +228,16 @@ func PrepareStateChangingHandlers(path string, moduleName string, nobjectTypes m
 	return handlerFuncs
 }
 
-func GetPackageFunctions(packs map[string]*ast.Package) []detectedFunction {
+func GetPackageFuncs(packs map[string]*ast.Package) []detectedFunction {
 	var detectedFunctions []detectedFunction
 
-	for packageName, pack := range packs {
+	for _, pack := range packs {
 		for _, f := range pack.Files {
 			for _, d := range f.Decls {
 				if fn, isFn := d.(*ast.FuncDecl); isFn {
 					detectedFunctions = append(detectedFunctions, detectedFunction{
-						Function:    fn,
-						Imports:     f.Imports,
-						PackageName: packageName,
+						Function: fn,
+						Imports:  f.Imports,
 					})
 				}
 			}
@@ -227,7 +247,7 @@ func GetPackageFunctions(packs map[string]*ast.Package) []detectedFunction {
 	return detectedFunctions
 }
 
-func GetStateChangingFunctionParameters(params *ast.FieldList) (string, error) {
+func GetStateChangingFuncParams(params *ast.FieldList) (string, error) {
 	if params.List == nil || len(params.List) == 0 {
 		return "", nil
 	} else if len(params.List) > 1 {
@@ -237,7 +257,7 @@ func GetStateChangingFunctionParameters(params *ast.FieldList) (string, error) {
 	return HandlerInputParameterName + "." + HandlerInputEmbededOrginalFunctionParameterName + ".(" + types.ExprString(params.List[0].Type) + ")", nil
 }
 
-func GetCustomRepositoryFunctionParameters(params *ast.FieldList) (string, error) {
+func GetCustomRepoFuncParams(params *ast.FieldList) (string, error) {
 	if params.List == nil || len(params.List) == 0 {
 		return "", nil
 	} else if len(params.List) > 1 {

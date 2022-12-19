@@ -1,13 +1,14 @@
 package main
 
 import (
+    "errors"
 	"github.com/aws/aws-lambda-go/lambda"
 	lib "github.com/Astenna/Nubes/lib"
-    {{.Imports}}
+    {{.TypesPackageAlias}} "{{.TypesPackagePath}}"
 )
 
 func Delete{{.TypeName}}Handler(id string) error {
-    err := lib.Delete[{{.TypeName}}](id)
+    err := lib.Delete[{{.TypesPackageAlias}}.{{.TypeName}}](id)
 
     if err != nil {
         return errors.New("failed to delete the instance of {{.TypeName}}")

@@ -1,12 +1,13 @@
 package main
 
 import (
+    "errors"
 	"github.com/aws/aws-lambda-go/lambda"
 	lib "github.com/Astenna/Nubes/lib"
-    {{.Imports}}
+    {{.TypesPackageAlias}} "{{.TypesPackagePath}}"
 )
 
-func Create{{.TypeName}}Handler(toBeCreated {{.TypeName}}) error {
+func Create{{.TypeName}}Handler(toBeCreated {{.TypesPackageAlias}}.{{.TypeName}}) error {
     err := lib.Insert(toBeCreated)
 
     if err != nil {

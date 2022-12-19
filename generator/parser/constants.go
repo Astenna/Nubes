@@ -16,5 +16,3 @@ const (
 	CreatePrefix = "Create"
 	DeletePrefix = "Delete"
 )
-
-const RepositoryOperationsNum = 3

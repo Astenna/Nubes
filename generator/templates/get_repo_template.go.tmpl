@@ -1,0 +1,21 @@
+package main
+
+import (
+    "errors"
+	"github.com/aws/aws-lambda-go/lambda"
+	lib "github.com/Astenna/Nubes/lib"
+    {{.TypesPackageAlias}} "{{.TypesPackagePath}}"
+)
+
+func Get{{.TypeName}}Handler(id string) ({{.TypesPackageAlias}}.{{.TypeName}}, error) {
+    output, err := lib.Get[{{.TypesPackageAlias}}.{{.TypeName}}](id)
+
+    if err != nil {
+        return *output, errors.New("failed to get {{.TypeName}}")
+    }
+    return *output, nil
+}
+
+func main() {
+	lambda.Start(Get{{.TypeName}}Handler)
+}
