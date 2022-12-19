@@ -12,9 +12,9 @@ const HandlerInputEmbededOrginalFunctionParameterName = "Parameter"
 
 // Prefixes of repository operations
 const (
-	GetPrefix    string = "Get"
-	CreatePrefix        = "Create"
-	DeletePrefix        = "Delete"
+	GetPrefix    = "Get"
+	CreatePrefix = "Create"
+	DeletePrefix = "Delete"
 )
 
 const RepositoryOperationsNum = 3

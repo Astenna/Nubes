@@ -1,11 +1,14 @@
 package parser
 
 import (
+	"bytes"
 	"fmt"
 	"go/ast"
 	"go/parser"
+	"go/printer"
 	"go/token"
 	"go/types"
+	"strconv"
 	"strings"
 )
 
@@ -24,7 +27,21 @@ type HandlerFunc struct {
 	OptionalReturnType   string
 }
 
-func PrepareRepositoriesHandlers(path string, moduleName string, nobjectTypes map[string]struct{}) []HandlerFunc {
+type RepositoryHandlerFunc struct {
+	TypeName      string
+	OperationName string
+}
+
+type RepositoryCustomHandlerFunc struct {
+	Imports       string
+	OperationName string
+	TypeName      string
+	Parameters    string
+	ReturnValues  string
+	Body          string
+}
+
+func PrepareRepositoriesHandlers(path string, moduleName string, nobjectTypes map[string]struct{}) []RepositoryCustomHandlerFunc {
 	set := token.NewFileSet()
 	packs, err := parser.ParseDir(set, path, nil, 0)
 	AssertDirParsed(err)
@@ -36,7 +53,7 @@ func PrepareRepositoriesHandlers(path string, moduleName string, nobjectTypes ma
 		isNoObjectMethodDefined[i] = map[string]bool{GetPrefix: false, CreatePrefix: false, DeletePrefix: false}
 	}
 
-	handlerFuncs := []HandlerFunc{}
+	repositoryHandlerFuncs := []RepositoryCustomHandlerFunc{}
 	for packageName, funcs := range funcsMap {
 		for _, f := range funcs {
 
@@ -55,7 +72,32 @@ func PrepareRepositoriesHandlers(path string, moduleName string, nobjectTypes ma
 
 			for typeName := range nobjectTypes {
 				if strings.HasSuffix(f.Name.Name, typeName) {
+					params, err := GetCustomRepositoryFunctionParameters(f.Type.Params)
+					if err != nil {
+						fmt.Printf("faas handler " + f.Name.Name + " custom definition replaced with default definition")
+						continue
+					}
+
+					returnParams, err := GetReturnTypesDefinition(f.Type.Results, nobjectTypes)
+					if err != nil {
+						fmt.Printf("faas handler " + f.Name.Name + " custom definition replaced with default definition")
+						continue
+					}
+
+					body, err := GetFunctionBody(set, f.Body)
+					if err != nil {
+						fmt.Printf("faas handler " + f.Name.Name + " custom definition replaced with default definition")
+						continue
+					}
+
 					isNoObjectMethodDefined[typeName][methodType] = true
+					repositoryHandlerFuncs = append(repositoryHandlerFuncs, RepositoryCustomHandlerFunc{
+						OperationName: methodType,
+						TypeName:      typeName,
+						Parameters:    params,
+						ReturnValues:  returnParams,
+						Body:          body,
+					})
 				}
 			}
 
@@ -63,7 +105,7 @@ func PrepareRepositoriesHandlers(path string, moduleName string, nobjectTypes ma
 		}
 	}
 
-	return handlerFuncs
+	return repositoryHandlerFuncs
 }
 
 func PrepareStateChangingHandlers(path string, moduleName string, nobjectTypes map[string]struct{}) []HandlerFunc {
@@ -148,7 +190,7 @@ func PrepareStateChangingHandlers(path string, moduleName string, nobjectTypes m
 				newHandler.OwnerVariableName = f.Recv.List[0].Names[0].Name
 			}
 
-			parameters, err := GetOrginalFunctionParameters(f.Type.Params)
+			parameters, err := GetStateChangningFunctionParameters(f.Type.Params)
 			if err != nil {
 				fmt.Println("Maximum allowed number of parameters is 1. Handler generation for " + f.Name.Name + "skipped")
 				continue
@@ -182,7 +224,7 @@ func GetPackageFunctionMap(packs map[string]*ast.Package) map[string][]*ast.Func
 	return funcsMap
 }
 
-func GetOrginalFunctionParameters(params *ast.FieldList) (string, error) {
+func GetStateChangningFunctionParameters(params *ast.FieldList) (string, error) {
 	if params.List == nil || len(params.List) == 0 {
 		return "", nil
 	} else if len(params.List) > 1 {
@@ -190,4 +232,47 @@ func GetOrginalFunctionParameters(params *ast.FieldList) (string, error) {
 	}
 
 	return HandlerInputParameterName + "." + HandlerInputEmbededOrginalFunctionParameterName + ".(" + types.ExprString(params.List[0].Type) + ")", nil
+}
+
+func GetCustomRepositoryFunctionParameters(params *ast.FieldList) (string, error) {
+	if params.List == nil || len(params.List) == 0 {
+		return "", nil
+	} else if len(params.List) > 1 {
+		return "", fmt.Errorf("maximum allowed number of parameters is 1")
+	}
+
+	return params.List[0].Names[0].Name + " " + types.ExprString(params.List[0].Type), nil
+}
+
+func GetReturnTypesDefinition(results *ast.FieldList, nobjectTypes map[string]struct{}) (string, error) {
+
+	if len(results.List) > 1 {
+		return "", fmt.Errorf("maximum allowed number of non-error return parameters is 1, found " + strconv.Itoa(len(results.List)))
+	}
+	if types.ExprString(results.List[len(results.List)-1].Type) != "error" {
+		return "", fmt.Errorf("the last return parameter type of repository function must be error")
+	}
+
+	if len(results.List) == 1 {
+		return "error", nil
+	}
+
+	// given the prev. conditions now we're sure
+	// the case is: (optionalReturnType, error)
+	returnParam := types.ExprString(results.List[0].Type)
+
+	if _, ok := nobjectTypes[returnParam]; ok {
+		return "( " + OrginalPackageAlias + "." + returnParam + " , error)", nil
+	}
+
+	return "( " + returnParam + " , error)", nil
+}
+
+func GetFunctionBody(fset *token.FileSet, body *ast.BlockStmt) (string, error) {
+	var buf bytes.Buffer
+	err := printer.Fprint(&buf, fset, body)
+	if err != nil {
+		return "", fmt.Errorf("error occurred when parsing the function body")
+	}
+	return buf.String(), nil
 }

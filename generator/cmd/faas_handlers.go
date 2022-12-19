@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"text/template"
 
 	"github.com/Astenna/Nubes/generator/parser"
@@ -20,30 +19,15 @@ var handlersCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		typesPath, _ := cmd.Flags().GetString("types")
 		repositoriesPath, _ := cmd.Flags().GetString("repositories")
-		handlersPath, _ := cmd.Flags().GetString("output")
+		generationDestination, _ := cmd.Flags().GetString("output")
 		moduleName, _ := cmd.Flags().GetString("module")
-		_ = repositoriesPath
 
 		nobjectTypes := parser.GetNobjectsDefinedInPack(typesPath)
 		functions := parser.PrepareStateChangingHandlers(MakePathAbosoluteOrExitOnError(typesPath), moduleName, nobjectTypes)
-		repository_functions := parser.PrepareRepositoriesHandlers(MakePathAbosoluteOrExitOnError(repositoriesPath), moduleName, nobjectTypes)
-		_ = repository_functions
-		templ, _ := template.ParseFiles("temapltes/handler_template.go.tmpl")
+		repositoryFunctions := parser.PrepareRepositoriesHandlers(MakePathAbosoluteOrExitOnError(repositoriesPath), moduleName, nobjectTypes)
 
-		handlersDirectoryPath := MakePathAbosoluteOrExitOnError(filepath.Join(handlersPath, "handler_testing"))
-		os.MkdirAll(handlersDirectoryPath, 0777)
-
-		for i, f := range functions {
-			file, err := os.Create(filepath.Join(handlersDirectoryPath, "test"+strconv.Itoa(i)+".go"))
-			if err != nil {
-				fmt.Println(err)
-			}
-			err = templ.Execute(file, f)
-			if err != nil {
-				fmt.Println(err)
-			}
-			defer file.Close()
-		}
+		GenerateStateChangingHandlers(generationDestination, functions)
+		GenerateRepositoriesHandlers(generationDestination, repositoryFunctions)
 	},
 }
 
@@ -61,6 +45,53 @@ func init() {
 	handlersCmd.Flags().StringVarP(&moduleName, "module", "m", ".", "module name of the source project")
 
 	cmd.Execute()
+}
+
+func GenerateStateChangingHandlers(path string, functions []parser.HandlerFunc) {
+	templ := ParseOrExitOnError("templates/handler_template.go.tmpl")
+	generationDestPath := MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "state-changes"))
+	os.MkdirAll(generationDestPath, 0777)
+
+	for _, f := range functions {
+		file, err := os.Create(filepath.Join(generationDestPath, f.HandlerName+".go"))
+		if err != nil {
+			fmt.Println(err)
+		}
+		err = templ.Execute(file, f)
+		if err != nil {
+			fmt.Println(err)
+		}
+		defer file.Close()
+	}
+}
+
+func GenerateRepositoriesHandlers(path string, functions []parser.RepositoryCustomHandlerFunc) {
+	templ := ParseOrExitOnError("templates/custom_repo_template.go.tmpl")
+	repositoriesDirectoryPath := MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "repositories"))
+	os.MkdirAll(repositoriesDirectoryPath, 0777)
+
+	for _, f := range functions {
+		file, err := os.Create(filepath.Join(repositoriesDirectoryPath, f.OperationName+f.TypeName+".go"))
+		if err != nil {
+			fmt.Println(err)
+		}
+		err = templ.Execute(file, f)
+		if err != nil {
+			fmt.Println(err)
+		}
+		defer file.Close()
+	}
+}
+
+func ParseOrExitOnError(templatePath string) template.Template {
+	templ, err := template.ParseFiles(templatePath)
+
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	return *templ
 }
 
 func MakePathAbosoluteOrExitOnError(path string) string {

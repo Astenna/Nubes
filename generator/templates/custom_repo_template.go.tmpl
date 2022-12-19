@@ -6,9 +6,8 @@ import (
     {{.Imports}}
 )
 
-func {{.OperationName}}{{.TypeName}}Handler({{.Parameters}}) {{ReturnValues}} {
-    {{.Body}}
-}
+func {{.OperationName}}{{.TypeName}}Handler({{.Parameters}}) {{.ReturnValues}} {{.Body}}
+
 
 func main() {
 	lambda.Start({{.OperationName}}{{.TypeName}}Handler)
