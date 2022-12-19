@@ -1,0 +1,15 @@
+package main
+
+import (
+	"github.com/aws/aws-lambda-go/lambda"
+	lib "github.com/Astenna/Nubes/lib"
+    {{.Imports}}
+)
+
+func {{.OperationName}}{{.TypeName}}Handler({{.Parameters}}) {{ReturnValues}} {
+    {{.Body}}
+}
+
+func main() {
+	lambda.Start({{.OperationName}}{{.TypeName}}Handler)
+}

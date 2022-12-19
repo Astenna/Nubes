@@ -1,0 +1,19 @@
+package main
+
+import (
+	"github.com/aws/aws-lambda-go/lambda"
+	lib "github.com/Astenna/Nubes/lib"
+    {{.Imports}}
+)
+
+func Delete{{.TypeName}}Handler(id string) error {
+    err := lib.Delete[{{.TypeName}}](id)
+
+    if err != nil {
+        return errors.New("failed to delete the instance of {{.TypeName}}")
+    }
+    return nil
+}
+func main() {
+	lambda.Start(Delete{{.TypeName}}Handler)
+}

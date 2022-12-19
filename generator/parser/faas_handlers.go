@@ -6,7 +6,6 @@ import (
 	"go/parser"
 	"go/token"
 	"go/types"
-	"os"
 	"strings"
 )
 
@@ -25,16 +24,53 @@ type HandlerFunc struct {
 	OptionalReturnType   string
 }
 
-func PrepareHandlersFromFunctions(path string, moduleName string) []HandlerFunc {
-	return nil
-}
-
-func PrepareHandlersFromMethods(path string, moduleName string) []HandlerFunc {
+func PrepareRepositoriesHandlers(path string, moduleName string, nobjectTypes map[string]struct{}) []HandlerFunc {
 	set := token.NewFileSet()
 	packs, err := parser.ParseDir(set, path, nil, 0)
 	AssertDirParsed(err)
 
-	isTypeNobject := GetNobjectsDefinedInPack(packs)
+	funcsMap := GetPackageFunctionMap(packs)
+
+	isNoObjectMethodDefined := make(map[string]map[string]bool, len(nobjectTypes))
+	for i := range nobjectTypes {
+		isNoObjectMethodDefined[i] = map[string]bool{GetPrefix: false, CreatePrefix: false, DeletePrefix: false}
+	}
+
+	handlerFuncs := []HandlerFunc{}
+	for packageName, funcs := range funcsMap {
+		for _, f := range funcs {
+
+			var methodType string
+
+			switch {
+			case strings.HasPrefix(f.Name.Name, GetPrefix):
+				methodType = GetPrefix
+			case strings.HasPrefix(f.Name.Name, CreatePrefix):
+				methodType = CreatePrefix
+			case strings.HasPrefix(f.Name.Name, DeletePrefix):
+				methodType = DeletePrefix
+			default:
+				continue
+			}
+
+			for typeName := range nobjectTypes {
+				if strings.HasSuffix(f.Name.Name, typeName) {
+					isNoObjectMethodDefined[typeName][methodType] = true
+				}
+			}
+
+			_ = packageName
+		}
+	}
+
+	return handlerFuncs
+}
+
+func PrepareStateChangingHandlers(path string, moduleName string, nobjectTypes map[string]struct{}) []HandlerFunc {
+	set := token.NewFileSet()
+	packs, err := parser.ParseDir(set, path, nil, 0)
+	AssertDirParsed(err)
+
 	funcsMap := GetPackageFunctionMap(packs)
 
 	handlerFuncs := []HandlerFunc{}
@@ -45,7 +81,7 @@ func PrepareHandlersFromMethods(path string, moduleName string) []HandlerFunc {
 			}
 
 			ownerType := strings.TrimPrefix(types.ExprString(f.Recv.List[0].Type), "*")
-			if !isTypeNobject[ownerType] {
+			if _, ok := nobjectTypes[ownerType]; !ok {
 				fmt.Println("Member type does not implement Nobject interface. Handler generation for " + f.Name.Name + "skipped")
 				continue
 			}
@@ -75,7 +111,7 @@ func PrepareHandlersFromMethods(path string, moduleName string) []HandlerFunc {
 				} else {
 
 					newHandler.OptionalReturnType = types.ExprString(f.Type.Results.List[0].Type)
-					if isTypeNobject[newHandler.OptionalReturnType] {
+					if _, ok := nobjectTypes[newHandler.OptionalReturnType]; ok {
 						newHandler.OptionalReturnType = newHandler.OrginalPackageAlias + "." + newHandler.OptionalReturnType
 					}
 
@@ -146,25 +182,6 @@ func GetPackageFunctionMap(packs map[string]*ast.Package) map[string][]*ast.Func
 	return funcsMap
 }
 
-func GetNobjectsDefinedInPack(packs map[string]*ast.Package) map[string]bool {
-	isTypeNobject := make(map[string]bool)
-
-	for _, pack := range packs {
-		for _, f := range pack.Files {
-			for _, d := range f.Decls {
-				if fn, isFn := d.(*ast.FuncDecl); isFn {
-					if fn.Recv != nil && fn.Name.Name == GetTypeName {
-						ownerType := types.ExprString(fn.Recv.List[0].Type)
-						isTypeNobject[ownerType] = true
-					}
-				}
-			}
-		}
-	}
-
-	return isTypeNobject
-}
-
 func GetOrginalFunctionParameters(params *ast.FieldList) (string, error) {
 	if params.List == nil || len(params.List) == 0 {
 		return "", nil
@@ -173,11 +190,4 @@ func GetOrginalFunctionParameters(params *ast.FieldList) (string, error) {
 	}
 
 	return HandlerInputParameterName + "." + HandlerInputEmbededOrginalFunctionParameterName + ".(" + types.ExprString(params.List[0].Type) + ")", nil
-}
-
-func AssertDirParsed(err error) {
-	if err != nil {
-		fmt.Println("Failed to parse files in the directory: %w", err)
-		os.Exit(1)
-	}
 }

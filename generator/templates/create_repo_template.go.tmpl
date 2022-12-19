@@ -1,0 +1,20 @@
+package main
+
+import (
+	"github.com/aws/aws-lambda-go/lambda"
+	lib "github.com/Astenna/Nubes/lib"
+    {{.Imports}}
+)
+
+func Create{{.TypeName}}Handler(toBeCreated {{.TypeName}}) error {
+    err := lib.Insert(toBeCreated)
+
+    if err != nil {
+        return errors.New("failed to create new instance of {{.TypeName}}")
+    }
+    return nil
+}
+
+func main() {
+	lambda.Start(Create{{.TypeName}}Handler)
+}

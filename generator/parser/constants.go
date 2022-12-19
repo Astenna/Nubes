@@ -9,3 +9,12 @@ const HandlerInputParameterType = "lib.HandlerParameters"
 const HandlerInputParameterName = "input"
 const HandlerParameters = "(" + HandlerInputParameterName + " " + HandlerInputParameterType + ")"
 const HandlerInputEmbededOrginalFunctionParameterName = "Parameter"
+
+// Prefixes of repository operations
+const (
+	GetPrefix    string = "Get"
+	CreatePrefix        = "Create"
+	DeletePrefix        = "Delete"
+)
+
+const RepositoryOperationsNum = 3

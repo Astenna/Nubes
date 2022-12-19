@@ -14,8 +14,8 @@ import (
 
 var handlersCmd = &cobra.Command{
 	Use:   "handlers",
-	Short: "Generates handlers for AWS lambda deployment",
-	Long:  `Generates handlers for AWS lambda deployment based on types and repositories indicated by the path`,
+	Short: "Generates handlers' definitions for AWS lambda deployment",
+	Long:  `Generates handlers' definitions for AWS lambda deployment based on types and repositories indicated by the path`,
 
 	Run: func(cmd *cobra.Command, args []string) {
 		typesPath, _ := cmd.Flags().GetString("types")
@@ -24,8 +24,11 @@ var handlersCmd = &cobra.Command{
 		moduleName, _ := cmd.Flags().GetString("module")
 		_ = repositoriesPath
 
-		functions := parser.PrepareHandlersFromMethods(MakePathAbosoluteOrExitOnError(typesPath), moduleName)
-		templ, _ := template.ParseFiles("handler_template.go.tmpl")
+		nobjectTypes := parser.GetNobjectsDefinedInPack(typesPath)
+		functions := parser.PrepareStateChangingHandlers(MakePathAbosoluteOrExitOnError(typesPath), moduleName, nobjectTypes)
+		repository_functions := parser.PrepareRepositoriesHandlers(MakePathAbosoluteOrExitOnError(repositoriesPath), moduleName, nobjectTypes)
+		_ = repository_functions
+		templ, _ := template.ParseFiles("temapltes/handler_template.go.tmpl")
 
 		handlersDirectoryPath := MakePathAbosoluteOrExitOnError(filepath.Join(handlersPath, "handler_testing"))
 		os.MkdirAll(handlersDirectoryPath, 0777)
