@@ -17,7 +17,7 @@ var clientCmd = &cobra.Command{
 		//output, _ := cmd.Flags().GetString("output")
 		_ = repositoriesPath
 
-		parser.PrepareTypesFiles(MakePathAbosoluteOrExitOnError(typesPath))
+		parser.PrepareTypes(MakePathAbosoluteOrExitOnError(typesPath))
 		//types := parser.PrepareTypes(MakePathAbosoluteOrExitOnError(typesPath))
 		//templ, _ := template.ParseFiles("type_template.go.tmpl")
 

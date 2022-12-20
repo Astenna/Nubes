@@ -51,7 +51,7 @@ func init() {
 }
 
 func GenerateStateChangingHandlers(path string, functions []parser.StateChangingHandler) {
-	templ := ParseOrExitOnError("templates/handler_template.go.tmpl")
+	templ := ParseOrExitOnError("templates/handlers/state_changing_template.go.tmpl")
 	generationDestPath := MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "state-changes"))
 	os.MkdirAll(generationDestPath, 0777)
 
@@ -69,7 +69,7 @@ func GenerateStateChangingHandlers(path string, functions []parser.StateChanging
 }
 
 func GenerateRepositoriesHandlers(path string, customFuncs []parser.CustomRepoHandler, defaultFuncs []parser.DefaultRepoHandler) {
-	templ := ParseOrExitOnError("templates/custom_repo_template.go.tmpl")
+	templ := ParseOrExitOnError("templates/handlers/custom_repo_template.go.tmpl")
 	repositoriesDirectoryPath := MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "repositories"))
 	os.MkdirAll(repositoriesDirectoryPath, 0777)
 
@@ -85,9 +85,9 @@ func GenerateRepositoriesHandlers(path string, customFuncs []parser.CustomRepoHa
 		defer file.Close()
 	}
 
-	getTempl := ParseOrExitOnError("templates/get_repo_template.go.tmpl")
-	createTempl := ParseOrExitOnError("templates/create_repo_template.go.tmpl")
-	deleteTempl := ParseOrExitOnError("templates/delete_repo_template.go.tmpl")
+	getTempl := ParseOrExitOnError("templates/handlers/get_repo_template.go.tmpl")
+	createTempl := ParseOrExitOnError("templates/handlers/create_repo_template.go.tmpl")
+	deleteTempl := ParseOrExitOnError("templates/handlers/delete_repo_template.go.tmpl")
 	for _, f := range defaultFuncs {
 		file, err := os.Create(filepath.Join(repositoriesDirectoryPath, f.OperationName+f.TypeName+".go"))
 		if err != nil {

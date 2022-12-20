@@ -7,19 +7,23 @@ import (
 	"go/token"
 	"go/types"
 	"os"
+	"strings"
 )
 
 type TypeDefinition struct {
 	PackageName      string
-	Import           string
+	Imports          string
 	StructDefinition string
 	MemberFunctions  []MemberFunction
 }
 
 type MemberFunction struct {
-	Name       string
-	Parameters string
-	Body       string
+	ReceiverName       string
+	ReceiverType       string
+	FuncName           string
+	InputParamName     string
+	InputParamType     string
+	OptionalReturnType string
 }
 
 func PrepareTypes(path string) []TypeDefinition {
@@ -27,19 +31,19 @@ func PrepareTypes(path string) []TypeDefinition {
 	packs, err := parser.ParseDir(set, path, nil, 0)
 	AssertDirParsed(err)
 
-	structsMap := make(map[string][]*ast.StructType)
+	var structs []*ast.StructType
 	funcsMap := make(map[string][]*ast.FuncDecl)
 
-	for packageName, pack := range packs {
+	for _, pack := range packs {
 		for _, f := range pack.Files {
 
 			ast.Inspect(f, func(n ast.Node) bool {
-				if str, ok := n.(*ast.StructType); ok {
-					if structsMap[packageName] == nil {
-						structsMap[packageName] = []*ast.StructType{}
+				if typeSpec, ok := n.(*ast.TypeSpec); ok {
+					if strctType, ok := typeSpec.Type.(*ast.StructType); ok {
+						structs = append(structs, strctType)
+						MakeFieldsUnexported(strctType.Fields)
+						printer.Fprint(os.Stdout, set, strctType)
 					}
-					structsMap[packageName] = append(structsMap[packageName], str)
-					printer.Fprint(os.Stdout, set, str)
 				}
 				return true
 			})
@@ -73,18 +77,21 @@ func PrepareTypes(path string) []TypeDefinition {
 	}
 
 	typeDefinitions := []TypeDefinition{}
-	for packageName, strcs := range structsMap {
-		for _, str := range strcs {
-			typeDefinitions = append(typeDefinitions, TypeDefinition{
-				PackageName:      packageName,
-				Import:           "TODO",
-				StructDefinition: types.ExprString(str),
-				MemberFunctions:  memberFuncsMap[types.ExprString(str)],
-			})
-		}
+	for _, strcs := range structs {
+		typeDefinitions = append(typeDefinitions, TypeDefinition{
+			Imports:          "TODO",
+			StructDefinition: types.ExprString(strcs),
+			MemberFunctions:  memberFuncsMap[types.ExprString(strcs)],
+		})
 	}
 
 	return typeDefinitions
+}
+
+func MakeFieldsUnexported(fieldList *ast.FieldList) {
+	for _, field := range fieldList.List {
+		field.Names[0].Name = strings.ToLower(field.Names[0].Name)
+	}
 }
 
 func PrepareTypesFiles(path string) []TypeDefinition {
