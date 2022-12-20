@@ -1,7 +1,11 @@
 package cmd
 
 import (
+	"os"
+	"path/filepath"
+
 	"github.com/Astenna/Nubes/generator/parser"
+	tp "github.com/Astenna/Nubes/generator/template_parser"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra-cli/cmd"
 )
@@ -14,27 +18,23 @@ var clientCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		typesPath, _ := cmd.Flags().GetString("types")
 		repositoriesPath, _ := cmd.Flags().GetString("repositories")
-		//output, _ := cmd.Flags().GetString("output")
+		output, _ := cmd.Flags().GetString("output")
+		projectName, _ := cmd.Flags().GetString("project-name")
 		_ = repositoriesPath
 
-		parser.PrepareTypes(MakePathAbosoluteOrExitOnError(typesPath))
-		//types := parser.PrepareTypes(MakePathAbosoluteOrExitOnError(typesPath))
-		//templ, _ := template.ParseFiles("type_template.go.tmpl")
+		typesMap := parser.PrepareTypes(tp.MakePathAbosoluteOrExitOnError(typesPath))
 
-		// outputDirectoryPath := MakePathAbosoluteOrExitOnError(filepath.Join(output, "output_testing"))
-		// os.MkdirAll(outputDirectoryPath, 0777)
+		outputDirectoryPath := tp.MakePathAbosoluteOrExitOnError(filepath.Join(output, projectName))
+		os.MkdirAll(outputDirectoryPath, 0777)
 
-		// for i, f := range types {
-		// 	file, err := os.Create(filepath.Join(outputDirectoryPath, "test"+strconv.Itoa(i)+".go"))
-		// 	if err != nil {
-		// 		fmt.Println(err)
-		// 	}
-		// 	err = templ.Execute(file, f)
-		// 	if err != nil {
-		// 		fmt.Println(err)
-		// 	}
-		// 	defer file.Close()
-		// }
+		lambdaClient := tp.ParseOrExitOnError("templates/client_lib/lambda_client.go.tmpl")
+		lambdaClientInput := struct{ PackageName string }{PackageName: projectName}
+		tp.CreateFileFromTemplate(lambdaClient, lambdaClientInput, filepath.Join(outputDirectoryPath, "lambda_client.go"))
+
+		templ := tp.ParseOrExitOnError("templates/client_lib/type.go.tmpl")
+		for typeName, typeDefinition := range typesMap {
+			tp.CreateFileFromTemplate(templ, typeDefinition, filepath.Join(outputDirectoryPath, typeName+".go"))
+		}
 	},
 }
 
@@ -44,10 +44,12 @@ func init() {
 	var typesPath string
 	var repositoriesPath string
 	var outputPath string
+	var projectName string
 
 	clientCmd.Flags().StringVarP(&typesPath, "types", "t", ".", "path to directory with types")
 	clientCmd.Flags().StringVarP(&repositoriesPath, "repositories", "r", ".", "path to directory with repositories")
-	clientCmd.Flags().StringVarP(&outputPath, "output", "o", ".", "path where directory with client project will be created")
+	clientCmd.Flags().StringVarP(&outputPath, "output", "o", ".", "path where directory with client library will be created")
+	clientCmd.Flags().StringVarP(&projectName, "project-name", "p", "client_lib", "name of the client library project")
 
 	cmd.Execute()
 }

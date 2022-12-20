@@ -1,12 +1,12 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"text/template"
 
 	"github.com/Astenna/Nubes/generator/parser"
+	tp "github.com/Astenna/Nubes/generator/template_parser"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra-cli/cmd"
 )
@@ -22,8 +22,8 @@ var handlersCmd = &cobra.Command{
 		generationDestination, _ := cmd.Flags().GetString("output")
 		moduleName, _ := cmd.Flags().GetString("module")
 
-		typesPath = MakePathAbosoluteOrExitOnError(typesPath)
-		repositoriesPath = MakePathAbosoluteOrExitOnError(repositoriesPath)
+		typesPath = tp.MakePathAbosoluteOrExitOnError(typesPath)
+		repositoriesPath = tp.MakePathAbosoluteOrExitOnError(repositoriesPath)
 
 		nobjectTypes, nobjectsImportPath := parser.GetNobjectsDefinedInPack(typesPath, moduleName)
 		stateChangingFuncs := parser.ParseStateChangingHandlers(typesPath, nobjectsImportPath, nobjectTypes)
@@ -51,82 +51,42 @@ func init() {
 }
 
 func GenerateStateChangingHandlers(path string, functions []parser.StateChangingHandler) {
-	templ := ParseOrExitOnError("templates/handlers/state_changing_template.go.tmpl")
-	generationDestPath := MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "state-changes"))
+	templ := tp.ParseOrExitOnError("templates/handlers/state_changing_template.go.tmpl")
+	generationDestPath := tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "state-changes"))
 	os.MkdirAll(generationDestPath, 0777)
 
 	for _, f := range functions {
-		file, err := os.Create(filepath.Join(generationDestPath, f.HandlerName+".go"))
-		if err != nil {
-			fmt.Println(err)
-		}
-		err = templ.Execute(file, f)
-		if err != nil {
-			fmt.Println(err)
-		}
-		defer file.Close()
+		tp.CreateFileFromTemplate(templ, f, filepath.Join(generationDestPath, f.HandlerName+".go"))
 	}
 }
 
 func GenerateRepositoriesHandlers(path string, customFuncs []parser.CustomRepoHandler, defaultFuncs []parser.DefaultRepoHandler) {
-	templ := ParseOrExitOnError("templates/handlers/custom_repo_template.go.tmpl")
-	repositoriesDirectoryPath := MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "repositories"))
+	var fileName string
+	templ := tp.ParseOrExitOnError("templates/handlers/custom_repo_template.go.tmpl")
+	repositoriesDirectoryPath := tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "repositories"))
 	os.MkdirAll(repositoriesDirectoryPath, 0777)
 
 	for _, f := range customFuncs {
-		file, err := os.Create(filepath.Join(repositoriesDirectoryPath, f.OperationName+f.TypeName+".go"))
-		if err != nil {
-			fmt.Println(err)
-		}
-		err = templ.Execute(file, f)
-		if err != nil {
-			fmt.Println(err)
-		}
-		defer file.Close()
+		fileName = filepath.Join(repositoriesDirectoryPath, f.OperationName+f.TypeName+".go")
+		tp.CreateFileFromTemplate(templ, f, fileName)
 	}
 
-	getTempl := ParseOrExitOnError("templates/handlers/get_repo_template.go.tmpl")
-	createTempl := ParseOrExitOnError("templates/handlers/create_repo_template.go.tmpl")
-	deleteTempl := ParseOrExitOnError("templates/handlers/delete_repo_template.go.tmpl")
-	for _, f := range defaultFuncs {
-		file, err := os.Create(filepath.Join(repositoriesDirectoryPath, f.OperationName+f.TypeName+".go"))
-		if err != nil {
-			fmt.Println(err)
-		}
+	getTempl := tp.ParseOrExitOnError("templates/handlers/get_repo_template.go.tmpl")
+	createTempl := tp.ParseOrExitOnError("templates/handlers/create_repo_template.go.tmpl")
+	deleteTempl := tp.ParseOrExitOnError("templates/handlers/delete_repo_template.go.tmpl")
 
+	var tmpl template.Template
+	for _, f := range defaultFuncs {
 		switch {
 		case f.OperationName == parser.GetPrefix:
-			err = getTempl.Execute(file, f)
+			tmpl = getTempl
 		case f.OperationName == parser.CreatePrefix:
-			err = createTempl.Execute(file, f)
+			tmpl = createTempl
 		case f.OperationName == parser.DeletePrefix:
-			err = deleteTempl.Execute(file, f)
+			tmpl = deleteTempl
 		}
 
-		if err != nil {
-			fmt.Println(err)
-		}
-		defer file.Close()
+		fileName = filepath.Join(repositoriesDirectoryPath, f.OperationName+f.TypeName+".go")
+		tp.CreateFileFromTemplate(tmpl, f, fileName)
 	}
-}
-
-func ParseOrExitOnError(templatePath string) template.Template {
-	templ, err := template.ParseFiles(templatePath)
-
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	return *templ
-}
-
-func MakePathAbosoluteOrExitOnError(path string) string {
-	absPath, err := filepath.Abs(path)
-
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	return absPath
 }

@@ -1,12 +1,13 @@
 package parser
 
 import (
+	"bytes"
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/printer"
 	"go/token"
 	"go/types"
-	"os"
 	"strings"
 )
 
@@ -21,18 +22,17 @@ type MemberFunction struct {
 	ReceiverName       string
 	ReceiverType       string
 	FuncName           string
-	InputParamName     string
 	InputParamType     string
 	OptionalReturnType string
 }
 
-func PrepareTypes(path string) []TypeDefinition {
+func PrepareTypes(path string) map[string]*TypeDefinition {
 	set := token.NewFileSet()
 	packs, err := parser.ParseDir(set, path, nil, 0)
 	AssertDirParsed(err)
 
-	var structs []*ast.StructType
-	funcsMap := make(map[string][]*ast.FuncDecl)
+	var detectedTypes []*ast.StructType
+	typeFiles := make(map[string]*TypeDefinition)
 
 	for _, pack := range packs {
 		for _, f := range pack.Files {
@@ -40,9 +40,20 @@ func PrepareTypes(path string) []TypeDefinition {
 			ast.Inspect(f, func(n ast.Node) bool {
 				if typeSpec, ok := n.(*ast.TypeSpec); ok {
 					if strctType, ok := typeSpec.Type.(*ast.StructType); ok {
-						structs = append(structs, strctType)
 						MakeFieldsUnexported(strctType.Fields)
-						printer.Fprint(os.Stdout, set, strctType)
+						detectedTypes = append(detectedTypes, strctType)
+
+						structString, err := GetStructAsString(set, typeSpec)
+						if err == nil {
+							typeName := strings.TrimPrefix(typeSpec.Name.Name, "*")
+							if elem, ok := typeFiles[typeName]; !ok {
+								typeFiles[typeName] = &TypeDefinition{
+									StructDefinition: structString,
+								}
+							} else {
+								elem.StructDefinition = structString
+							}
+						}
 					}
 				}
 				return true
@@ -50,42 +61,57 @@ func PrepareTypes(path string) []TypeDefinition {
 
 			for _, d := range f.Decls {
 				if fn, isFn := d.(*ast.FuncDecl); isFn {
-					if fn.Recv == nil {
+					if fn.Recv == nil || fn.Name.Name == GetTypeName {
 						continue
 					}
-					ownerType := types.ExprString(fn.Recv.List[0].Type)
-					if funcsMap[ownerType] == nil {
-						funcsMap[ownerType] = []*ast.FuncDecl{}
+
+					memberFunction, err := PrepareMemberFunction(fn)
+					if err != nil {
+						fmt.Println("Function "+fn.Name.Name+"not generated in client lib", err)
+						continue
 					}
-					funcsMap[ownerType] = append(funcsMap[ownerType], fn)
+
+					if elem, ok := typeFiles[memberFunction.ReceiverType]; !ok {
+						typeFiles[memberFunction.ReceiverType] = &TypeDefinition{
+							MemberFunctions: []MemberFunction{
+								*memberFunction,
+							},
+						}
+					} else {
+						elem.MemberFunctions = append(elem.MemberFunctions, *memberFunction)
+					}
 				}
 			}
 		}
 	}
 
-	memberFuncsMap := make(map[string][]MemberFunction)
-	for ownerType, funcs := range funcsMap {
-		for _, f := range funcs {
-			if f.Name.Name == GetTypeName {
-				continue
-			}
-			memberFuncsMap[ownerType] = append(memberFuncsMap[ownerType], MemberFunction{
-				Name:       f.Name.Name,
-				Parameters: "TODO",
-			})
-		}
+	return typeFiles
+}
+
+func PrepareMemberFunction(fn *ast.FuncDecl) (*MemberFunction, error) {
+
+	if fn.Type.Results == nil ||
+		types.ExprString(fn.Type.Results.List[len(fn.Type.Results.List)-1].Type) != "error" {
+		return nil, fmt.Errorf("methods belonging to nobjects must return error type")
+	}
+	if len(fn.Type.Results.List) > 2 {
+		return nil, fmt.Errorf("methods belonging to nobjects can return at most 2 variables")
 	}
 
-	typeDefinitions := []TypeDefinition{}
-	for _, strcs := range structs {
-		typeDefinitions = append(typeDefinitions, TypeDefinition{
-			Imports:          "TODO",
-			StructDefinition: types.ExprString(strcs),
-			MemberFunctions:  memberFuncsMap[types.ExprString(strcs)],
-		})
+	memberFunction := MemberFunction{
+		ReceiverType: strings.TrimPrefix(types.ExprString(fn.Recv.List[0].Type), "*"),
+		FuncName:     fn.Name.Name,
 	}
 
-	return typeDefinitions
+	if len(fn.Recv.List[0].Names) > 0 {
+		memberFunction.ReceiverName = fn.Recv.List[0].Names[0].Name
+	}
+
+	if len(fn.Type.Results.List) > 1 {
+		memberFunction.InputParamType = types.ExprString(fn.Type.Results.List[0].Type)
+	}
+
+	return &memberFunction, nil
 }
 
 func MakeFieldsUnexported(fieldList *ast.FieldList) {
@@ -94,68 +120,11 @@ func MakeFieldsUnexported(fieldList *ast.FieldList) {
 	}
 }
 
-func PrepareTypesFiles(path string) []TypeDefinition {
-	set := token.NewFileSet()
-	packs, err := parser.ParseDir(set, path, nil, 0)
-	AssertDirParsed(err)
-
-	//structsMap := make(map[string][]*ast.StructType)
-	//funcsMap := make(map[string][]*ast.FuncDecl)
-
-	for _, pack := range packs {
-		for _, file := range pack.Files {
-			ast.Inspect(file, func(n ast.Node) bool {
-				switch x := n.(type) {
-				case *ast.FuncDecl:
-
-					newCallStmt := &ast.ExprStmt{
-						X: &ast.CallExpr{
-							Fun: &ast.SelectorExpr{
-								X: &ast.Ident{
-									Name: "fmt",
-								},
-								Sel: &ast.Ident{
-									Name: "Println",
-								},
-							},
-							Args: []ast.Expr{
-								&ast.BasicLit{
-									Kind:  token.STRING,
-									Value: `"instrumentation"`,
-								},
-							},
-						},
-					}
-
-					x.Body.List = []ast.Stmt{newCallStmt}
-				}
-				return true
-			})
-
-			printer.Fprint(os.Stdout, set, file)
-		}
+func GetStructAsString(fset *token.FileSet, detectedStruct *ast.TypeSpec) (string, error) {
+	var buf bytes.Buffer
+	err := printer.Fprint(&buf, fset, detectedStruct)
+	if err != nil {
+		return "", fmt.Errorf("error occurred when parsing the struct")
 	}
-
-	return nil
+	return buf.String(), nil
 }
-
-// astutil.Apply(pack, func(c *astutil.Cursor) bool {
-// 	n := c.Node()
-// 	switch n.(type) {
-// 	case *ast.FuncDecl:
-
-// 		astutil.Apply(n, func(crs *astutil.Cursor) bool {
-// 			if _, ok := crs.Node().(*ast.BlockStmt); ok {
-// 				blckStmnt := ast.BlockStmt{
-// 					List: {
-
-// 					},
-// 				}
-// 				c.Replace(blckStmnt)
-// 			}
-// 			return false
-// 		}, nil)
-
-// 	}
-// 	return false
-// }, nil)

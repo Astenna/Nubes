@@ -19,17 +19,19 @@ func NewShop(ownerId string) *Shop {
 	return &Shop{Owner: lib.NewReference[User](ownerId)}
 }
 
-func (s *Shop) ChangeName(name string) {
+func (s *Shop) ChangeName(name string) error {
 	s.Name = name
+	return nil
 }
 
-func (s *Shop) ChangeOwnerNoReturnValue(ownerId string) {
+func (s *Shop) ChangeOwnerNoReturnValue(ownerId string) error {
 	s.Owner = lib.NewReference[User](ownerId)
+	return nil
 }
 
-func (s *Shop) ChangeOwner(ownerId string) test.Test {
+func (s *Shop) ChangeOwner(ownerId string) (test.Test, error) {
 	s.Owner = lib.NewReference[User](ownerId)
-	return *new(test.Test)
+	return *new(test.Test), nil
 }
 
 func (s *Shop) ChangeOwnerWithError(ownerId string) (Product, error) {

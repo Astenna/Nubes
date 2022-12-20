@@ -1,0 +1,39 @@
+package client_lib
+
+import (
+	"encoding/json"
+
+	"github.com/Astenna/Nubes/lib"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/lambda"
+)
+
+type {{.StructDefinition}}
+
+{{range .MemberFunctions}}
+func ({{.ReceiverName}} {{.ReceiverType}}) {{.FuncName}}({{if .InputParamType}} input {{.InputParamType}}{{end}}) {{if .OptionalReturnType}} ({{.OptionalReturnType}}, error) {{else}} error {{end}} {
+    params := new(lib.HandlerParameters)
+    {{if .ReceiverName}} params.Id = {{.ReceiverName}}.Id {{end}}
+    {{if .InputParamType}} params.input = input {{end}}
+
+    jsonParam, err := json.Marshal(params)
+	if err != nil {
+		return *new(Order), err
+	}
+
+	out, err := lambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("{{.FuncName}}{{.ReceiverType}}"), Payload: jsonParam})
+	if err != nil {
+		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} err
+	}
+
+    {{if .OptionalReturnType}} {{.OptionalReturnType}}
+    result := new({{.OptionalReturnType}})
+	err = json.Unmarshal(out.Payload, result)
+	if err != nil {
+		return *new({{.OptionalReturnType}}), err
+	}
+    {{end}}
+	
+	return err
+}
+{{end}}
