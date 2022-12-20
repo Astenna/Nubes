@@ -127,7 +127,13 @@ func PrepareMemberFunction(fn *ast.FuncDecl) (*MemberFunction, error) {
 	}
 
 	if len(fn.Type.Results.List) > 1 {
-		memberFunction.InputParamType = types.ExprString(fn.Type.Results.List[0].Type)
+		memberFunction.OptionalReturnType = types.ExprString(fn.Type.Results.List[0].Type)
+	}
+
+	if len(fn.Type.Params.List) > 1 {
+		return nil, fmt.Errorf("methods belonging to nobjects can have at most 1 parameter")
+	} else if len(fn.Type.Params.List) == 1 {
+		memberFunction.InputParamType = types.ExprString(fn.Type.Params.List[0].Type)
 	}
 
 	return &memberFunction, nil

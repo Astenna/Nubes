@@ -30,13 +30,13 @@ func ({{.ReceiverName}} {{.ReceiverType}}) {{.FuncName}}({{if .InputParamType}}i
 		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} _err
 	}
 
-    {{if .OptionalReturnType}} {{.OptionalReturnType}}
+    {{if .OptionalReturnType}}
     result := new({{.OptionalReturnType}})
 	err = json.Unmarshal(out.Payload, result)
 	if err != nil {
 		return *new({{.OptionalReturnType}}), err
 	}{{end}}
 	
-	return {{if .OptionalReturnType}}out,{{end}} err
+	return {{if .OptionalReturnType}}*result,{{end}} err
 }
 {{end}}
