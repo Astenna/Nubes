@@ -12,10 +12,11 @@ import (
 )
 
 type TypeDefinition struct {
-	PackageName      string
-	Imports          string
-	StructDefinition string
-	MemberFunctions  []MemberFunction
+	PackageName           string
+	Imports               string
+	StructDefinition      string
+	NobjectImplementation string
+	MemberFunctions       []MemberFunction
 }
 
 type MemberFunction struct {
@@ -61,7 +62,25 @@ func PrepareTypes(path string) map[string]*TypeDefinition {
 
 			for _, d := range f.Decls {
 				if fn, isFn := d.(*ast.FuncDecl); isFn {
-					if fn.Recv == nil || fn.Name.Name == GetTypeName {
+					if fn.Recv == nil {
+						continue
+					}
+
+					if fn.Name.Name == GetTypeName {
+						typeName := strings.TrimPrefix(types.ExprString(fn.Recv.List[0].Type), "*")
+						funcString, err := GetFuncDeclAsString(set, fn)
+						if err != nil {
+							fmt.Println("error occurred when parsing GetTypeName of " + typeName)
+							continue
+						}
+
+						if elem, ok := typeFiles[typeName]; !ok {
+							typeFiles[typeName] = &TypeDefinition{
+								NobjectImplementation: funcString,
+							}
+						} else {
+							elem.NobjectImplementation = funcString
+						}
 						continue
 					}
 
@@ -125,6 +144,15 @@ func GetStructAsString(fset *token.FileSet, detectedStruct *ast.TypeSpec) (strin
 	err := printer.Fprint(&buf, fset, detectedStruct)
 	if err != nil {
 		return "", fmt.Errorf("error occurred when parsing the struct")
+	}
+	return buf.String(), nil
+}
+
+func GetFuncDeclAsString(fset *token.FileSet, f *ast.FuncDecl) (string, error) {
+	var buf bytes.Buffer
+	err := printer.Fprint(&buf, fset, f)
+	if err != nil {
+		return "", fmt.Errorf("error occurred when parsing the function body")
 	}
 	return buf.String(), nil
 }

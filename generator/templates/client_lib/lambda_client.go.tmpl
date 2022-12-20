@@ -9,4 +9,4 @@ var sess = session.Must(session.NewSessionWithOptions(session.Options{
     SharedConfigState: session.SharedConfigEnable,
 }))
 
-var lambdaClient = lambda.New(sess)
+var LambdaClient = lambda.New(sess)

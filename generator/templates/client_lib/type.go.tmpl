@@ -1,29 +1,33 @@
 package client_lib
 
 import (
+	"github.com/Astenna/Nubes/lib"
+{{if .MemberFunctions}}
 	"encoding/json"
 
-	"github.com/Astenna/Nubes/lib"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/lambda"
+{{end}}
 )
 
 type {{.StructDefinition}}
 
+{{if .NobjectImplementation}} {{.NobjectImplementation}}{{end}}
+
 {{range .MemberFunctions}}
-func ({{.ReceiverName}} {{.ReceiverType}}) {{.FuncName}}({{if .InputParamType}} input {{.InputParamType}}{{end}}) {{if .OptionalReturnType}} ({{.OptionalReturnType}}, error) {{else}} error {{end}} {
+func ({{.ReceiverName}} {{.ReceiverType}}) {{.FuncName}}({{if .InputParamType}}input {{.InputParamType}}{{end}}) {{if .OptionalReturnType}} ({{.OptionalReturnType}}, error) {{else}} error {{end}} {
     params := new(lib.HandlerParameters)
-    {{if .ReceiverName}} params.Id = {{.ReceiverName}}.Id {{end}}
-    {{if .InputParamType}} params.input = input {{end}}
+    {{if .ReceiverName}} params.Id = {{.ReceiverName}}.id {{end}}
+    {{if .InputParamType}} params.Parameter = input {{end}}
 
     jsonParam, err := json.Marshal(params)
 	if err != nil {
-		return *new(Order), err
+		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} err
 	}
 
-	out, err := lambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("{{.FuncName}}{{.ReceiverType}}"), Payload: jsonParam})
-	if err != nil {
-		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} err
+	{{if .OptionalReturnType}}out{{else}}_{{end}}, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("{{.FuncName}}{{.ReceiverType}}"), Payload: jsonParam})
+	if _err != nil {
+		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} _err
 	}
 
     {{if .OptionalReturnType}} {{.OptionalReturnType}}
@@ -31,9 +35,8 @@ func ({{.ReceiverName}} {{.ReceiverType}}) {{.FuncName}}({{if .InputParamType}} 
 	err = json.Unmarshal(out.Payload, result)
 	if err != nil {
 		return *new({{.OptionalReturnType}}), err
-	}
-    {{end}}
+	}{{end}}
 	
-	return err
+	return {{if .OptionalReturnType}}out,{{end}} err
 }
 {{end}}
