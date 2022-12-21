@@ -1,0 +1,22 @@
+package main
+
+import (
+    "errors"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-lambda-go/lambda"
+	lib "github.com/Astenna/Nubes/lib"
+    {{.TypesPackageAlias}} "{{.TypesPackagePath}}"
+)
+
+func Update{{.TypeName}}Handler(toBeUpdated aws.JSONValue) error {
+    err := lib.Update[{{.TypesPackageAlias}}.{{.TypeName}}](toBeUpdated)
+
+    if err != nil {
+        return errors.New("failed to update {{.TypeName}}")
+    }
+    return nil
+}
+
+func main() {
+	lambda.Start(Update{{.TypeName}}Handler)
+}

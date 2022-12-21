@@ -16,4 +16,5 @@ const (
 	GetPrefix    = "Get"
 	CreatePrefix = "Create"
 	DeletePrefix = "Delete"
+	UpdatePrefix = "Update"
 )

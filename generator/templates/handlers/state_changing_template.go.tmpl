@@ -15,11 +15,16 @@ import (
 		return {{if .OptionalReturnVar}} *new({{.OptionalReturnType}}), {{end}} err
 	}
 	{{end}}
+
 	{{.ReturnFromInvocation}}{{.Invocation}}
+	if _err != nil {
+		return {{if .OptionalReturnVar}} result, {{end}} _err
+	}
+
 	{{if eq false .Stateless}}
-	err = lib.Insert({{.OwnerVariableName}})
+	_err = lib.Insert({{.OwnerVariableName}})
 	{{end}}
-	return {{if .OptionalReturnVar}} {{.OptionalReturnVar}}, {{end}} err
+	return {{if .OptionalReturnVar}} {{.OptionalReturnVar}}, {{end}} _err
 }
 
 func main() {

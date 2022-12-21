@@ -74,6 +74,7 @@ func GenerateRepositoriesHandlers(path string, customFuncs []parser.CustomRepoHa
 	getTempl := tp.ParseOrExitOnError("templates/handlers/get_repo_template.go.tmpl")
 	createTempl := tp.ParseOrExitOnError("templates/handlers/create_repo_template.go.tmpl")
 	deleteTempl := tp.ParseOrExitOnError("templates/handlers/delete_repo_template.go.tmpl")
+	updateTempl := tp.ParseOrExitOnError("templates/handlers/update_repo_template.go.tmpl")
 
 	var tmpl template.Template
 	for _, f := range defaultFuncs {
@@ -84,6 +85,8 @@ func GenerateRepositoriesHandlers(path string, customFuncs []parser.CustomRepoHa
 			tmpl = createTempl
 		case f.OperationName == parser.DeletePrefix:
 			tmpl = deleteTempl
+		case f.OperationName == parser.UpdatePrefix:
+			tmpl = updateTempl
 		}
 
 		fileName = filepath.Join(repositoriesDirectoryPath, f.OperationName+f.TypeName+".go")

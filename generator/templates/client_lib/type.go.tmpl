@@ -1,8 +1,7 @@
 package client_lib
 
 import (
-	"github.com/Astenna/Nubes/lib"
-{{if .MemberFunctions}}
+{{if or .MemberFunctions .FieldDefinitions}}
 	"encoding/json"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -13,6 +12,39 @@ import (
 type {{.StructDefinition}}
 
 {{if .NobjectImplementation}} {{.NobjectImplementation}}{{end}}
+
+{{range .FieldDefinitions}}
+func (s {{.ReceiverName}}) Get{{.FieldNameUpper}}() ({{.FieldType}}, error) {
+	jsonParam, err := json.Marshal(s.id)
+	if err != nil {
+		return *new({{.FieldType}}), err
+	}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("Get{{.ReceiverName}}"), Payload: jsonParam})
+	if _err != nil {
+		return *new({{.FieldType}}), _err
+	}
+
+	result := new({{.ReceiverName}})
+	err = json.Unmarshal(out.Payload, result)
+	if err != nil {
+		return *new({{.FieldType}}), err
+	}
+
+	return result.{{.FieldName}}, err
+}
+
+func ({{.ReceiverName}}) Set{{.FieldNameUpper}}(newValue {{.FieldType}}) error {
+	jsonParam, err := json.Marshal(aws.JSONValue{"{{.FieldName}}": newValue})
+	if err != nil {
+		return err
+	}
+
+	_, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("Update{{.ReceiverName}}"), Payload: jsonParam})
+	return _err
+}
+{{end}}
+
 
 {{range .MemberFunctions}}
 func ({{.ReceiverName}} {{.ReceiverType}}) {{.FuncName}}({{if .InputParamType}}input {{.InputParamType}}{{end}}) {{if .OptionalReturnType}} ({{.OptionalReturnType}}, error) {{else}} error {{end}} {

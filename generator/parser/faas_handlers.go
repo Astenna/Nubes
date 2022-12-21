@@ -57,7 +57,7 @@ func ParseRepoHandlers(path string, nobjectsImportPath string, nobjectTypes map[
 
 	isNoObjectMethodDefined := make(map[string]map[string]bool, len(nobjectTypes))
 	for i := range nobjectTypes {
-		isNoObjectMethodDefined[i] = map[string]bool{GetPrefix: false, CreatePrefix: false, DeletePrefix: false}
+		isNoObjectMethodDefined[i] = map[string]bool{GetPrefix: false, CreatePrefix: false, DeletePrefix: false, UpdatePrefix: false}
 	}
 
 	repoCustomFuncs := []CustomRepoHandler{}
@@ -72,6 +72,8 @@ func ParseRepoHandlers(path string, nobjectsImportPath string, nobjectTypes map[
 			methodType = CreatePrefix
 		case strings.HasPrefix(f.Name.Name, DeletePrefix):
 			methodType = DeletePrefix
+		case strings.HasPrefix(f.Name.Name, UpdatePrefix):
+			methodType = UpdatePrefix
 		default:
 			continue
 		}
@@ -191,11 +193,11 @@ func ParseStateChangingHandlers(path string, nobjectsImportPath string, nobjectT
 					if len(f.Type.Results.List) == 1 {
 						// C2
 						newHandler.Signature += " error"
-						newHandler.ReturnFromInvocation = "err :="
+						newHandler.ReturnFromInvocation = "_err :="
 					} else {
 						// C4
 						newHandler.Signature += "(" + newHandler.OptionalReturnType + " ,error)"
-						newHandler.ReturnFromInvocation = "result, err :="
+						newHandler.ReturnFromInvocation = "result, _err :="
 						newHandler.OptionalReturnVar = "result"
 					}
 				}

@@ -17,6 +17,7 @@ type TypeDefinition struct {
 	StructDefinition      string
 	NobjectImplementation string
 	MemberFunctions       []MemberFunction
+	FieldDefinitions      []FieldDefinition
 }
 
 type MemberFunction struct {
@@ -27,12 +28,18 @@ type MemberFunction struct {
 	OptionalReturnType string
 }
 
+type FieldDefinition struct {
+	ReceiverName   string
+	FieldNameUpper string
+	FieldName      string
+	FieldType      string
+}
+
 func PrepareTypes(path string) map[string]*TypeDefinition {
 	set := token.NewFileSet()
 	packs, err := parser.ParseDir(set, path, nil, 0)
 	AssertDirParsed(err)
 
-	var detectedTypes []*ast.StructType
 	typeFiles := make(map[string]*TypeDefinition)
 
 	for _, pack := range packs {
@@ -41,19 +48,15 @@ func PrepareTypes(path string) map[string]*TypeDefinition {
 			ast.Inspect(f, func(n ast.Node) bool {
 				if typeSpec, ok := n.(*ast.TypeSpec); ok {
 					if strctType, ok := typeSpec.Type.(*ast.StructType); ok {
+						typeName := strings.TrimPrefix(typeSpec.Name.Name, "*")
 						MakeFieldsUnexported(strctType.Fields)
-						detectedTypes = append(detectedTypes, strctType)
-
 						structString, err := GetStructAsString(set, typeSpec)
 						if err == nil {
-							typeName := strings.TrimPrefix(typeSpec.Name.Name, "*")
-							if elem, ok := typeFiles[typeName]; !ok {
-								typeFiles[typeName] = &TypeDefinition{
-									StructDefinition: structString,
-								}
-							} else {
-								elem.StructDefinition = structString
+							if _, ok := typeFiles[typeName]; !ok {
+								typeFiles[typeName] = &TypeDefinition{}
 							}
+							typeFiles[typeName].StructDefinition = structString
+							typeFiles[typeName].FieldDefinitions = GetFieldDefinitions(typeName, strctType)
 						}
 					}
 				}
@@ -107,6 +110,25 @@ func PrepareTypes(path string) map[string]*TypeDefinition {
 	return typeFiles
 }
 
+func GetFieldDefinitions(typeName string, strctType *ast.StructType) []FieldDefinition {
+	fieldDefinitions := make([]FieldDefinition, 0, len(strctType.Fields.List)-1)
+
+	for _, field := range strctType.Fields.List {
+		if field.Names[0].Name != "id" {
+			test := field.Names[0].Name
+			_ = test
+			fieldDefinitions = append(fieldDefinitions, FieldDefinition{
+				FieldNameUpper: MakeFirstCharacterUpperCase(field.Names[0].Name),
+				FieldName:      field.Names[0].Name,
+				FieldType:      types.ExprString(field.Type),
+				ReceiverName:   typeName,
+			})
+		}
+	}
+
+	return fieldDefinitions
+}
+
 func PrepareMemberFunction(fn *ast.FuncDecl) (*MemberFunction, error) {
 
 	if fn.Type.Results == nil ||
@@ -141,8 +163,36 @@ func PrepareMemberFunction(fn *ast.FuncDecl) (*MemberFunction, error) {
 
 func MakeFieldsUnexported(fieldList *ast.FieldList) {
 	for _, field := range fieldList.List {
-		field.Names[0].Name = strings.ToLower(field.Names[0].Name)
+		field.Names[0].Name = MakeFirstCharacterLowerCase(field.Names[0].Name)
 	}
+}
+
+func MakeFirstCharacterLowerCase(str string) string {
+	if len(str) < 2 {
+		return strings.ToLower(str)
+	}
+
+	bts := []byte(str)
+
+	firstByte := bytes.ToLower([]byte{bts[0]})
+	rest := bts[1:]
+
+	str = string(bytes.Join([][]byte{firstByte, rest}, nil))
+	return str
+}
+
+func MakeFirstCharacterUpperCase(str string) string {
+	if len(str) < 2 {
+		return strings.ToUpper(str)
+	}
+
+	bts := []byte(str)
+
+	firstByte := bytes.ToUpper([]byte{bts[0]})
+	rest := bts[1:]
+
+	str = string(bytes.Join([][]byte{firstByte, rest}, nil))
+	return str
 }
 
 func GetStructAsString(fset *token.FileSet, detectedStruct *ast.TypeSpec) (string, error) {
