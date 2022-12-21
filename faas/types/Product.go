@@ -3,7 +3,7 @@ package types
 import "github.com/Astenna/Nubes/lib"
 
 type Product struct {
-	Id                int
+	Id                string
 	Name              string
 	QuantityAvailable int
 	SoldBy            lib.Reference[Shop]

@@ -1,7 +1,7 @@
 package types
 
 type User struct {
-	Id        int
+	Id        string
 	FirstName string
 	LastName  string
 	Email     string
