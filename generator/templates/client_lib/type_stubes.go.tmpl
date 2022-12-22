@@ -1,0 +1,13 @@
+package {{.PackageName}}
+
+import lib "github.com/Astenna/Nubes/lib"
+
+{{range .Types}}
+type {{.TypeNameUpper}}Stub struct {
+    Id string
+    {{range .FieldDefinitions}}
+    {{if .IsReference}} {{.FieldNameUpper}} lib.Reference[{{.FieldType}}]
+    {{else}} {{.FieldNameUpper}} {{.FieldType}} {{end}}
+    {{end}}
+}
+{{end}}

@@ -22,7 +22,7 @@ var clientCmd = &cobra.Command{
 		projectName, _ := cmd.Flags().GetString("project-name")
 		_ = repositoriesPath
 
-		typesMap := parser.PrepareTypes(tp.MakePathAbosoluteOrExitOnError(typesPath))
+		nobjectTypes := parser.PrepareTypes(tp.MakePathAbosoluteOrExitOnError(typesPath))
 
 		outputDirectoryPath := tp.MakePathAbosoluteOrExitOnError(filepath.Join(output, projectName))
 		os.MkdirAll(outputDirectoryPath, 0777)
@@ -32,9 +32,16 @@ var clientCmd = &cobra.Command{
 		tp.CreateFileFromTemplate(lambdaClient, lambdaClientInput, filepath.Join(outputDirectoryPath, "lambda_client.go"))
 
 		templ := tp.ParseOrExitOnError("templates/client_lib/type.go.tmpl")
-		for typeName, typeDefinition := range typesMap {
-			tp.CreateFileFromTemplate(templ, typeDefinition, filepath.Join(outputDirectoryPath, typeName+".go"))
+		for _, typeDefinition := range nobjectTypes {
+			typeDefinition.PackageName = projectName
+			tp.CreateFileFromTemplate(templ, typeDefinition, filepath.Join(outputDirectoryPath, typeDefinition.TypeNameLower+".go"))
 		}
+
+		stub_templ := tp.ParseOrExitOnError("templates/client_lib/type_stubes.go.tmpl")
+		tp.CreateFileFromTemplate(stub_templ, struct {
+			PackageName string
+			Types       []*parser.TypeDefinition
+		}{PackageName: projectName, Types: nobjectTypes}, filepath.Join(outputDirectoryPath, "stubs.go"))
 	},
 }
 

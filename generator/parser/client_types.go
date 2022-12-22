@@ -9,6 +9,8 @@ import (
 	"go/token"
 	"go/types"
 	"strings"
+
+	"golang.org/x/exp/maps"
 )
 
 type TypeDefinition struct {
@@ -16,31 +18,32 @@ type TypeDefinition struct {
 	Imports               string
 	StructDefinition      string
 	NobjectImplementation string
+	TypeNameLower         string
+	TypeNameUpper         string
 	MemberFunctions       []MemberFunction
 	FieldDefinitions      []FieldDefinition
 }
 
 type MemberFunction struct {
 	ReceiverName       string
-	ReceiverType       string
 	FuncName           string
 	InputParamType     string
 	OptionalReturnType string
 }
 
 type FieldDefinition struct {
-	ReceiverName   string
 	FieldNameUpper string
 	FieldName      string
 	FieldType      string
+	IsReference    bool
 }
 
-func PrepareTypes(path string) map[string]*TypeDefinition {
+func PrepareTypes(path string) []*TypeDefinition {
 	set := token.NewFileSet()
 	packs, err := parser.ParseDir(set, path, nil, 0)
 	AssertDirParsed(err)
 
-	typeFiles := make(map[string]*TypeDefinition)
+	definedTypes := make(map[string]*TypeDefinition)
 
 	for _, pack := range packs {
 		for _, f := range pack.Files {
@@ -52,11 +55,13 @@ func PrepareTypes(path string) map[string]*TypeDefinition {
 						MakeFieldsUnexported(strctType.Fields)
 						structString, err := GetStructAsString(set, typeSpec)
 						if err == nil {
-							if _, ok := typeFiles[typeName]; !ok {
-								typeFiles[typeName] = &TypeDefinition{}
+							if _, ok := definedTypes[typeName]; !ok {
+								definedTypes[typeName] = &TypeDefinition{}
 							}
-							typeFiles[typeName].StructDefinition = structString
-							typeFiles[typeName].FieldDefinitions = GetFieldDefinitions(typeName, strctType)
+							definedTypes[typeName].StructDefinition = structString
+							definedTypes[typeName].TypeNameUpper = typeName
+							definedTypes[typeName].TypeNameLower = MakeFirstCharacterLowerCase(typeName)
+							definedTypes[typeName].FieldDefinitions = GetFieldDefinitions(typeName, strctType)
 						}
 					}
 				}
@@ -69,16 +74,16 @@ func PrepareTypes(path string) map[string]*TypeDefinition {
 						continue
 					}
 
+					typeName := strings.TrimPrefix(types.ExprString(fn.Recv.List[0].Type), "*")
 					if fn.Name.Name == GetTypeName {
-						typeName := strings.TrimPrefix(types.ExprString(fn.Recv.List[0].Type), "*")
 						funcString, err := GetFuncDeclAsString(set, fn)
 						if err != nil {
 							fmt.Println("error occurred when parsing GetTypeName of " + typeName)
 							continue
 						}
 
-						if elem, ok := typeFiles[typeName]; !ok {
-							typeFiles[typeName] = &TypeDefinition{
+						if elem, ok := definedTypes[typeName]; !ok {
+							definedTypes[typeName] = &TypeDefinition{
 								NobjectImplementation: funcString,
 							}
 						} else {
@@ -93,8 +98,8 @@ func PrepareTypes(path string) map[string]*TypeDefinition {
 						continue
 					}
 
-					if elem, ok := typeFiles[memberFunction.ReceiverType]; !ok {
-						typeFiles[memberFunction.ReceiverType] = &TypeDefinition{
+					if elem, ok := definedTypes[typeName]; !ok {
+						definedTypes[typeName] = &TypeDefinition{
 							MemberFunctions: []MemberFunction{
 								*memberFunction,
 							},
@@ -107,7 +112,7 @@ func PrepareTypes(path string) map[string]*TypeDefinition {
 		}
 	}
 
-	return typeFiles
+	return maps.Values(definedTypes)
 }
 
 func GetFieldDefinitions(typeName string, strctType *ast.StructType) []FieldDefinition {
@@ -115,14 +120,20 @@ func GetFieldDefinitions(typeName string, strctType *ast.StructType) []FieldDefi
 
 	for _, field := range strctType.Fields.List {
 		if field.Names[0].Name != "id" {
-			test := field.Names[0].Name
-			_ = test
-			fieldDefinitions = append(fieldDefinitions, FieldDefinition{
+
+			newFieldDefinition := FieldDefinition{
 				FieldNameUpper: MakeFirstCharacterUpperCase(field.Names[0].Name),
 				FieldName:      field.Names[0].Name,
-				FieldType:      types.ExprString(field.Type),
-				ReceiverName:   typeName,
-			})
+			}
+
+			newFieldDefinition.FieldType = strings.TrimPrefix(types.ExprString(field.Type), "*")
+			if strings.Contains(newFieldDefinition.FieldType, ReferenceType) {
+				newFieldDefinition.FieldType = strings.TrimPrefix(newFieldDefinition.FieldType, ReferenceType)
+				newFieldDefinition.FieldType = strings.Trim(newFieldDefinition.FieldType, "[]")
+				newFieldDefinition.IsReference = true
+			}
+
+			fieldDefinitions = append(fieldDefinitions, newFieldDefinition)
 		}
 	}
 
@@ -140,8 +151,7 @@ func PrepareMemberFunction(fn *ast.FuncDecl) (*MemberFunction, error) {
 	}
 
 	memberFunction := MemberFunction{
-		ReceiverType: strings.TrimPrefix(types.ExprString(fn.Recv.List[0].Type), "*"),
-		FuncName:     fn.Name.Name,
+		FuncName: fn.Name.Name,
 	}
 
 	if len(fn.Recv.List[0].Names) > 0 {

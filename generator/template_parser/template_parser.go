@@ -31,7 +31,7 @@ func MakePathAbosoluteOrExitOnError(path string) string {
 func CreateFileFromTemplate(templ template.Template, data any, newFilePath string) {
 	file, err := os.Create(newFilePath)
 	if err != nil {
-		fmt.Println("error occurred when retrieving template definition", err)
+		fmt.Println("error occurred when creating a file", err)
 	}
 	err = templ.Execute(file, data)
 	if err != nil {

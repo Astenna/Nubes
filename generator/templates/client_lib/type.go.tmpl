@@ -1,54 +1,81 @@
-package client_lib
-
-import (
+package {{.PackageName}}
 {{if or .MemberFunctions .FieldDefinitions}}
+import (
+    "errors"
 	"encoding/json"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/lambda"
-{{end}}
-)
+	"github.com/Astenna/Nubes/lib"
+){{end}}
 
 type {{.StructDefinition}}
 
-{{if .NobjectImplementation}} {{.NobjectImplementation}}{{end}}
+{{if .NobjectImplementation}} {{.NobjectImplementation}} {{end}}
+
+// CONSTRUCTOR
+
+{{if .NobjectImplementation}} func New{{.TypeNameUpper}}(id string) {{.TypeNameUpper}} {
+	newInstance := new({{.TypeNameUpper}})
+	newInstance.id = id
+	return *newInstance
+} {{end}}
+
+// GETTERS AND SETTERS
 
 {{range .FieldDefinitions}}
-func (s {{.ReceiverName}}) Get{{.FieldNameUpper}}() ({{.FieldType}}, error) {
+func (s {{$.TypeNameUpper}}) Get{{.FieldNameUpper}}() ({{.FieldType}}, error) {
+	if s.id == "" {
+		return *new({{.FieldType}}), errors.New("Id of the type not set, use New{{$.TypeNameUpper}} constructor to create new instance of the type!")
+	}
+
 	jsonParam, err := json.Marshal(s.id)
 	if err != nil {
 		return *new({{.FieldType}}), err
 	}
 
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("Get{{.ReceiverName}}"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("Get{{$.TypeNameUpper}}"), Payload: jsonParam})
 	if _err != nil {
 		return *new({{.FieldType}}), _err
 	}
 
-	result := new({{.ReceiverName}})
+	result := new({{$.TypeNameUpper}})
 	err = json.Unmarshal(out.Payload, result)
 	if err != nil {
 		return *new({{.FieldType}}), err
 	}
 
+	{{if .IsReference}}
+	var referenceResult = New{{.FieldType}}(result.{{.FieldName}}.Id)
+	return referenceResult, err
+	{{else}}
 	return result.{{.FieldName}}, err
+	{{end}}
 }
-
-func ({{.ReceiverName}}) Set{{.FieldNameUpper}}(newValue {{.FieldType}}) error {
-	jsonParam, err := json.Marshal(aws.JSONValue{"{{.FieldName}}": newValue})
+func (s {{$.TypeNameUpper}}) Set{{.FieldNameUpper}}(newValue {{if .IsReference}}string{{else}}{{.FieldType}}{{end}}) error {
+	if s.id == "" {
+		return errors.New("Id of the type not set, use New{{$.TypeNameUpper}} constructor to create new instance of the type!")
+	}
+	
+	jsonParam, err := json.Marshal(aws.JSONValue{"{{.FieldNameUpper}}": newValue, "Id": s.id})
 	if err != nil {
 		return err
 	}
 
-	_, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("Update{{.ReceiverName}}"), Payload: jsonParam})
+	_, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("Update{{$.TypeNameUpper}}"), Payload: jsonParam})
 	return _err
-}
+} 
 {{end}}
 
 
+// METHODS
+
 {{range .MemberFunctions}}
-func ({{.ReceiverName}} {{.ReceiverType}}) {{.FuncName}}({{if .InputParamType}}input {{.InputParamType}}{{end}}) {{if .OptionalReturnType}} ({{.OptionalReturnType}}, error) {{else}} error {{end}} {
-    params := new(lib.HandlerParameters)
+func ({{.ReceiverName}} {{$.TypeNameUpper}}) {{.FuncName}}({{if .InputParamType}}input {{.InputParamType}}{{end}}) {{if .OptionalReturnType}} ({{.OptionalReturnType}}, error) {{else}} error {{end}} {
+	if {{.ReceiverName}}.id == "" {
+		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} errors.New("Id of the type not set, use New{{$.TypeNameUpper}} constructor to create new instance of the type!")
+	}
+	
+	params := new(lib.HandlerParameters)
     {{if .ReceiverName}} params.Id = {{.ReceiverName}}.id {{end}}
     {{if .InputParamType}} params.Parameter = input {{end}}
 
@@ -57,7 +84,7 @@ func ({{.ReceiverName}} {{.ReceiverType}}) {{.FuncName}}({{if .InputParamType}}i
 		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} err
 	}
 
-	{{if .OptionalReturnType}}out{{else}}_{{end}}, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("{{.FuncName}}{{.ReceiverType}}"), Payload: jsonParam})
+	{{if .OptionalReturnType}}out{{else}}_{{end}}, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("{{.FuncName}}{{$.TypeNameUpper}}"), Payload: jsonParam})
 	if _err != nil {
 		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} _err
 	}
@@ -70,5 +97,4 @@ func ({{.ReceiverName}} {{.ReceiverType}}) {{.FuncName}}({{if .InputParamType}}i
 	}{{end}}
 	
 	return {{if .OptionalReturnType}}*result,{{end}} err
-}
-{{end}}
+} {{end}}
