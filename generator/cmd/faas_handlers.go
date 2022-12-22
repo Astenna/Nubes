@@ -51,23 +51,31 @@ func init() {
 }
 
 func GenerateStateChangingHandlers(path string, functions []parser.StateChangingHandler) {
+	var handlerDir string
+	var ownerHandlerNameCombined string
 	templ := tp.ParseOrExitOnError("templates/handlers/state_changing_template.go.tmpl")
 	generationDestPath := tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "state-changes"))
-	os.MkdirAll(generationDestPath, 0777)
 
 	for _, f := range functions {
-		tp.CreateFileFromTemplate(templ, f, filepath.Join(generationDestPath, f.HandlerName+".go"))
+		ownerHandlerNameCombined = f.OwnerType + f.HandlerName
+		handlerDir = filepath.Join(generationDestPath, ownerHandlerNameCombined)
+		os.MkdirAll(handlerDir, 0777)
+		tp.CreateFileFromTemplate(templ, f, filepath.Join(handlerDir, ownerHandlerNameCombined+".go"))
 	}
 }
 
 func GenerateRepositoriesHandlers(path string, customFuncs []parser.CustomRepoHandler, defaultFuncs []parser.DefaultRepoHandler) {
 	var fileName string
+	var handlerDir string
+	var operationTypeCombined string
 	templ := tp.ParseOrExitOnError("templates/handlers/custom_repo_template.go.tmpl")
 	repositoriesDirectoryPath := tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "repositories"))
-	os.MkdirAll(repositoriesDirectoryPath, 0777)
 
 	for _, f := range customFuncs {
-		fileName = filepath.Join(repositoriesDirectoryPath, f.OperationName+f.TypeName+".go")
+		operationTypeCombined = f.OperationName + f.TypeName
+		handlerDir = filepath.Join(repositoriesDirectoryPath, operationTypeCombined)
+		os.MkdirAll(handlerDir, 0777)
+		fileName = filepath.Join(handlerDir, operationTypeCombined+".go")
 		tp.CreateFileFromTemplate(templ, f, fileName)
 	}
 
@@ -89,7 +97,10 @@ func GenerateRepositoriesHandlers(path string, customFuncs []parser.CustomRepoHa
 			tmpl = updateTempl
 		}
 
-		fileName = filepath.Join(repositoriesDirectoryPath, f.OperationName+f.TypeName+".go")
+		operationTypeCombined = f.OperationName + f.TypeName
+		handlerDir = filepath.Join(repositoriesDirectoryPath, operationTypeCombined)
+		os.MkdirAll(handlerDir, 0777)
+		fileName = filepath.Join(handlerDir, operationTypeCombined+".go")
 		tp.CreateFileFromTemplate(tmpl, f, fileName)
 	}
 }
