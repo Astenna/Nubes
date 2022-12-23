@@ -36,7 +36,7 @@ func (s {{$.TypeNameUpper}}) Get{{.FieldNameUpper}}() ({{.FieldType}}, error) {
 		return *new({{.FieldType}}), errors.New("id of the type not set, use New{{$.TypeNameUpper}} constructor to create new instance of the type")
 	}
 
-	jsonParam, err := json.Marshal(aws.JSONValue{"Id": s.id})
+	jsonParam, err := json.Marshal(s.id)
 	if err != nil {
 		return *new({{.FieldType}}), err
 	}

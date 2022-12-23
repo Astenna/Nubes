@@ -90,10 +90,12 @@ func Update[T Object](values aws.JSONValue) error {
 		TableName: aws.String((*new(T)).GetTypeName()),
 		Key: map[string]*dynamodb.AttributeValue{
 			"Id": {
-				S: aws.String(values["id"].(string)),
+				S: aws.String(values["Id"].(string)),
 			},
 		},
-		UpdateExpression: expr.Update(),
+		UpdateExpression:          expr.Update(),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
 	})
 
 	return err
