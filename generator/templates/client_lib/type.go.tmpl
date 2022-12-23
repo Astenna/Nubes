@@ -8,27 +8,35 @@ import (
 	"github.com/Astenna/Nubes/lib"
 ){{end}}
 
-type {{.StructDefinition}}
+type {{.TypeNameUpper}} struct {
+	id string 
+	{{if eq .NobjectImplementation ""}}{{range .FieldDefinitions}}
+    	{{if .IsReference}} {{.FieldNameUpper}} lib.Reference[{{.FieldType}}] 
+		{{else}} {{.FieldNameUpper}} {{.FieldType}} {{end}} 
+	{{end}} {{end}}
+}
 
-{{if .NobjectImplementation}} {{.NobjectImplementation}} {{end}}
+
+{{if .NobjectImplementation}} // ALL THE CODE BELOW IS GENERATED ONLY FOR NOBJECTS TYPES
+{{.NobjectImplementation}} 
 
 // CONSTRUCTOR
 
-{{if .NobjectImplementation}} func New{{.TypeNameUpper}}(id string) {{.TypeNameUpper}} {
+func New{{.TypeNameUpper}}(id string) {{.TypeNameUpper}} {
 	newInstance := new({{.TypeNameUpper}})
 	newInstance.id = id
 	return *newInstance
-} {{end}}
+} 
 
 // GETTERS AND SETTERS
 
 {{range .FieldDefinitions}}
 func (s {{$.TypeNameUpper}}) Get{{.FieldNameUpper}}() ({{.FieldType}}, error) {
 	if s.id == "" {
-		return *new({{.FieldType}}), errors.New("Id of the type not set, use New{{$.TypeNameUpper}} constructor to create new instance of the type!")
+		return *new({{.FieldType}}), errors.New("id of the type not set, use New{{$.TypeNameUpper}} constructor to create new instance of the type")
 	}
 
-	jsonParam, err := json.Marshal(s.id)
+	jsonParam, err := json.Marshal(aws.JSONValue{"Id": s.id})
 	if err != nil {
 		return *new({{.FieldType}}), err
 	}
@@ -38,22 +46,22 @@ func (s {{$.TypeNameUpper}}) Get{{.FieldNameUpper}}() ({{.FieldType}}, error) {
 		return *new({{.FieldType}}), _err
 	}
 
-	result := new({{$.TypeNameUpper}})
+	result := new({{$.TypeNameUpper}}Stub)
 	err = json.Unmarshal(out.Payload, result)
 	if err != nil {
 		return *new({{.FieldType}}), err
 	}
 
 	{{if .IsReference}}
-	var referenceResult = New{{.FieldType}}(result.{{.FieldName}}.Id)
+	var referenceResult = New{{.FieldType}}(result.{{.FieldNameUpper}}.Id)
 	return referenceResult, err
 	{{else}}
-	return result.{{.FieldName}}, err
+	return result.{{.FieldNameUpper}}, err
 	{{end}}
 }
 func (s {{$.TypeNameUpper}}) Set{{.FieldNameUpper}}(newValue {{if .IsReference}}string{{else}}{{.FieldType}}{{end}}) error {
 	if s.id == "" {
-		return errors.New("Id of the type not set, use New{{$.TypeNameUpper}} constructor to create new instance of the type!")
+		return errors.New("id of the type not set, use New{{$.TypeNameUpper}} constructor to create new instance of the type")
 	}
 	
 	jsonParam, err := json.Marshal(aws.JSONValue{"{{.FieldNameUpper}}": newValue, "Id": s.id})
@@ -71,30 +79,32 @@ func (s {{$.TypeNameUpper}}) Set{{.FieldNameUpper}}(newValue {{if .IsReference}}
 
 {{range .MemberFunctions}}
 func ({{.ReceiverName}} {{$.TypeNameUpper}}) {{.FuncName}}({{if .InputParamType}}input {{.InputParamType}}{{end}}) {{if .OptionalReturnType}} ({{.OptionalReturnType}}, error) {{else}} error {{end}} {
-	if {{.ReceiverName}}.id == "" {
-		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} errors.New("Id of the type not set, use New{{$.TypeNameUpper}} constructor to create new instance of the type!")
-	}
+	{{if.ReceiverName}} if {{.ReceiverName}}.id == "" {
+		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} errors.New("Id of the type not set, use New{{$.TypeNameUpper}} constructor to create new instance of the type")
+	}{{end}}
 	
-	params := new(lib.HandlerParameters)
+	{{if or .ReceiverName .InputParamType}}params := new(lib.HandlerParameters) {{end}}
     {{if .ReceiverName}} params.Id = {{.ReceiverName}}.id {{end}}
     {{if .InputParamType}} params.Parameter = input {{end}}
 
-    jsonParam, err := json.Marshal(params)
+	{{if or .ReceiverName .InputParamType}} jsonParam, err := json.Marshal(params)
 	if err != nil {
 		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} err
-	}
+	} {{end}}
 
-	{{if .OptionalReturnType}}out{{else}}_{{end}}, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("{{.FuncName}}{{$.TypeNameUpper}}"), Payload: jsonParam})
+	{{if .OptionalReturnType}}out{{else}}_{{end}}, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("{{.FuncName}}{{$.TypeNameUpper}}") {{if or .ReceiverName .InputParamType}}, Payload: jsonParam {{end}}})
 	if _err != nil {
 		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} _err
 	}
 
     {{if .OptionalReturnType}}
     result := new({{.OptionalReturnType}})
-	err = json.Unmarshal(out.Payload, result)
-	if err != nil {
+	_err = json.Unmarshal(out.Payload, result)
+	if _err != nil {
 		return *new({{.OptionalReturnType}}), err
 	}{{end}}
 	
-	return {{if .OptionalReturnType}}*result,{{end}} err
+	return {{if .OptionalReturnType}}*result,{{end}} _err
 } {{end}}
+
+{{end}} 
