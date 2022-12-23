@@ -7,24 +7,28 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
+	"github.com/google/uuid"
 )
 
-func Insert(objToInsert Object) error {
+func Insert(objToInsert Object) (string, error) {
 	var attributeVals, err = dynamodbattribute.MarshalMap(objToInsert)
 	if err != nil {
-		return err
+		return "", err
 	}
 
+	newId := uuid.New().String()
+	attributeVals["Id"].SetS(newId)
 	input := &dynamodb.PutItemInput{
 		Item:      attributeVals,
 		TableName: aws.String(objToInsert.GetTypeName()),
 	}
+
 	_, err = DBClient.PutItem(input)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return newId, nil
 }
 
 func Delete[T Object](id string) error {

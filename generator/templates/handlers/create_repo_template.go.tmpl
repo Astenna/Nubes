@@ -7,13 +7,13 @@ import (
     {{.TypesPackageAlias}} "{{.TypesPackagePath}}"
 )
 
-func Create{{.TypeName}}Handler(toBeCreated {{.TypesPackageAlias}}.{{.TypeName}}) error {
-    err := lib.Insert(toBeCreated)
+func Create{{.TypeName}}Handler(toBeCreated {{.TypesPackageAlias}}.{{.TypeName}}) (string, error) {
+    id, err := lib.Insert(toBeCreated)
 
     if err != nil {
         return errors.New("failed to create new instance of {{.TypeName}}")
     }
-    return nil
+    return id, nil
 }
 
 func main() {
