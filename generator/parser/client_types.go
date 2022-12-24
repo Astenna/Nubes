@@ -25,10 +25,12 @@ type TypeDefinition struct {
 }
 
 type MemberFunction struct {
-	ReceiverName       string
-	FuncName           string
-	InputParamType     string
-	OptionalReturnType string
+	ReceiverName            string
+	FuncName                string
+	InputParamType          string
+	OptionalReturnType      string
+	OptionalReturnTypeUpper string
+	IsReturnTypeNobject     bool
 }
 
 type FieldDefinition struct {
@@ -113,7 +115,28 @@ func PrepareTypes(path string) []*TypeDefinition {
 		}
 	}
 
+	DetectAndSetNobjectsReturnTypes(definedTypes)
 	return maps.Values(definedTypes)
+}
+
+func DetectAndSetNobjectsReturnTypes(definedTypes map[string]*TypeDefinition) {
+	for _, typeDefinition := range definedTypes {
+		for i, function := range typeDefinition.MemberFunctions {
+			if isReturnTypeDefined(function) && isReturnTypeNobject(function, definedTypes) {
+				typeDefinition.MemberFunctions[i].IsReturnTypeNobject = true
+				typeDefinition.MemberFunctions[i].OptionalReturnTypeUpper = function.OptionalReturnType
+				typeDefinition.MemberFunctions[i].OptionalReturnType = MakeFirstCharacterLowerCase(function.OptionalReturnType)
+			}
+		}
+	}
+}
+
+func isReturnTypeDefined(f MemberFunction) bool {
+	return f.OptionalReturnType != ""
+}
+
+func isReturnTypeNobject(f MemberFunction, defTypes map[string]*TypeDefinition) bool {
+	return defTypes[f.OptionalReturnType] != nil && defTypes[f.OptionalReturnType].NobjectImplementation != ""
 }
 
 func GetFieldDefinitions(typeName string, strctType *ast.StructType) []FieldDefinition {

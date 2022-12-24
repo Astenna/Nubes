@@ -124,13 +124,15 @@ func ({{.ReceiverName}} {{$.TypeNameLower}}) {{.FuncName}}({{if .InputParamType}
 	}
 
     {{if .OptionalReturnType}}
-    result := new({{.OptionalReturnType}})
+	{{if .IsReturnTypeNobject}} result := new({{.OptionalReturnType}}Stub)
+	{{else}} result := new({{.OptionalReturnType}})
+	}{{end}}
 	_err = json.Unmarshal(out.Payload, result)
 	if _err != nil {
 		return *new({{.OptionalReturnType}}), err
 	}{{end}}
 	
-	return {{if .OptionalReturnType}}*result,{{end}} _err
+	return {{if .OptionalReturnType}}{{if .IsReturnTypeNobject}}New{{.OptionalReturnTypeUpper}}(result.Id){{else}}*result,{{end}}{{end}} _err
 } {{end}}
 
 {{end}} 
