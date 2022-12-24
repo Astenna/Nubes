@@ -22,7 +22,7 @@ import (
 	}
 
 	{{if eq false .Stateless}}
-	_err = lib.Insert({{.OwnerVariableName}})
+	_, _err = lib.Insert({{.OwnerVariableName}})
 	{{end}}
 	return {{if .OptionalReturnVar}} {{.OptionalReturnVar}}, {{end}} _err
 }

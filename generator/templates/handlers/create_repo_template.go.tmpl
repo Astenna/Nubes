@@ -11,7 +11,7 @@ func Create{{.TypeName}}Handler(toBeCreated {{.TypesPackageAlias}}.{{.TypeName}}
     id, err := lib.Insert(toBeCreated)
 
     if err != nil {
-        return errors.New("failed to create new instance of {{.TypeName}}")
+        return "", errors.New("failed to create new instance of {{.TypeName}}")
     }
     return id, nil
 }

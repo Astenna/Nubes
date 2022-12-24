@@ -7,9 +7,9 @@ import (
 	lib "github.com/Astenna/Nubes/lib"
 )
 
-func CreateShop(shop types.Shop) error {
+func CreateShop(shop types.Shop) (string, error) {
 	if shop.Name == "" {
-		return errors.New("shop name can not be empty")
+		return "", errors.New("shop name can not be empty")
 	}
 
 	return lib.Insert(shop)

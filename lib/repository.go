@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func Insert(objToInsert Object) (string, error) {
+func Insert(objToInsert Nobject) (string, error) {
 	var attributeVals, err = dynamodbattribute.MarshalMap(objToInsert)
 	if err != nil {
 		return "", err
@@ -31,7 +31,7 @@ func Insert(objToInsert Object) (string, error) {
 	return newId, nil
 }
 
-func Delete[T Object](id string) error {
+func Delete[T Nobject](id string) error {
 	if id == "" {
 		return fmt.Errorf("missing id of object to delete")
 	}
@@ -49,7 +49,7 @@ func Delete[T Object](id string) error {
 	return err
 }
 
-func Get[T Object](id string) (*T, error) {
+func Get[T Nobject](id string) (*T, error) {
 	if id == "" {
 		return nil, fmt.Errorf("missing id of object to get")
 	}
@@ -73,7 +73,7 @@ func Get[T Object](id string) (*T, error) {
 	return parsedItem, err
 }
 
-func Update[T Object](values aws.JSONValue) error {
+func Update[T Nobject](values aws.JSONValue) error {
 	if len(values) == 0 {
 		return fmt.Errorf("no values specified for update")
 	}

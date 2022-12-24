@@ -3,6 +3,7 @@ package {{.PackageName}}
 import lib "github.com/Astenna/Nubes/lib"
 
 {{range .Types}}
+{{if .NobjectImplementation}}
 type {{.TypeNameUpper}}Stub struct {
     Id string
     {{range .FieldDefinitions}}
@@ -10,4 +11,8 @@ type {{.TypeNameUpper}}Stub struct {
     {{else}} {{.FieldNameUpper}} {{.FieldType}} {{end}}
     {{end}}
 }
+
+func ({{.TypeNameUpper}}Stub)GetTypeName() string {{.NobjectImplementation}} 
+
+{{end}}
 {{end}}

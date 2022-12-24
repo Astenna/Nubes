@@ -35,6 +35,7 @@ type FieldDefinition struct {
 	FieldNameUpper string
 	FieldName      string
 	FieldType      string
+	FieldTypeUpper string
 	IsReference    bool
 }
 
@@ -76,7 +77,7 @@ func PrepareTypes(path string) []*TypeDefinition {
 
 					typeName := strings.TrimPrefix(types.ExprString(fn.Recv.List[0].Type), "*")
 					if fn.Name.Name == GetTypeName {
-						funcString, err := GetFuncDeclAsString(set, fn)
+						funcString, err := GetFunctionBody(set, fn.Body)
 						if err != nil {
 							fmt.Println("error occurred when parsing GetTypeName of " + typeName)
 							continue
@@ -129,7 +130,8 @@ func GetFieldDefinitions(typeName string, strctType *ast.StructType) []FieldDefi
 			newFieldDefinition.FieldType = strings.TrimPrefix(types.ExprString(field.Type), "*")
 			if strings.Contains(newFieldDefinition.FieldType, ReferenceType) {
 				newFieldDefinition.FieldType = strings.TrimPrefix(newFieldDefinition.FieldType, ReferenceType)
-				newFieldDefinition.FieldType = strings.Trim(newFieldDefinition.FieldType, "[]")
+				newFieldDefinition.FieldTypeUpper = strings.Trim(newFieldDefinition.FieldType, "[]")
+				newFieldDefinition.FieldType = MakeFirstCharacterLowerCase(newFieldDefinition.FieldTypeUpper)
 				newFieldDefinition.IsReference = true
 			}
 
@@ -210,15 +212,6 @@ func GetStructAsString(fset *token.FileSet, detectedStruct *ast.TypeSpec) (strin
 	err := printer.Fprint(&buf, fset, detectedStruct)
 	if err != nil {
 		return "", fmt.Errorf("error occurred when parsing the struct")
-	}
-	return buf.String(), nil
-}
-
-func GetFuncDeclAsString(fset *token.FileSet, f *ast.FuncDecl) (string, error) {
-	var buf bytes.Buffer
-	err := printer.Fprint(&buf, fset, f)
-	if err != nil {
-		return "", fmt.Errorf("error occurred when parsing the function body")
 	}
 	return buf.String(), nil
 }

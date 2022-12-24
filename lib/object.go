@@ -1,5 +1,5 @@
 package lib
 
-type Object interface {
+type Nobject interface {
 	GetTypeName() string
 }

@@ -1,11 +1,11 @@
 package lib
 
-type Reference[T Object] struct {
+type Reference[T Nobject] struct {
 	instance *T `dynamodbav:"-"`
 	Id       string
 }
 
-func NewReference[T Object](id string) *Reference[T] {
+func NewReference[T Nobject](id string) *Reference[T] {
 	if id != "" {
 		newObj := &Reference[T]{
 			Id: id,

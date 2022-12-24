@@ -8,7 +8,7 @@ import (
 	"github.com/Astenna/Nubes/lib"
 ){{end}}
 
-type {{.TypeNameUpper}} struct {
+type {{if eq .NobjectImplementation ""}} {{.TypeNameUpper}} {{else}} {{.TypeNameLower}} {{end}} struct {
 	id string 
 	{{if eq .NobjectImplementation ""}}{{range .FieldDefinitions}}
     	{{if .IsReference}} {{.FieldNameUpper}} lib.Reference[{{.FieldType}}] 
@@ -18,12 +18,13 @@ type {{.TypeNameUpper}} struct {
 
 
 {{if .NobjectImplementation}} // ALL THE CODE BELOW IS GENERATED ONLY FOR NOBJECTS TYPES
-{{.NobjectImplementation}} 
+func ({{$.TypeNameLower}})GetTypeName() string {{.NobjectImplementation}} 
+
 
 // CONSTRUCTOR
 
-func New{{.TypeNameUpper}}(id string) {{.TypeNameUpper}} {
-	newInstance := new({{.TypeNameUpper}})
+func New{{.TypeNameUpper}}(id string) {{.TypeNameLower}} {
+	newInstance := new({{.TypeNameLower}})
 	newInstance.id = id
 	return *newInstance
 } 
@@ -31,7 +32,7 @@ func New{{.TypeNameUpper}}(id string) {{.TypeNameUpper}} {
 // GETTERS AND SETTERS
 
 {{range .FieldDefinitions}}
-func (s {{$.TypeNameUpper}}) Get{{.FieldNameUpper}}() ({{.FieldType}}, error) {
+func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}() ({{.FieldType}}, error) {
 	if s.id == "" {
 		return *new({{.FieldType}}), errors.New("id of the type not set, use New{{$.TypeNameUpper}} constructor to create new instance of the type")
 	}
@@ -53,13 +54,38 @@ func (s {{$.TypeNameUpper}}) Get{{.FieldNameUpper}}() ({{.FieldType}}, error) {
 	}
 
 	{{if .IsReference}}
-	var referenceResult = New{{.FieldType}}(result.{{.FieldNameUpper}}.Id)
+	var referenceResult = New{{.FieldTypeUpper}}(result.{{.FieldNameUpper}}.Id)
 	return referenceResult, err
 	{{else}}
 	return result.{{.FieldNameUpper}}, err
 	{{end}}
 }
-func (s {{$.TypeNameUpper}}) Set{{.FieldNameUpper}}(newValue {{if .IsReference}}string{{else}}{{.FieldType}}{{end}}) error {
+{{if .IsReference}}
+func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}Id() (string, error) {
+	if s.id == "" {
+		return "", errors.New("id of the type not set, use New{{$.TypeNameUpper}} constructor to create new instance of the type")
+	}
+
+	jsonParam, err := json.Marshal(s.id)
+	if err != nil {
+		return "", err
+	}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("Get{{$.TypeNameUpper}}"), Payload: jsonParam})
+	if _err != nil {
+		return "", _err
+	}
+
+	result := new({{$.TypeNameUpper}}Stub)
+	err = json.Unmarshal(out.Payload, result)
+	if err != nil {
+		return "", err
+	}
+
+	return result.{{.FieldNameUpper}}.Id, err
+}
+{{end}}
+func (s {{$.TypeNameLower}}) Set{{.FieldNameUpper}}(newValue {{if .IsReference}}string{{else}}{{.FieldType}}{{end}}) error {
 	if s.id == "" {
 		return errors.New("id of the type not set, use New{{$.TypeNameUpper}} constructor to create new instance of the type")
 	}
@@ -78,7 +104,7 @@ func (s {{$.TypeNameUpper}}) Set{{.FieldNameUpper}}(newValue {{if .IsReference}}
 // METHODS
 
 {{range .MemberFunctions}}
-func ({{.ReceiverName}} {{$.TypeNameUpper}}) {{.FuncName}}({{if .InputParamType}}input {{.InputParamType}}{{end}}) {{if .OptionalReturnType}} ({{.OptionalReturnType}}, error) {{else}} error {{end}} {
+func ({{.ReceiverName}} {{$.TypeNameLower}}) {{.FuncName}}({{if .InputParamType}}input {{.InputParamType}}{{end}}) {{if .OptionalReturnType}} ({{.OptionalReturnType}}, error) {{else}} error {{end}} {
 	{{if.ReceiverName}} if {{.ReceiverName}}.id == "" {
 		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} errors.New("Id of the type not set, use New{{$.TypeNameUpper}} constructor to create new instance of the type")
 	}{{end}}

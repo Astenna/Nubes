@@ -7,17 +7,17 @@ import (
 	lib "github.com/Astenna/Nubes/lib"
 )
 
-func CreateUser(user types.User) error {
+func CreateUser(user types.User) (string, error) {
 	if user.LastName != "" && user.FirstName != "" {
-		err := lib.Insert(&user)
+		newId, err := lib.Insert(&user)
 
 		if err != nil {
-			return errors.New("failed to create user")
+			return "", errors.New("failed to create user")
 		}
-		return nil
+		return newId, nil
 	}
 
-	return errors.New("the fields FirstName and LastName can not be empty")
+	return "", errors.New("the fields FirstName and LastName can not be empty")
 }
 
 func DeleteUser(id string) error {
