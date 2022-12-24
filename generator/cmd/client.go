@@ -42,6 +42,11 @@ var clientCmd = &cobra.Command{
 			PackageName string
 			Types       []*parser.TypeDefinition
 		}{PackageName: projectName, Types: definedTypes}, filepath.Join(outputDirectoryPath, "stubs.go"))
+
+		repository_templ := tp.ParseOrExitOnError("templates/client_lib/repository.go.tmpl")
+		tp.CreateFileFromTemplate(repository_templ, struct {
+			PackageName string
+		}{PackageName: projectName}, filepath.Join(outputDirectoryPath, "repository.go"))
 	},
 }
 
