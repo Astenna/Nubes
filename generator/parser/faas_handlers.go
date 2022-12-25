@@ -13,18 +13,18 @@ import (
 )
 
 type StateChangingHandler struct {
-	OrginalPackage       string
-	OrginalPackageAlias  string
-	Imports              string
-	Signature            string
-	OwnerVariableName    string
-	OwnerType            string
-	ReturnFromInvocation string
-	Invocation           string
-	HandlerName          string
-	Stateless            bool
-	OptionalReturnVar    string
-	OptionalReturnType   string
+	OrginalPackage           string
+	OrginalPackageAlias      string
+	Imports                  string
+	Signature                string
+	OwnerVariableName        string
+	OwnerType                string
+	ReturnFromInvocation     string
+	Invocation               string
+	HandlerNameWithoutSuffix string
+	Stateless                bool
+	OptionalReturnVar        string
+	OptionalReturnType       string
 }
 
 type DefaultRepoHandler struct {
@@ -155,12 +155,12 @@ func ParseStateChangingHandlers(path string, nobjectsImportPath string, nobjectT
 		}
 
 		newHandler := StateChangingHandler{
-			OrginalPackage:      nobjectsImportPath,
-			OrginalPackageAlias: OrginalPackageAlias,
-			HandlerName:         f.Name.Name + HandlerSuffix,
-			Signature:           "func " + f.Name.Name + HandlerSuffix + HandlerParameters,
-			OwnerType:           ownerType,
-			Imports:             GetImports(set, detectedFunction.Imports),
+			OrginalPackage:           nobjectsImportPath,
+			OrginalPackageAlias:      OrginalPackageAlias,
+			HandlerNameWithoutSuffix: f.Name.Name,
+			Signature:                "func " + f.Name.Name + HandlerSuffix + HandlerParameters,
+			OwnerType:                ownerType,
+			Imports:                  GetImports(set, detectedFunction.Imports),
 		}
 
 		// 4 cases:

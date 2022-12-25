@@ -28,5 +28,5 @@ import (
 }
 
 func main() {
-	lambda.Start({{.HandlerName}})
+	lambda.Start({{.HandlerNameWithoutSuffix}}Handler)
 }

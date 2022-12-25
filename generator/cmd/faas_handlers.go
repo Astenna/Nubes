@@ -31,6 +31,8 @@ var handlersCmd = &cobra.Command{
 
 		GenerateStateChangingHandlers(generationDestination, stateChangingFuncs)
 		GenerateRepositoriesHandlers(generationDestination, customRepoFuncs, defaultRepoFuncs)
+		serverlessTemplateInput := ServerlessTemplateInput{PackageName: moduleName, DefaultRepos: defaultRepoFuncs, CustomRepos: customRepoFuncs, StateFuncs: stateChangingFuncs}
+		GenerateServerlessFile(generationDestination, serverlessTemplateInput)
 	},
 }
 
@@ -50,18 +52,17 @@ func init() {
 	cmd.Execute()
 }
 
-func GenerateStateChangingHandlers(path string, functions []parser.StateChangingHandler) {
-	var handlerDir string
-	var ownerHandlerNameCombined string
-	templ := tp.ParseOrExitOnError("templates/handlers/state_changing_template.go.tmpl")
-	generationDestPath := tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "state-changes"))
+type ServerlessTemplateInput struct {
+	PackageName  string
+	DefaultRepos []parser.DefaultRepoHandler
+	CustomRepos  []parser.CustomRepoHandler
+	StateFuncs   []parser.StateChangingHandler
+}
 
-	for _, f := range functions {
-		ownerHandlerNameCombined = f.OwnerType + f.HandlerName
-		handlerDir = filepath.Join(generationDestPath, ownerHandlerNameCombined)
-		os.MkdirAll(handlerDir, 0777)
-		tp.CreateFileFromTemplate(templ, f, filepath.Join(handlerDir, ownerHandlerNameCombined+".go"))
-	}
+func GenerateServerlessFile(path string, templateInput ServerlessTemplateInput) {
+	serverlessTempl := tp.ParseOrExitOnError("templates/handlers/serverless.yml.tmpl")
+	fileName := filepath.Join(tp.MakePathAbosoluteOrExitOnError(path), "serverless.yml")
+	tp.CreateFileFromTemplate(serverlessTempl, templateInput, fileName)
 }
 
 func GenerateRepositoriesHandlers(path string, customFuncs []parser.CustomRepoHandler, defaultFuncs []parser.DefaultRepoHandler) {
@@ -102,5 +103,19 @@ func GenerateRepositoriesHandlers(path string, customFuncs []parser.CustomRepoHa
 		os.MkdirAll(handlerDir, 0777)
 		fileName = filepath.Join(handlerDir, operationTypeCombined+".go")
 		tp.CreateFileFromTemplate(tmpl, f, fileName)
+	}
+}
+
+func GenerateStateChangingHandlers(path string, functions []parser.StateChangingHandler) {
+	var handlerDir string
+	var ownerHandlerNameCombined string
+	templ := tp.ParseOrExitOnError("templates/handlers/state_changing_template.go.tmpl")
+	generationDestPath := tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "state-changes"))
+
+	for _, f := range functions {
+		ownerHandlerNameCombined = f.OwnerType + f.HandlerNameWithoutSuffix
+		handlerDir = filepath.Join(generationDestPath, ownerHandlerNameCombined)
+		os.MkdirAll(handlerDir, 0777)
+		tp.CreateFileFromTemplate(templ, f, filepath.Join(handlerDir, ownerHandlerNameCombined+".go"))
 	}
 }

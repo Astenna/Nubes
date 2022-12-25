@@ -118,7 +118,7 @@ func ({{.ReceiverName}} {{$.TypeNameLower}}) {{.FuncName}}({{if .InputParamType}
 		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} err
 	} {{end}}
 
-	{{if .OptionalReturnType}}out{{else}}_{{end}}, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("{{.FuncName}}{{$.TypeNameUpper}}") {{if or .ReceiverName .InputParamType}}, Payload: jsonParam {{end}}})
+	{{if .OptionalReturnType}}out{{else}}_{{end}}, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("{{$.TypeNameUpper}}{{.FuncName}}") {{if or .ReceiverName .InputParamType}}, Payload: jsonParam {{end}}})
 	if _err != nil {
 		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} _err
 	}
