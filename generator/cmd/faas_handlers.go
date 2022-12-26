@@ -5,10 +5,12 @@ import (
 	"path/filepath"
 	"text/template"
 
+	"github.com/Astenna/Nubes/generator/database"
 	"github.com/Astenna/Nubes/generator/parser"
 	tp "github.com/Astenna/Nubes/generator/template_parser"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra-cli/cmd"
+	"golang.org/x/exp/maps"
 )
 
 var handlersCmd = &cobra.Command{
@@ -21,6 +23,7 @@ var handlersCmd = &cobra.Command{
 		repositoriesPath, _ := cmd.Flags().GetString("repositories")
 		generationDestination, _ := cmd.Flags().GetString("output")
 		moduleName, _ := cmd.Flags().GetString("module")
+		dbInit, _ := cmd.Flags().GetBool("dbInit")
 
 		typesPath = tp.MakePathAbosoluteOrExitOnError(typesPath)
 		repositoriesPath = tp.MakePathAbosoluteOrExitOnError(repositoriesPath)
@@ -33,6 +36,10 @@ var handlersCmd = &cobra.Command{
 		GenerateRepositoriesHandlers(generationDestination, customRepoFuncs, defaultRepoFuncs)
 		serverlessTemplateInput := ServerlessTemplateInput{PackageName: moduleName, DefaultRepos: defaultRepoFuncs, CustomRepos: customRepoFuncs, StateFuncs: stateChangingFuncs}
 		GenerateServerlessFile(generationDestination, serverlessTemplateInput)
+
+		if dbInit {
+			database.CreateTypeTables(maps.Keys(nobjectTypes))
+		}
 	},
 }
 
@@ -43,11 +50,13 @@ func init() {
 	var repositoriesPath string
 	var handlersPath string
 	var moduleName string
+	var dbInit bool
 
 	handlersCmd.Flags().StringVarP(&typesPath, "types", "t", ".", "path to directory with types")
 	handlersCmd.Flags().StringVarP(&repositoriesPath, "repositories", "r", ".", "path to directory with repositories")
 	handlersCmd.Flags().StringVarP(&handlersPath, "output", "o", ".", "path where directory with handlers will be created")
 	handlersCmd.Flags().StringVarP(&moduleName, "module", "m", ".", "module name of the source project")
+	handlersCmd.Flags().BoolVarP(&dbInit, "dbInit", "i", false, "boolean, indicates whether database should be initialized by creation of tables based on type names")
 
 	cmd.Execute()
 }
