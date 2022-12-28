@@ -38,7 +38,9 @@ type FieldDefinition struct {
 	FieldName      string
 	FieldType      string
 	FieldTypeUpper string
+	Tags           string
 	IsReference    bool
+	IsReadonly     bool
 }
 
 func PrepareTypes(path string) []*TypeDefinition {
@@ -156,6 +158,11 @@ func GetFieldDefinitions(typeName string, strctType *ast.StructType) []FieldDefi
 				newFieldDefinition.FieldTypeUpper = strings.Trim(newFieldDefinition.FieldType, "[]")
 				newFieldDefinition.FieldType = MakeFirstCharacterLowerCase(newFieldDefinition.FieldTypeUpper)
 				newFieldDefinition.IsReference = true
+			}
+
+			if field.Tag != nil && strings.Contains(field.Tag.Value, ReadonlyTag) {
+				newFieldDefinition.IsReadonly = true
+				newFieldDefinition.Tags = field.Tag.Value
 			}
 
 			fieldDefinitions = append(fieldDefinitions, newFieldDefinition)

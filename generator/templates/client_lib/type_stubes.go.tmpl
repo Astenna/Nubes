@@ -8,7 +8,7 @@ type {{.TypeNameUpper}}Stub struct {
     Id string
     {{range .FieldDefinitions}}
     {{if .IsReference}} {{.FieldNameUpper}} lib.Reference[{{.FieldType}}]
-    {{else}} {{.FieldNameUpper}} {{.FieldType}} {{end}}
+    {{else}} {{.FieldNameUpper}} {{.FieldType}} {{end}} {{.Tags}}
     {{end}}
 }
 

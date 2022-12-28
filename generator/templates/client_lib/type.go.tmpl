@@ -85,6 +85,7 @@ func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}Id() (string, error) {
 	return result.{{.FieldNameUpper}}.Id, err
 }
 {{end}}
+{{if eq .IsReadonly false}}
 func (s {{$.TypeNameLower}}) Set{{.FieldNameUpper}}(newValue {{if .IsReference}}string{{else}}{{.FieldType}}{{end}}) error {
 	if s.id == "" {
 		return errors.New("id of the type not set, use New{{$.TypeNameUpper}} constructor to create new instance of the type")
@@ -98,7 +99,7 @@ func (s {{$.TypeNameLower}}) Set{{.FieldNameUpper}}(newValue {{if .IsReference}}
 	_, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("Update{{$.TypeNameUpper}}"), Payload: jsonParam})
 	return _err
 } 
-{{end}}
+{{end}}{{end}}
 
 
 // METHODS
