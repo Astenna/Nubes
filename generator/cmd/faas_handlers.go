@@ -112,6 +112,7 @@ func GenerateRepositoriesHandlers(path string, customFuncs []parser.CustomRepoHa
 		os.MkdirAll(handlerDir, 0777)
 		fileName = filepath.Join(handlerDir, operationTypeCombined+".go")
 		tp.CreateFileFromTemplate(tmpl, f, fileName)
+		tp.RunGoimportsOnFile(fileName)
 	}
 }
 
@@ -125,6 +126,8 @@ func GenerateStateChangingHandlers(path string, functions []parser.StateChanging
 		ownerHandlerNameCombined = f.OwnerType + f.HandlerNameWithoutSuffix
 		handlerDir = filepath.Join(generationDestPath, ownerHandlerNameCombined)
 		os.MkdirAll(handlerDir, 0777)
-		tp.CreateFileFromTemplate(templ, f, filepath.Join(handlerDir, ownerHandlerNameCombined+".go"))
+		filepath := filepath.Join(handlerDir, ownerHandlerNameCombined+".go")
+		tp.CreateFileFromTemplate(templ, f, filepath)
+		tp.RunGoimportsOnFile(filepath)
 	}
 }

@@ -34,14 +34,18 @@ var clientCmd = &cobra.Command{
 		templ := tp.ParseOrExitOnError("templates/client_lib/type.go.tmpl")
 		for _, typeDefinition := range definedTypes {
 			typeDefinition.PackageName = projectName
-			tp.CreateFileFromTemplate(templ, typeDefinition, filepath.Join(outputDirectoryPath, typeDefinition.TypeNameLower+".go"))
+			filePath := filepath.Join(outputDirectoryPath, typeDefinition.TypeNameLower+".go")
+			tp.CreateFileFromTemplate(templ, typeDefinition, filePath)
+			tp.RunGoimportsOnFile(filePath)
 		}
 
 		stub_templ := tp.ParseOrExitOnError("templates/client_lib/type_stubes.go.tmpl")
+		filePath := filepath.Join(outputDirectoryPath, "stubs.go")
 		tp.CreateFileFromTemplate(stub_templ, struct {
 			PackageName string
 			Types       []*parser.TypeDefinition
-		}{PackageName: projectName, Types: definedTypes}, filepath.Join(outputDirectoryPath, "stubs.go"))
+		}{PackageName: projectName, Types: definedTypes}, filePath)
+		tp.RunGoimportsOnFile(filePath)
 
 		repository_templ := tp.ParseOrExitOnError("templates/client_lib/repository.go.tmpl")
 		tp.CreateFileFromTemplate(repository_templ, struct {

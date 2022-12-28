@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -16,8 +17,16 @@ func Insert(objToInsert Nobject) (string, error) {
 		return "", err
 	}
 
-	newId := uuid.New().String()
-	attributeVals["Id"].SetS(newId)
+	var newId string
+	if custom, ok := objToInsert.(CustomId); ok {
+		if newId = custom.GetId(); newId == "" {
+			return "", errors.New("id field empty. It must be set when using non-default id field")
+		}
+	} else {
+		newId = uuid.New().String()
+		attributeVals["Id"].SetS(newId)
+	}
+
 	input := &dynamodb.PutItemInput{
 		Item:      attributeVals,
 		TableName: aws.String(objToInsert.GetTypeName()),

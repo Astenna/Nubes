@@ -37,5 +37,5 @@ func CreateFileFromTemplate(templ template.Template, data any, newFilePath strin
 	if err != nil {
 		fmt.Println("template did not executed successfully", err)
 	}
-	defer file.Close()
+	file.Close()
 }

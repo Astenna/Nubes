@@ -21,7 +21,7 @@ func GetNobjectsDefinedInPack(path string, moduleName string) (map[string]struct
 		for _, f := range pack.Files {
 			for _, d := range f.Decls {
 				if fn, isFn := d.(*ast.FuncDecl); isFn {
-					if fn.Recv != nil && fn.Name.Name == GetTypeName {
+					if fn.Recv != nil && fn.Name.Name == NobjectImplementationMethod {
 						ownerType := types.ExprString(fn.Recv.List[0].Type)
 						nobjectTypes[ownerType] = struct{}{}
 					}

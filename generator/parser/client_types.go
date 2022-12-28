@@ -14,14 +14,16 @@ import (
 )
 
 type TypeDefinition struct {
-	PackageName           string
-	Imports               string
-	StructDefinition      string
-	NobjectImplementation string
-	TypeNameLower         string
-	TypeNameUpper         string
-	MemberFunctions       []MemberFunction
-	FieldDefinitions      []FieldDefinition
+	PackageName            string
+	Imports                string
+	StructDefinition       string
+	NobjectImplementation  string
+	CustomIdImplementation string
+	CustomIdReceiverName   string
+	TypeNameLower          string
+	TypeNameUpper          string
+	MemberFunctions        []MemberFunction
+	FieldDefinitions       []FieldDefinition
 }
 
 type MemberFunction struct {
@@ -80,19 +82,33 @@ func PrepareTypes(path string) []*TypeDefinition {
 					}
 
 					typeName := strings.TrimPrefix(types.ExprString(fn.Recv.List[0].Type), "*")
-					if fn.Name.Name == GetTypeName {
+					if fn.Name.Name == NobjectImplementationMethod {
 						funcString, err := GetFunctionBody(set, fn.Body)
 						if err != nil {
 							fmt.Println("error occurred when parsing GetTypeName of " + typeName)
 							continue
 						}
 
-						if elem, ok := definedTypes[typeName]; !ok {
-							definedTypes[typeName] = &TypeDefinition{
-								NobjectImplementation: funcString,
-							}
-						} else {
-							elem.NobjectImplementation = funcString
+						if _, ok := definedTypes[typeName]; !ok {
+							definedTypes[typeName] = &TypeDefinition{}
+						}
+						definedTypes[typeName].NobjectImplementation = funcString
+						continue
+					}
+
+					if fn.Name.Name == CustomIdImplementationMethod {
+						funcString, err := GetFunctionBody(set, fn.Body)
+						if err != nil {
+							fmt.Println("error occurred when parsing GetTypeName of " + typeName)
+							continue
+						}
+
+						if _, ok := definedTypes[typeName]; !ok {
+							definedTypes[typeName] = &TypeDefinition{}
+						}
+						definedTypes[typeName].CustomIdImplementation = funcString
+						if len(fn.Recv.List[0].Names) > 0 {
+							definedTypes[typeName].CustomIdReceiverName = fn.Recv.List[0].Names[0].Name
 						}
 						continue
 					}
@@ -103,15 +119,10 @@ func PrepareTypes(path string) []*TypeDefinition {
 						continue
 					}
 
-					if elem, ok := definedTypes[typeName]; !ok {
-						definedTypes[typeName] = &TypeDefinition{
-							MemberFunctions: []MemberFunction{
-								*memberFunction,
-							},
-						}
-					} else {
-						elem.MemberFunctions = append(elem.MemberFunctions, *memberFunction)
+					if _, ok := definedTypes[typeName]; !ok {
+						definedTypes[typeName] = &TypeDefinition{}
 					}
+					definedTypes[typeName].MemberFunctions = append(definedTypes[typeName].MemberFunctions, *memberFunction)
 				}
 			}
 		}
@@ -145,28 +156,29 @@ func GetFieldDefinitions(typeName string, strctType *ast.StructType) []FieldDefi
 	fieldDefinitions := make([]FieldDefinition, 0, len(strctType.Fields.List)-1)
 
 	for _, field := range strctType.Fields.List {
-		if field.Names[0].Name != "id" {
-
-			newFieldDefinition := FieldDefinition{
-				FieldNameUpper: MakeFirstCharacterUpperCase(field.Names[0].Name),
-				FieldName:      field.Names[0].Name,
-			}
-
-			newFieldDefinition.FieldType = strings.TrimPrefix(types.ExprString(field.Type), "*")
-			if strings.Contains(newFieldDefinition.FieldType, ReferenceType) {
-				newFieldDefinition.FieldType = strings.TrimPrefix(newFieldDefinition.FieldType, ReferenceType)
-				newFieldDefinition.FieldTypeUpper = strings.Trim(newFieldDefinition.FieldType, "[]")
-				newFieldDefinition.FieldType = MakeFirstCharacterLowerCase(newFieldDefinition.FieldTypeUpper)
-				newFieldDefinition.IsReference = true
-			}
-
-			if field.Tag != nil && strings.Contains(field.Tag.Value, ReadonlyTag) {
-				newFieldDefinition.IsReadonly = true
-				newFieldDefinition.Tags = field.Tag.Value
-			}
-
-			fieldDefinitions = append(fieldDefinitions, newFieldDefinition)
+		newFieldDefinition := FieldDefinition{
+			FieldNameUpper: MakeFirstCharacterUpperCase(field.Names[0].Name),
+			FieldName:      field.Names[0].Name,
 		}
+
+		if field.Names[0].Name == "id" {
+			newFieldDefinition.IsReadonly = true
+		}
+
+		newFieldDefinition.FieldType = strings.TrimPrefix(types.ExprString(field.Type), "*")
+		if strings.Contains(newFieldDefinition.FieldType, ReferenceType) {
+			newFieldDefinition.FieldType = strings.TrimPrefix(newFieldDefinition.FieldType, ReferenceType)
+			newFieldDefinition.FieldTypeUpper = strings.Trim(newFieldDefinition.FieldType, "[]")
+			newFieldDefinition.FieldType = MakeFirstCharacterLowerCase(newFieldDefinition.FieldTypeUpper)
+			newFieldDefinition.IsReference = true
+		}
+
+		if field.Tag != nil && strings.Contains(field.Tag.Value, ReadonlyTag) {
+			newFieldDefinition.IsReadonly = true
+			newFieldDefinition.Tags = field.Tag.Value
+		}
+
+		fieldDefinitions = append(fieldDefinitions, newFieldDefinition)
 	}
 
 	return fieldDefinitions

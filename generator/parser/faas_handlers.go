@@ -144,7 +144,7 @@ func ParseStateChangingHandlers(path string, nobjectsImportPath string, nobjectT
 	handlerFuncs := []StateChangingHandler{}
 	for _, detectedFunction := range functions {
 		f := detectedFunction.Function
-		if f.Recv == nil || f.Name.Name == GetTypeName {
+		if f.Recv == nil || f.Name.Name == NobjectImplementationMethod {
 			continue
 		}
 

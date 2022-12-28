@@ -1,8 +1,9 @@
 package parser
 
 // Every type to be used in the system must
-// implement the interface with the GetTypeName method
-const GetTypeName = "GetTypeName"
+// implement the interface with the NobjectImplementationMethod method
+const NobjectImplementationMethod = "GetTypeName"
+const CustomIdImplementationMethod = "GetId"
 
 const HandlerSuffix = "Handler"
 const OrginalPackageAlias = "org"
