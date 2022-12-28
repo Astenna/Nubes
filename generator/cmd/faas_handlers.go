@@ -10,7 +10,6 @@ import (
 	tp "github.com/Astenna/Nubes/generator/template_parser"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra-cli/cmd"
-	"golang.org/x/exp/maps"
 )
 
 var handlersCmd = &cobra.Command{
@@ -28,9 +27,9 @@ var handlersCmd = &cobra.Command{
 		typesPath = tp.MakePathAbosoluteOrExitOnError(typesPath)
 		repositoriesPath = tp.MakePathAbosoluteOrExitOnError(repositoriesPath)
 
-		nobjectTypes, nobjectsImportPath := parser.GetNobjectsDefinedInPack(typesPath, moduleName)
-		stateChangingFuncs := parser.ParseStateChangingHandlers(typesPath, nobjectsImportPath, nobjectTypes)
-		customRepoFuncs, defaultRepoFuncs := parser.ParseRepoHandlers(repositoriesPath, nobjectsImportPath, nobjectTypes)
+		isNobjectType, nobjectsImportPath := parser.GetNobjectsDefinedInPack(typesPath, moduleName)
+		stateChangingFuncs := parser.ParseStateChangingHandlers(typesPath, nobjectsImportPath, isNobjectType)
+		customRepoFuncs, defaultRepoFuncs := parser.ParseRepoHandlers(repositoriesPath, nobjectsImportPath, isNobjectType)
 
 		GenerateStateChangingHandlers(generationDestination, stateChangingFuncs)
 		GenerateRepositoriesHandlers(generationDestination, customRepoFuncs, defaultRepoFuncs)
@@ -38,7 +37,7 @@ var handlersCmd = &cobra.Command{
 		GenerateServerlessFile(generationDestination, serverlessTemplateInput)
 
 		if dbInit {
-			database.CreateTypeTables(maps.Keys(nobjectTypes))
+			database.CreateTypeTables(isNobjectType)
 		}
 	},
 }

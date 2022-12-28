@@ -43,13 +43,13 @@ func Create[T lib.Nobject](toBeCreated T) (string, error) {
 		return "", _err
 	}
 
-	var newObjectId string
+	newObjectId := new(string)
 	err = json.Unmarshal(out.Payload, newObjectId)
 	if err != nil {
 		return "", err
 	}
 
-	return newObjectId, err
+	return *newObjectId, err
 }
 
 func Delete[T lib.Nobject](id string) error {

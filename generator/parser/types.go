@@ -7,14 +7,15 @@ import (
 	"go/token"
 	"go/types"
 	"os"
+	"strings"
 )
 
-func GetNobjectsDefinedInPack(path string, moduleName string) (map[string]struct{}, string) {
+func GetNobjectsDefinedInPack(path string, moduleName string) (map[string]bool, string) {
 	set := token.NewFileSet()
 	packs, err := parser.ParseDir(set, path, nil, 0)
 	AssertDirParsed(err)
 
-	nobjectTypes := make(map[string]struct{})
+	isNobjectType := make(map[string]bool)
 
 	var packageName string
 	for pckgName, pack := range packs {
@@ -23,7 +24,18 @@ func GetNobjectsDefinedInPack(path string, moduleName string) (map[string]struct
 				if fn, isFn := d.(*ast.FuncDecl); isFn {
 					if fn.Recv != nil && fn.Name.Name == NobjectImplementationMethod {
 						ownerType := types.ExprString(fn.Recv.List[0].Type)
-						nobjectTypes[ownerType] = struct{}{}
+						isNobjectType[ownerType] = true
+					}
+				}
+
+				if genDecl, ok := d.(*ast.GenDecl); ok {
+					for _, elem := range genDecl.Specs {
+						if typeSpec, ok := elem.(*ast.TypeSpec); ok {
+							typeName := strings.TrimPrefix(typeSpec.Name.Name, "*")
+							if _, isPresent := isNobjectType[typeName]; !isPresent {
+								isNobjectType[typeName] = false
+							}
+						}
 					}
 				}
 			}
@@ -31,7 +43,7 @@ func GetNobjectsDefinedInPack(path string, moduleName string) (map[string]struct
 		packageName = pckgName
 	}
 
-	return nobjectTypes, moduleName + "/" + packageName
+	return isNobjectType, moduleName + "/" + packageName
 }
 
 func AssertDirParsed(err error) {

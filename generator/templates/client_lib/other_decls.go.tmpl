@@ -1,0 +1,9 @@
+package {{.PackageName}}
+
+{{range $i, $item := .Consts}}
+{{$item}}
+{{end}}
+
+{{range $i, $item :=  .GenDecls}}
+{{$item}}
+{{end}}

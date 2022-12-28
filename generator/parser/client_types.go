@@ -16,7 +16,6 @@ import (
 type TypeDefinition struct {
 	PackageName            string
 	Imports                string
-	StructDefinition       string
 	NobjectImplementation  string
 	CustomIdImplementation string
 	CustomIdReceiverName   string
@@ -45,12 +44,19 @@ type FieldDefinition struct {
 	IsReadonly     bool
 }
 
-func PrepareTypes(path string) []*TypeDefinition {
+type OtherDecls struct {
+	Consts      []string
+	GenDecls    []string
+	PackageName string
+}
+
+func PrepareTypes(path string) ([]*TypeDefinition, OtherDecls) {
 	set := token.NewFileSet()
 	packs, err := parser.ParseDir(set, path, nil, 0)
 	AssertDirParsed(err)
 
 	definedTypes := make(map[string]*TypeDefinition)
+	otherTypesDecls := OtherDecls{}
 
 	for _, pack := range packs {
 		for _, f := range pack.Files {
@@ -60,15 +66,18 @@ func PrepareTypes(path string) []*TypeDefinition {
 					if strctType, ok := typeSpec.Type.(*ast.StructType); ok {
 						typeName := strings.TrimPrefix(typeSpec.Name.Name, "*")
 						MakeFieldsUnexported(strctType.Fields)
-						structString, err := GetStructAsString(set, typeSpec)
-						if err == nil {
-							if _, ok := definedTypes[typeName]; !ok {
-								definedTypes[typeName] = &TypeDefinition{}
-							}
-							definedTypes[typeName].StructDefinition = structString
-							definedTypes[typeName].TypeNameUpper = typeName
-							definedTypes[typeName].TypeNameLower = MakeFirstCharacterLowerCase(typeName)
-							definedTypes[typeName].FieldDefinitions = GetFieldDefinitions(typeName, strctType)
+						if _, ok := definedTypes[typeName]; !ok {
+							definedTypes[typeName] = &TypeDefinition{}
+						}
+						definedTypes[typeName].TypeNameUpper = typeName
+						definedTypes[typeName].TypeNameLower = MakeFirstCharacterLowerCase(typeName)
+						definedTypes[typeName].FieldDefinitions = GetFieldDefinitions(typeName, strctType)
+					} else {
+						def, err := GetTypeSpecAsString(set, typeSpec)
+						if err != nil {
+							fmt.Println(err)
+						} else {
+							otherTypesDecls.GenDecls = append(otherTypesDecls.GenDecls, def)
 						}
 					}
 				}
@@ -76,6 +85,18 @@ func PrepareTypes(path string) []*TypeDefinition {
 			})
 
 			for _, d := range f.Decls {
+
+				if genDecl, ok := d.(*ast.GenDecl); ok {
+					if genDecl.Tok == token.CONST {
+						constStr, err := GetConstAsString(set, genDecl)
+						if err != nil {
+							fmt.Println(err)
+						}
+						otherTypesDecls.Consts = append(otherTypesDecls.Consts, constStr)
+						continue
+					}
+				}
+
 				if fn, isFn := d.(*ast.FuncDecl); isFn {
 					if fn.Recv == nil {
 						continue
@@ -129,7 +150,7 @@ func PrepareTypes(path string) []*TypeDefinition {
 	}
 
 	DetectAndSetNobjectsReturnTypes(definedTypes)
-	return maps.Values(definedTypes)
+	return maps.Values(definedTypes), otherTypesDecls
 }
 
 func DetectAndSetNobjectsReturnTypes(definedTypes map[string]*TypeDefinition) {
@@ -249,9 +270,19 @@ func MakeFirstCharacterUpperCase(str string) string {
 	return str
 }
 
-func GetStructAsString(fset *token.FileSet, detectedStruct *ast.TypeSpec) (string, error) {
+func GetTypeSpecAsString(fset *token.FileSet, detectedStruct *ast.TypeSpec) (string, error) {
 	var buf bytes.Buffer
+	buf.WriteString("type ")
 	err := printer.Fprint(&buf, fset, detectedStruct)
+	if err != nil {
+		return "", fmt.Errorf("error occurred when parsing the struct")
+	}
+	return buf.String(), nil
+}
+
+func GetConstAsString(fset *token.FileSet, detectedGenDecl *ast.GenDecl) (string, error) {
+	var buf bytes.Buffer
+	err := printer.Fprint(&buf, fset, detectedGenDecl)
 	if err != nil {
 		return "", fmt.Errorf("error occurred when parsing the struct")
 	}

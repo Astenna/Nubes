@@ -9,11 +9,14 @@ import (
 ){{end}}
 
 type {{if eq .NobjectImplementation ""}} {{.TypeNameUpper}} {{else}} {{.TypeNameLower}} {{end}} struct {
-	id string 
-	{{if eq .NobjectImplementation ""}}{{range .FieldDefinitions}}
-    	{{if .IsReference}} {{.FieldNameUpper}} lib.Reference[{{.FieldType}}] 
-		{{else}} {{.FieldNameUpper}} {{.FieldType}} {{end}} 
-	{{end}} {{end}}
+	{{if eq .NobjectImplementation ""}}
+		{{range .FieldDefinitions}}
+    		{{if .IsReference}} {{.FieldNameUpper}} lib.Reference[{{.FieldType}}] 
+			{{else}} {{.FieldNameUpper}} {{.FieldType}} {{end}} 
+		{{end}}
+	{{else}}
+	id string
+	{{end}} 
 }
 
 
@@ -114,7 +117,7 @@ func (s {{$.TypeNameLower}}) Set{{.FieldNameUpper}}(newValue {{if .IsReference}}
 {{range .MemberFunctions}}
 func ({{.ReceiverName}} {{$.TypeNameLower}}) {{.FuncName}}({{if .InputParamType}}input {{.InputParamType}}{{end}}) {{if .OptionalReturnType}} ({{.OptionalReturnType}}, error) {{else}} error {{end}} {
 	{{if.ReceiverName}} if {{.ReceiverName}}.id == "" {
-		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} errors.New("Id of the type not set, use New{{$.TypeNameUpper}} constructor to create new instance of the type")
+		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} errors.New("id of the type not set, use New{{$.TypeNameUpper}} constructor to create new instance of the type")
 	}{{end}}
 	
 	{{if or .ReceiverName .InputParamType}}params := new(lib.HandlerParameters) {{end}}

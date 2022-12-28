@@ -22,7 +22,7 @@ var clientCmd = &cobra.Command{
 		projectName, _ := cmd.Flags().GetString("project-name")
 		_ = repositoriesPath
 
-		definedTypes := parser.PrepareTypes(tp.MakePathAbosoluteOrExitOnError(typesPath))
+		definedTypes, otherDecls := parser.PrepareTypes(tp.MakePathAbosoluteOrExitOnError(typesPath))
 
 		outputDirectoryPath := tp.MakePathAbosoluteOrExitOnError(filepath.Join(output, projectName))
 		os.MkdirAll(outputDirectoryPath, 0777)
@@ -51,6 +51,11 @@ var clientCmd = &cobra.Command{
 		tp.CreateFileFromTemplate(repository_templ, struct {
 			PackageName string
 		}{PackageName: projectName}, filepath.Join(outputDirectoryPath, "repository.go"))
+
+		other_decls_templ := tp.ParseOrExitOnError("templates/client_lib/other_decls.go.tmpl")
+		otherDecls.PackageName = projectName
+		filePath = filepath.Join(outputDirectoryPath, "other_decls.go")
+		tp.CreateFileFromTemplate(other_decls_templ, otherDecls, filePath)
 	},
 }
 

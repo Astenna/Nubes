@@ -48,7 +48,7 @@ type detectedFunction struct {
 	Imports  []*ast.ImportSpec
 }
 
-func ParseRepoHandlers(path string, nobjectsImportPath string, nobjectTypes map[string]struct{}) ([]CustomRepoHandler, []DefaultRepoHandler) {
+func ParseRepoHandlers(path string, nobjectsImportPath string, nobjectTypes map[string]bool) ([]CustomRepoHandler, []DefaultRepoHandler) {
 	set := token.NewFileSet()
 	packs, err := parser.ParseDir(set, path, nil, 0)
 	AssertDirParsed(err)
@@ -134,7 +134,7 @@ func GetDefaultRepoHandler(isNoObjectMethodDefined map[string]map[string]bool, n
 	return defaultFuncs
 }
 
-func ParseStateChangingHandlers(path string, nobjectsImportPath string, nobjectTypes map[string]struct{}) []StateChangingHandler {
+func ParseStateChangingHandlers(path string, nobjectsImportPath string, definedInOrgPackage map[string]bool) []StateChangingHandler {
 	set := token.NewFileSet()
 	packs, err := parser.ParseDir(set, path, nil, 0)
 	AssertDirParsed(err)
@@ -149,7 +149,7 @@ func ParseStateChangingHandlers(path string, nobjectsImportPath string, nobjectT
 		}
 
 		ownerType := strings.TrimPrefix(types.ExprString(f.Recv.List[0].Type), "*")
-		if _, ok := nobjectTypes[ownerType]; !ok {
+		if _, ok := definedInOrgPackage[ownerType]; !ok {
 			fmt.Println("Member type does not implement Nobject interface. Handler generation for " + f.Name.Name + "skipped")
 			continue
 		}
@@ -180,7 +180,7 @@ func ParseStateChangingHandlers(path string, nobjectsImportPath string, nobjectT
 			} else {
 
 				newHandler.OptionalReturnType = types.ExprString(f.Type.Results.List[0].Type)
-				if _, ok := nobjectTypes[newHandler.OptionalReturnType]; ok {
+				if _, ok := definedInOrgPackage[newHandler.OptionalReturnType]; ok {
 					newHandler.OptionalReturnType = newHandler.OrginalPackageAlias + "." + newHandler.OptionalReturnType
 				}
 
@@ -269,7 +269,7 @@ func GetCustomRepoFuncParams(params *ast.FieldList) (string, error) {
 	return params.List[0].Names[0].Name + " " + types.ExprString(params.List[0].Type), nil
 }
 
-func GetReturnTypesDefinition(results *ast.FieldList, nobjectTypes map[string]struct{}) (string, error) {
+func GetReturnTypesDefinition(results *ast.FieldList, nobjectTypes map[string]bool) (string, error) {
 
 	if len(results.List) > 1 {
 		return "", fmt.Errorf("maximum allowed number of non-error return parameters is 1, found " + strconv.Itoa(len(results.List)))
