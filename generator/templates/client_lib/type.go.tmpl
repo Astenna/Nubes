@@ -28,10 +28,17 @@ func New{{.TypeNameUpper}}(id string) {{.TypeNameLower}} {
 	newInstance.id = id
 	return *newInstance
 } 
+ 
+// GETID
+
+func (s {{$.TypeNameLower}})GetId() string {
+	return s.id
+}
 
 // GETTERS AND SETTERS
 
 {{range .FieldDefinitions}}
+{{if ne .FieldNameUpper "Id"}}
 func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}() ({{.FieldType}}, error) {
 	if s.id == "" {
 		return *new({{.FieldType}}), errors.New("id of the type not set, use New{{$.TypeNameUpper}} constructor to create new instance of the type")
@@ -59,7 +66,7 @@ func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}() ({{.FieldType}}, error) {
 	{{else}}
 	return result.{{.FieldNameUpper}}, err
 	{{end}}
-}
+} {{end}}
 {{if .IsReference}}
 func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}Id() (string, error) {
 	if s.id == "" {
@@ -125,7 +132,7 @@ func ({{.ReceiverName}} {{$.TypeNameLower}}) {{.FuncName}}({{if .InputParamType}
 	}
 
     {{if .OptionalReturnType}}
-	{{if .IsReturnTypeNobject}} result := new({{.OptionalReturnType}}Stub)
+	{{if .IsReturnTypeNobject}} result := new({{.OptionalReturnTypeUpper}}Stub)
 	{{else}} result := new({{.OptionalReturnType}})
 	}{{end}}
 	_err = json.Unmarshal(out.Payload, result)
@@ -133,7 +140,7 @@ func ({{.ReceiverName}} {{$.TypeNameLower}}) {{.FuncName}}({{if .InputParamType}
 		return *new({{.OptionalReturnType}}), err
 	}{{end}}
 	
-	return {{if .OptionalReturnType}}{{if .IsReturnTypeNobject}}New{{.OptionalReturnTypeUpper}}(result.Id){{else}}*result,{{end}}{{end}} _err
+	return {{if .OptionalReturnType}}{{if .IsReturnTypeNobject}}New{{.OptionalReturnTypeUpper}}(result.GetId()),{{else}}*result,{{end}}{{end}} _err
 } {{end}}
 
 {{end}} 
