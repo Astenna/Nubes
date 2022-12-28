@@ -1,6 +1,10 @@
 package types
 
-import "github.com/Astenna/Nubes/lib"
+import (
+	"errors"
+
+	"github.com/Astenna/Nubes/lib"
+)
 
 type Product struct {
 	Id                string
@@ -12,4 +16,13 @@ type Product struct {
 
 func (Product) GetTypeName() string {
 	return "Product"
+}
+
+func (p *Product) DecreaseAvailabilityBy(decreaseNum int) error {
+	if p.QuantityAvailable-decreaseNum < 0 {
+		return errors.New("not enough quantity available")
+	}
+
+	p.QuantityAvailable = p.QuantityAvailable - decreaseNum
+	return nil
 }
