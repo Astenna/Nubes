@@ -112,7 +112,7 @@ func (s {{$.TypeNameLower}}) Set{{.FieldNameUpper}}(newValue {{if .IsReference}}
 {{end}}{{end}}
 
 
-// METHODS
+// (STATE-CHANGING) METHODS
 
 {{range .MemberFunctions}}
 func ({{.ReceiverName}} {{$.TypeNameLower}}) {{.FuncName}}({{if .InputParamType}}input {{.InputParamType}}{{end}}) {{if .OptionalReturnType}} ({{.OptionalReturnType}}, error) {{else}} error {{end}} {

@@ -56,8 +56,8 @@ func ParseRepoHandlers(path string, nobjectsImportPath string, nobjectTypes map[
 	functions := GetPackageFuncs(packs)
 
 	isNoObjectMethodDefined := make(map[string]map[string]bool, len(nobjectTypes))
-	for i := range nobjectTypes {
-		isNoObjectMethodDefined[i] = map[string]bool{GetPrefix: false, CreatePrefix: false, DeletePrefix: false, UpdatePrefix: false}
+	for i, isNobject := range nobjectTypes {
+		isNoObjectMethodDefined[i] = map[string]bool{GetPrefix: !isNobject, CreatePrefix: !isNobject, DeletePrefix: !isNobject, UpdatePrefix: !isNobject}
 	}
 
 	repoCustomFuncs := []CustomRepoHandler{}
@@ -144,7 +144,7 @@ func ParseStateChangingHandlers(path string, nobjectsImportPath string, definedI
 	handlerFuncs := []StateChangingHandler{}
 	for _, detectedFunction := range functions {
 		f := detectedFunction.Function
-		if f.Recv == nil || f.Name.Name == NobjectImplementationMethod {
+		if f.Recv == nil || f.Name.Name == NobjectImplementationMethod || f.Name.Name == CustomIdImplementationMethod {
 			continue
 		}
 
@@ -217,7 +217,7 @@ func ParseStateChangingHandlers(path string, nobjectsImportPath string, definedI
 			newHandler.OwnerVariableName = f.Recv.List[0].Names[0].Name
 		}
 
-		parameters, err := GetStateChangingFuncParams(f.Type.Params)
+		parameters, err := GetStateChangingFuncParams(f.Type.Params, definedInOrgPackage)
 		if err != nil {
 			fmt.Println("Maximum allowed number of parameters is 1. Handler generation for " + f.Name.Name + "skipped")
 			continue
@@ -249,14 +249,18 @@ func GetPackageFuncs(packs map[string]*ast.Package) []detectedFunction {
 	return detectedFunctions
 }
 
-func GetStateChangingFuncParams(params *ast.FieldList) (string, error) {
+func GetStateChangingFuncParams(params *ast.FieldList, definedInOrgPackage map[string]bool) (string, error) {
 	if params.List == nil || len(params.List) == 0 {
 		return "", nil
 	} else if len(params.List) > 1 {
 		return "", fmt.Errorf("maximum allowed number of parameters is 1")
 	}
 
-	return HandlerInputParameterName + "." + HandlerInputEmbededOrginalFunctionParameterName + ".(" + types.ExprString(params.List[0].Type) + ")", nil
+	inputParamType := types.ExprString(params.List[0].Type)
+	if _, ok := definedInOrgPackage[inputParamType]; ok {
+		inputParamType = OrginalPackageAlias + "." + inputParamType
+	}
+	return HandlerInputParameterName + "." + HandlerInputEmbededOrginalFunctionParameterName + ".(" + inputParamType + ")", nil
 }
 
 func GetCustomRepoFuncParams(params *ast.FieldList) (string, error) {
