@@ -6,7 +6,7 @@ import lib "github.com/Astenna/Nubes/lib"
 {{if .NobjectImplementation}}
 type {{.TypeNameUpper}}Stub struct {
     {{range .FieldDefinitions}}
-    {{if .IsReference}} {{.FieldNameUpper}} lib.Reference[{{.FieldType}}]
+    {{if .IsReference}} {{.FieldNameUpper}} lib.Reference[{{.FieldTypeUpper}}Stub]
     {{else}} {{.FieldNameUpper}} {{.FieldType}} {{end}} {{.Tags}}
     {{end}}
 }

@@ -3,6 +3,7 @@ package cmd
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/Astenna/Nubes/generator/database"
@@ -33,13 +34,18 @@ var handlersCmd = &cobra.Command{
 
 		GenerateStateChangingHandlers(generationDestination, stateChangingFuncs)
 		GenerateRepositoriesHandlers(generationDestination, customRepoFuncs, defaultRepoFuncs)
-		serverlessTemplateInput := ServerlessTemplateInput{PackageName: moduleName, DefaultRepos: defaultRepoFuncs, CustomRepos: customRepoFuncs, StateFuncs: stateChangingFuncs}
+		serviceName := lastString(strings.Split(moduleName, "/"))
+		serverlessTemplateInput := ServerlessTemplateInput{ServiceName: serviceName, DefaultRepos: defaultRepoFuncs, CustomRepos: customRepoFuncs, StateFuncs: stateChangingFuncs}
 		GenerateServerlessFile(generationDestination, serverlessTemplateInput)
 
 		if dbInit {
 			database.CreateTypeTables(isNobjectType)
 		}
 	},
+}
+
+func lastString(ss []string) string {
+	return ss[len(ss)-1]
 }
 
 func init() {
@@ -54,14 +60,14 @@ func init() {
 	handlersCmd.Flags().StringVarP(&typesPath, "types", "t", ".", "path to directory with types")
 	handlersCmd.Flags().StringVarP(&repositoriesPath, "repositories", "r", ".", "path to directory with repositories")
 	handlersCmd.Flags().StringVarP(&handlersPath, "output", "o", ".", "path where directory with handlers will be created")
-	handlersCmd.Flags().StringVarP(&moduleName, "module", "m", ".", "module name of the source project")
+	handlersCmd.Flags().StringVarP(&moduleName, "module", "m", "MISSING_MODULE_NAME", "module name of the source project")
 	handlersCmd.Flags().BoolVarP(&dbInit, "dbInit", "i", false, "boolean, indicates whether database should be initialized by creation of tables based on type names")
 
 	cmd.Execute()
 }
 
 type ServerlessTemplateInput struct {
-	PackageName  string
+	ServiceName  string
 	DefaultRepos []parser.DefaultRepoHandler
 	CustomRepos  []parser.CustomRepoHandler
 	StateFuncs   []parser.StateChangingHandler
