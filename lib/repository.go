@@ -24,7 +24,10 @@ func Insert(objToInsert Nobject) (string, error) {
 		}
 	} else {
 		newId = uuid.New().String()
-		attributeVals["Id"].SetS(newId)
+		attr := attributeVals["Id"].SetS(newId)
+		// without this, dynamodb throws error because more than
+		// one of the supported datatypes is set to not nil
+		attr.NULL = nil
 	}
 
 	input := &dynamodb.PutItemInput{
