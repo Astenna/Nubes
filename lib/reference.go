@@ -15,14 +15,14 @@ func NewReference[T Nobject](id string) *Reference[T] {
 	return nil
 }
 
-func (r Reference[T]) Get() T {
+func (r Reference[T]) Get() *T {
 	if r.instance == nil {
 		r.instance = new(T)
 	}
 
-	return *r.instance
+	return r.instance
 }
 
-func (r Reference[T]) Set(i int) {
-	// perform update on the object
+func (r *Reference[T]) Set(i string) {
+	r.Id = i
 }

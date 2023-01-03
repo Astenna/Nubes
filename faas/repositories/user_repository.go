@@ -19,12 +19,3 @@ func CreateUser(user types.User) (string, error) {
 
 	return "", errors.New("the fields FirstName and LastName can not be empty")
 }
-
-func DeleteUser(id string) error {
-	err := lib.Delete[types.User](id)
-	return err
-}
-
-func GetUser(id string) (*types.User, error) {
-	return lib.Get[types.User](id)
-}

@@ -14,7 +14,3 @@ func CreateShop(shop types.Shop) (string, error) {
 
 	return lib.Insert(shop)
 }
-
-func GetShop(id string) (*types.Shop, error) {
-	return lib.Get[types.Shop](id)
-}

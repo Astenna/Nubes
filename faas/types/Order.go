@@ -6,6 +6,7 @@ type Order struct {
 	Id       string
 	Buyer    lib.Reference[User]
 	Products []OrderedProduct
+	Shipping lib.Reference[Shipping]
 }
 
 type OrderedProduct struct {
