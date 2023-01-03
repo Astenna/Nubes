@@ -12,7 +12,7 @@ func Update{{.TypeName}}Handler(toBeUpdated aws.JSONValue) error {
     err := lib.Update[{{.TypesPackageAlias}}.{{.TypeName}}](toBeUpdated)
 
     if err != nil {
-        return errors.New("failed to update {{.TypeName}}")
+        return err
     }
     return nil
 }

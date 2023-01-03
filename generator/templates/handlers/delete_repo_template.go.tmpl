@@ -11,7 +11,7 @@ func Delete{{.TypeName}}Handler(id string) error {
     err := lib.Delete[{{.TypesPackageAlias}}.{{.TypeName}}](id)
 
     if err != nil {
-        return errors.New("failed to delete the {{.TypeName}} with id " + id)
+        return err
     }
     return nil
 }

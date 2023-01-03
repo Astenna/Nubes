@@ -11,7 +11,7 @@ func Get{{.TypeName}}Handler(id string) ({{.TypesPackageAlias}}.{{.TypeName}}, e
     output, err := lib.Get[{{.TypesPackageAlias}}.{{.TypeName}}](id)
 
     if err != nil {
-        return *output, errors.New("failed to get {{.TypeName}}")
+        return *output, err
     }
     return *output, nil
 }
