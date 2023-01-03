@@ -24,6 +24,7 @@ var handlersCmd = &cobra.Command{
 		generationDestination, _ := cmd.Flags().GetString("output")
 		moduleName, _ := cmd.Flags().GetString("module")
 		dbInit, _ := cmd.Flags().GetBool("dbInit")
+		generateDeploymentFiles, _ := cmd.Flags().GetBool("deplFiles")
 
 		typesPath = tp.MakePathAbosoluteOrExitOnError(typesPath)
 		repositoriesPath = tp.MakePathAbosoluteOrExitOnError(repositoriesPath)
@@ -34,9 +35,12 @@ var handlersCmd = &cobra.Command{
 
 		GenerateStateChangingHandlers(generationDestination, stateChangingFuncs)
 		GenerateRepositoriesHandlers(generationDestination, customRepoFuncs, defaultRepoFuncs)
-		serviceName := lastString(strings.Split(moduleName, "/"))
-		serverlessTemplateInput := ServerlessTemplateInput{ServiceName: serviceName, DefaultRepos: defaultRepoFuncs, CustomRepos: customRepoFuncs, StateFuncs: stateChangingFuncs}
-		GenerateServerlessFile(generationDestination, serverlessTemplateInput)
+
+		if generateDeploymentFiles {
+			serviceName := lastString(strings.Split(moduleName, "/"))
+			serverlessInput := ServerlessTemplateInput{ServiceName: serviceName, DefaultRepos: defaultRepoFuncs, CustomRepos: customRepoFuncs, StateFuncs: stateChangingFuncs}
+			GenerateDeploymentFiles(generationDestination, serverlessInput)
+		}
 
 		if dbInit {
 			database.CreateTypeTables(isNobjectType)
@@ -56,12 +60,14 @@ func init() {
 	var handlersPath string
 	var moduleName string
 	var dbInit bool
+	var generateDeploymentFiles bool
 
 	handlersCmd.Flags().StringVarP(&typesPath, "types", "t", ".", "path to directory with types")
 	handlersCmd.Flags().StringVarP(&repositoriesPath, "repositories", "r", ".", "path to directory with repositories")
 	handlersCmd.Flags().StringVarP(&handlersPath, "output", "o", ".", "path where directory with handlers will be created")
 	handlersCmd.Flags().StringVarP(&moduleName, "module", "m", "MISSING_MODULE_NAME", "module name of the source project")
 	handlersCmd.Flags().BoolVarP(&dbInit, "dbInit", "i", false, "boolean, indicates whether database should be initialized by creation of tables based on type names")
+	handlersCmd.Flags().BoolVarP(&generateDeploymentFiles, "deplFiles", "g", true, "boolean, indicates whether deployment files for AWS lambdas are to be created")
 
 	cmd.Execute()
 }
@@ -73,10 +79,18 @@ type ServerlessTemplateInput struct {
 	StateFuncs   []parser.StateChangingHandler
 }
 
-func GenerateServerlessFile(path string, templateInput ServerlessTemplateInput) {
-	serverlessTempl := tp.ParseOrExitOnError("templates/handlers/serverless.yml.tmpl")
+func GenerateDeploymentFiles(path string, templateInput ServerlessTemplateInput) {
+	serverlessTempl := tp.ParseOrExitOnError("templates/handlers/deployment/serverless.yml.tmpl")
 	fileName := filepath.Join(tp.MakePathAbosoluteOrExitOnError(path), "serverless.yml")
 	tp.CreateFileFromTemplate(serverlessTempl, templateInput, fileName)
+
+	buildScriptTempl := tp.ParseOrExitOnError("templates/handlers/deployment/build_handlers.sh.tmpl")
+	fileName = filepath.Join(tp.MakePathAbosoluteOrExitOnError(path), "build_handlers.sh")
+	tp.CreateFileFromTemplate(buildScriptTempl, nil, fileName)
+
+	dockerfileTempl := tp.ParseOrExitOnError("templates/handlers/deployment/Dockerfile.tmpl")
+	fileName = filepath.Join(tp.MakePathAbosoluteOrExitOnError(path), "Dockerfile")
+	tp.CreateFileFromTemplate(dockerfileTempl, nil, fileName)
 }
 
 func GenerateRepositoriesHandlers(path string, customFuncs []parser.CustomRepoHandler, defaultFuncs []parser.DefaultRepoHandler) {

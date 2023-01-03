@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 if ! [ -d $1 ];
 then
@@ -9,5 +9,5 @@ fi
 for f in $(find "$1" -type f -name "*.go");
 do
     echo "building $f";
-    env GOOS=linux go build -o ../faas/bin/ $f
+    GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o bin/ $f
 done

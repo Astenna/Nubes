@@ -1,0 +1,13 @@
+FROM public.ecr.aws/lambda/go:latest AS builder
+
+WORKDIR /src
+RUN yum install go -y
+COPY . ./
+RUN go mod download
+
+RUN chmod +x ./build_handlers.sh
+RUN ./build_handlers.sh generated/
+
+FROM public.ecr.aws/lambda/go:latest
+
+COPY --from=builder /src/bin /var/task
