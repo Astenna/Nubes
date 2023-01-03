@@ -10,19 +10,24 @@ import (
 func CreateOrder(order types.Order) (string, error) {
 	// CHECK & DECREASE ORDERED PRODUCTS AVAILABILITY
 	for _, orderedProduct := range order.Products {
-		err := orderedProduct.Product.Get().DecreaseAvailabilityBy(orderedProduct.Quantity)
+		product, err := orderedProduct.Product.Get()
 		if err != nil {
 			return "", errors.New("item " + orderedProduct.Product.Id + " not available")
 		}
+		product.DecreaseAvailabilityBy(orderedProduct.Quantity)
 		// OR: address the consistency issues by making smaller order
 		// without not available item, return warning in the error (?)
 		// https://yourbasic.org/golang/delete-element-slice/
 	}
 
 	// CREATE SHIPPING
+	buyer, err := order.Buyer.Get()
+	if err != nil {
+		return "", errors.New("unable to retrieve user's address for shipping")
+	}
 	newShipping := types.Shipping{
 		State:   types.InPreparation,
-		Address: order.Buyer.Get().Address,
+		Address: buyer.Address,
 	}
 	newShippingId, err := lib.Insert(newShipping)
 	if err != nil {
@@ -30,6 +35,6 @@ func CreateOrder(order types.Order) (string, error) {
 	}
 
 	// CREATE ORDER
-	order.Shipping = *lib.NewReference[types.Shipping](newShippingId)
+	order.Shipping = *lib.NewFaasReference[types.Shipping](newShippingId)
 	return lib.Insert(order)
 }

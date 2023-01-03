@@ -10,7 +10,7 @@ type Product struct {
 	Id                string
 	Name              string
 	QuantityAvailable int
-	SoldBy            lib.Reference[Shop]
+	SoldBy            lib.FaasReference[Shop]
 	Price             float32
 }
 

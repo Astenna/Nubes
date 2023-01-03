@@ -7,7 +7,7 @@ import (
 type Shop struct {
 	Id    string
 	Name  string
-	Owner *lib.Reference[User]
+	Owner *lib.FaasReference[User]
 }
 
 func (Shop) GetTypeName() string {
