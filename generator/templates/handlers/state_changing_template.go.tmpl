@@ -6,27 +6,31 @@ import (
 	{{.Imports}}
 )
 
-{{.Signature}} {
+func {{.MethodName}}Handler(input lib.HandlerParameters) {{if .OptionalReturnType}} ({{.OptionalReturnType}}, error) {{else}} error {{end}} {
 	{{if eq true .Stateless}} 
-	{{.OwnerVariableName}} := new({{.OrginalPackageAlias}}.{{.OwnerType}}) 
+	instance := new({{.OrginalPackageAlias}}.{{.ReceiverType}}) 
 	{{else}} 
-	{{.OwnerVariableName}}, err := lib.Get[{{.OrginalPackageAlias}}.{{.OwnerType}}](input.Id)
+	instance, err := lib.Get[{{.OrginalPackageAlias}}.{{.ReceiverType}}](input.Id)
 	if err != nil {
-		return {{if .OptionalReturnVar}} *new({{.OptionalReturnType}}), {{end}} err
+		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} err
 	}
 	{{end}}
 
-	{{.ReturnFromInvocation}}{{.Invocation}}
+	{{if and .OptionalReturnType .ErrorReturned}} result, _err := instance.{{.Invocation}}
+	{{else if .OptionalReturnType}} result := instance.{{.Invocation}} 
+	{{else if .ErrorReturned}} _err := instance.{{.Invocation}} 
+	{{else}} instance.{{.Invocation}} {{end}} 
+	{{if .ErrorReturned}}
 	if _err != nil {
-		return {{if .OptionalReturnVar}} result, {{end}} _err
-	}
+		return {{if .OptionalReturnType}} result, {{end}} _err
+	} {{end}}
 
 	{{if eq false .Stateless}}
-	_, _err = lib.Insert({{.OwnerVariableName}})
+	_, _err = lib.Insert(instance)
 	{{end}}
-	return {{if .OptionalReturnVar}} {{.OptionalReturnVar}}, {{end}} _err
+	return {{if .OptionalReturnType}} result, {{end}} _err
 }
 
 func main() {
-	lambda.Start({{.HandlerNameWithoutSuffix}}Handler)
+	lambda.Start({{.MethodName}}Handler)
 }

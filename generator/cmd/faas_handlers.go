@@ -29,7 +29,7 @@ var handlersCmd = &cobra.Command{
 		typesPath = tp.MakePathAbosoluteOrExitOnError(typesPath)
 		repositoriesPath = tp.MakePathAbosoluteOrExitOnError(repositoriesPath)
 
-		isNobjectType, nobjectsImportPath := parser.GetNobjectsDefinedInPack(typesPath, moduleName)
+		isNobjectType, nobjectsImportPath := parser.GetPackageTypes(typesPath, moduleName)
 		stateChangingFuncs := parser.ParseStateChangingHandlers(typesPath, nobjectsImportPath, isNobjectType)
 		customRepoFuncs, defaultRepoFuncs := parser.ParseRepoHandlers(repositoriesPath, nobjectsImportPath, isNobjectType)
 
@@ -142,7 +142,7 @@ func GenerateStateChangingHandlers(path string, functions []parser.StateChanging
 	generationDestPath := tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "state-changes"))
 
 	for _, f := range functions {
-		ownerHandlerNameCombined = f.OwnerType + f.HandlerNameWithoutSuffix
+		ownerHandlerNameCombined = f.ReceiverType + f.MethodName
 		handlerDir = filepath.Join(generationDestPath, ownerHandlerNameCombined)
 		os.MkdirAll(handlerDir, 0777)
 		filepath := filepath.Join(handlerDir, ownerHandlerNameCombined+".go")

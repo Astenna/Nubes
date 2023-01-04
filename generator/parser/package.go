@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func GetNobjectsDefinedInPack(path string, moduleName string) (map[string]bool, string) {
+func GetPackageTypes(path string, moduleName string) (map[string]bool, string) {
 	set := token.NewFileSet()
 	packs, err := parser.ParseDir(set, path, nil, 0)
 	AssertDirParsed(err)
@@ -44,6 +44,25 @@ func GetNobjectsDefinedInPack(path string, moduleName string) (map[string]bool, 
 	}
 
 	return isNobjectType, moduleName + "/" + packageName
+}
+
+func GetPackageFuncs(packs map[string]*ast.Package) map[string][]detectedFunction {
+	detectedFunctions := make(map[string][]detectedFunction)
+
+	for _, pack := range packs {
+		for path, f := range pack.Files {
+			for _, d := range f.Decls {
+				if fn, isFn := d.(*ast.FuncDecl); isFn {
+					detectedFunctions[path] = append(detectedFunctions[f.Name.Name], detectedFunction{
+						Function: fn,
+						Imports:  f.Imports,
+					})
+				}
+			}
+		}
+	}
+
+	return detectedFunctions
 }
 
 func AssertDirParsed(err error) {
