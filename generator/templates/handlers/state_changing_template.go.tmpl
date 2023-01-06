@@ -7,27 +7,13 @@ import (
 )
 
 func {{.MethodName}}Handler(input lib.HandlerParameters) {{if .OptionalReturnType}} ({{.OptionalReturnType}}, error) {{else}} error {{end}} {
-	{{if eq true .Stateless}} 
 	instance := new({{.OrginalPackageAlias}}.{{.ReceiverType}}) 
-	{{else}} 
-	instance, err := lib.Get[{{.OrginalPackageAlias}}.{{.ReceiverType}}](input.Id)
-	if err != nil {
-		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} err
-	}
-	{{end}}
 
-	{{if and .OptionalReturnType .ErrorReturned}} result, _err := instance.{{.Invocation}}
-	{{else if .OptionalReturnType}} result := instance.{{.Invocation}} 
-	{{else if .ErrorReturned}} _err := instance.{{.Invocation}} 
-	{{else}} instance.{{.Invocation}} {{end}} 
-	{{if .ErrorReturned}}
+	{{if .OptionalReturnType}} result, {{end}}_err := instance.{{.Invocation}} 
 	if _err != nil {
 		return {{if .OptionalReturnType}} result, {{end}} _err
-	} {{end}}
-
-	{{if eq false .Stateless}}
-	_, _err = lib.Insert(instance)
-	{{end}}
+	}
+	
 	return {{if .OptionalReturnType}} result, {{end}} _err
 }
 

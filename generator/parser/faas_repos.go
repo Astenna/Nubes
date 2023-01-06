@@ -25,15 +25,15 @@ type CustomRepoHandler struct {
 	Body          string
 }
 
-func ParseRepoHandlers(path string, nobjectsImportPath string, nobjectTypes map[string]bool) ([]CustomRepoHandler, []DefaultRepoHandler) {
+func ParseRepoHandlers(path string, parsedPackage ParsedPackage) ([]CustomRepoHandler, []DefaultRepoHandler) {
 	set := token.NewFileSet()
 	packs, err := parser.ParseDir(set, path, nil, 0)
-	AssertDirParsed(err)
+	assertDirParsed(err)
 
-	fileFunctionsMap := GetPackageFuncs(packs)
+	fileFunctionsMap := getPackageFuncs(packs)
 
-	isNoObjectMethodDefined := make(map[string]map[string]bool, len(nobjectTypes))
-	for i, isNobject := range nobjectTypes {
+	isNoObjectMethodDefined := make(map[string]map[string]bool, len(parsedPackage.IsNobjectInOrginalPackage))
+	for i, isNobject := range parsedPackage.IsNobjectInOrginalPackage {
 		isNoObjectMethodDefined[i] = map[string]bool{GetPrefix: !isNobject, CreatePrefix: !isNobject, DeletePrefix: !isNobject, UpdatePrefix: !isNobject}
 	}
 
@@ -56,23 +56,23 @@ func ParseRepoHandlers(path string, nobjectsImportPath string, nobjectTypes map[
 				continue
 			}
 
-			for typeName := range nobjectTypes {
+			for typeName := range parsedPackage.IsNobjectInOrginalPackage {
 				if strings.HasSuffix(f.Name.Name, typeName) {
-					params, err := GetCustomRepoFuncParams(f.Type.Params)
+					params, err := getCustomRepoFuncParams(f.Type.Params)
 					if err != nil {
-						fmt.Println("faas handler " + f.Name.Name + " custom definition replaced with default definition")
+						fmt.Println(err.Error() + "faas handler " + f.Name.Name + " custom definition replaced with default definition")
 						continue
 					}
 
-					returnParams, err := GetReturnTypesDefinition(f.Type.Results, nobjectTypes)
+					returnParams, err := getFunctionReturnTypesAsString(f.Type.Results, parsedPackage.IsNobjectInOrginalPackage)
 					if err != nil {
-						fmt.Println("faas handler " + f.Name.Name + " custom definition replaced with default definition")
+						fmt.Println(err.Error() + "faas handler " + f.Name.Name + " custom definition replaced with default definition")
 						continue
 					}
 
-					body, err := GetFunctionBody(set, f.Body)
+					body, err := getFunctionBodyAsString(set, f.Body)
 					if err != nil {
-						fmt.Printf("faas handler " + f.Name.Name + " custom definition replaced with default definition")
+						fmt.Printf(err.Error() + "faas handler " + f.Name.Name + " custom definition replaced with default definition")
 						continue
 					}
 
@@ -83,18 +83,18 @@ func ParseRepoHandlers(path string, nobjectsImportPath string, nobjectTypes map[
 						Parameters:    params,
 						ReturnValues:  returnParams,
 						Body:          body,
-						Imports:       GetImports(set, detectedFunction.Imports),
+						Imports:       getImportsAsString(set, detectedFunction.Imports),
 					})
 				}
 			}
 		}
 	}
 
-	repoDefaultFuncs := GetDefaultRepoHandler(isNoObjectMethodDefined, nobjectsImportPath)
+	repoDefaultFuncs := getDefaultRepoHandler(isNoObjectMethodDefined, parsedPackage.ImportPath)
 	return repoCustomFuncs, repoDefaultFuncs
 }
 
-func GetDefaultRepoHandler(isNoObjectMethodDefined map[string]map[string]bool, nobjectsImportPath string) []DefaultRepoHandler {
+func getDefaultRepoHandler(isNoObjectMethodDefined map[string]map[string]bool, nobjectsImportPath string) []DefaultRepoHandler {
 	var defaultFuncs []DefaultRepoHandler
 
 	for typeName, typeMethodsMap := range isNoObjectMethodDefined {
@@ -113,7 +113,7 @@ func GetDefaultRepoHandler(isNoObjectMethodDefined map[string]map[string]bool, n
 	return defaultFuncs
 }
 
-func GetCustomRepoFuncParams(params *ast.FieldList) (string, error) {
+func getCustomRepoFuncParams(params *ast.FieldList) (string, error) {
 	if params.List == nil || len(params.List) == 0 {
 		return "", nil
 	} else if len(params.List) > 1 {

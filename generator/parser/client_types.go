@@ -53,7 +53,7 @@ type OtherDecls struct {
 func PrepareTypes(path string) ([]*TypeDefinition, OtherDecls) {
 	set := token.NewFileSet()
 	packs, err := parser.ParseDir(set, path, nil, 0)
-	AssertDirParsed(err)
+	assertDirParsed(err)
 
 	definedTypes := make(map[string]*TypeDefinition)
 	otherTypesDecls := OtherDecls{}
@@ -104,7 +104,7 @@ func PrepareTypes(path string) ([]*TypeDefinition, OtherDecls) {
 
 					typeName := strings.TrimPrefix(types.ExprString(fn.Recv.List[0].Type), "*")
 					if fn.Name.Name == NobjectImplementationMethod {
-						funcString, err := GetFunctionBody(set, fn.Body)
+						funcString, err := getFunctionBodyAsString(set, fn.Body)
 						if err != nil {
 							fmt.Println("error occurred when parsing GetTypeName of " + typeName)
 							continue
@@ -118,7 +118,7 @@ func PrepareTypes(path string) ([]*TypeDefinition, OtherDecls) {
 					}
 
 					if fn.Name.Name == CustomIdImplementationMethod {
-						funcString, err := GetFunctionBody(set, fn.Body)
+						funcString, err := getFunctionBodyAsString(set, fn.Body)
 						if err != nil {
 							fmt.Println("error occurred when parsing GetTypeName of " + typeName)
 							continue

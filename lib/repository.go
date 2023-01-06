@@ -43,6 +43,30 @@ func Insert(objToInsert Nobject) (string, error) {
 	return newId, nil
 }
 
+func Upsert(objToInsert Nobject, id string) error {
+	var attributeVals, err = dynamodbattribute.MarshalMap(objToInsert)
+	if err != nil {
+		return err
+	}
+
+	attr := attributeVals["Id"].SetS(id)
+	// without this, dynamodb throws error because more than
+	// one of the supported datatypes is set to not nil
+	attr.NULL = nil
+
+	input := &dynamodb.PutItemInput{
+		Item:      attributeVals,
+		TableName: aws.String(objToInsert.GetTypeName()),
+	}
+
+	_, err = DBClient.PutItem(input)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func Delete[T Nobject](id string) error {
 	if id == "" {
 		return fmt.Errorf("missing id of object to delete")

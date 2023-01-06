@@ -29,9 +29,10 @@ var handlersCmd = &cobra.Command{
 		typesPath = tp.MakePathAbosoluteOrExitOnError(typesPath)
 		repositoriesPath = tp.MakePathAbosoluteOrExitOnError(repositoriesPath)
 
-		isNobjectType, nobjectsImportPath := parser.GetPackageTypes(typesPath, moduleName)
-		stateChangingFuncs := parser.ParseStateChangingHandlers(typesPath, nobjectsImportPath, isNobjectType)
-		customRepoFuncs, defaultRepoFuncs := parser.ParseRepoHandlers(repositoriesPath, nobjectsImportPath, isNobjectType)
+		parsedPackage := parser.GetPackageTypes(typesPath, moduleName)
+		stateChangingFuncs := parser.ParseStateChangingHandlers(typesPath, parsedPackage)
+		customRepoFuncs, defaultRepoFuncs := parser.ParseRepoHandlers(repositoriesPath, parsedPackage)
+		parser.AddReadWriteOpToMethods(typesPath, parsedPackage)
 
 		GenerateStateChangingHandlers(generationDestination, stateChangingFuncs)
 		GenerateRepositoriesHandlers(generationDestination, customRepoFuncs, defaultRepoFuncs)
@@ -43,7 +44,7 @@ var handlersCmd = &cobra.Command{
 		}
 
 		if dbInit {
-			database.CreateTypeTables(isNobjectType)
+			database.CreateTypeTables(parsedPackage.IsNobjectInOrginalPackage)
 		}
 	},
 }

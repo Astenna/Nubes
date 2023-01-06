@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"errors"
 	"fmt"
 	"go/ast"
 	"go/parser"
@@ -10,21 +11,38 @@ import (
 	"strings"
 )
 
-func GetPackageTypes(path string, moduleName string) (map[string]bool, string) {
+type ParsedPackage struct {
+	ImportPath                string
+	IsNobjectInOrginalPackage map[string]bool
+	TypesWithCustomId         map[string]string
+}
+
+func GetPackageTypes(path string, moduleName string) ParsedPackage {
 	set := token.NewFileSet()
 	packs, err := parser.ParseDir(set, path, nil, 0)
-	AssertDirParsed(err)
+	assertDirParsed(err)
 
-	isNobjectType := make(map[string]bool)
+	result := ParsedPackage{
+		IsNobjectInOrginalPackage: make(map[string]bool),
+		TypesWithCustomId:         map[string]string{},
+	}
 
-	var packageName string
-	for pckgName, pack := range packs {
+	for packageName, pack := range packs {
 		for _, f := range pack.Files {
 			for _, d := range f.Decls {
 				if fn, isFn := d.(*ast.FuncDecl); isFn {
 					if fn.Recv != nil && fn.Name.Name == NobjectImplementationMethod {
-						ownerType := types.ExprString(fn.Recv.List[0].Type)
-						isNobjectType[ownerType] = true
+						ownerType := getFunctionReceiverTypeAsString(fn.Recv)
+						result.IsNobjectInOrginalPackage[ownerType] = true
+					}
+					if fn.Recv != nil && fn.Name.Name == CustomIdImplementationMethod {
+						ownerType := getFunctionReceiverTypeAsString(fn.Recv)
+						idFieldName, err := getIdFieldNameFromCustomIdImpl(fn)
+						if err != nil {
+							fmt.Println(err)
+							continue
+						}
+						result.TypesWithCustomId[ownerType] = idFieldName
 					}
 				}
 
@@ -32,21 +50,38 @@ func GetPackageTypes(path string, moduleName string) (map[string]bool, string) {
 					for _, elem := range genDecl.Specs {
 						if typeSpec, ok := elem.(*ast.TypeSpec); ok {
 							typeName := strings.TrimPrefix(typeSpec.Name.Name, "*")
-							if _, isPresent := isNobjectType[typeName]; !isPresent {
-								isNobjectType[typeName] = false
+							if _, isPresent := result.IsNobjectInOrginalPackage[typeName]; !isPresent {
+								result.IsNobjectInOrginalPackage[typeName] = false
 							}
 						}
 					}
 				}
 			}
 		}
-		packageName = pckgName
+		result.ImportPath = moduleName + "/" + packageName
 	}
 
-	return isNobjectType, moduleName + "/" + packageName
+	return result
 }
 
-func GetPackageFuncs(packs map[string]*ast.Package) map[string][]detectedFunction {
+func getIdFieldNameFromCustomIdImpl(fn *ast.FuncDecl) (string, error) {
+	var returnResult string
+	ast.Inspect(fn, func(n ast.Node) bool {
+		if ret, ok := n.(*ast.ReturnStmt); ok {
+			returnResult = types.ExprString(ret.Results[0])
+			return false
+		}
+		return true
+	})
+
+	if returnResult == "" {
+		return "", errors.New("unable to detect Id field based on custom id interface implementation for" + fn.Recv.List[0].Names[0].Name)
+	}
+	splitted := strings.Split(returnResult, ".")
+	return splitted[len(splitted)-1], nil
+}
+
+func getPackageFuncs(packs map[string]*ast.Package) map[string][]detectedFunction {
 	detectedFunctions := make(map[string][]detectedFunction)
 
 	for _, pack := range packs {
@@ -65,7 +100,7 @@ func GetPackageFuncs(packs map[string]*ast.Package) map[string][]detectedFunctio
 	return detectedFunctions
 }
 
-func AssertDirParsed(err error) {
+func assertDirParsed(err error) {
 	if err != nil {
 		fmt.Println("Failed to parse files in the directory: %w", err)
 		os.Exit(1)

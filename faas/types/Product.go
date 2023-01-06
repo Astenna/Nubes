@@ -7,11 +7,11 @@ import (
 )
 
 type Product struct {
-	Id                string
-	Name              string
-	QuantityAvailable int
-	SoldBy            lib.FaasReference[Shop]
-	Price             float32
+	Id			string
+	Name			string
+	QuantityAvailable	int
+	SoldBy			lib.FaasReference[Shop]
+	Price			float32
 }
 
 func (Product) GetTypeName() string {
@@ -19,10 +19,18 @@ func (Product) GetTypeName() string {
 }
 
 func (p *Product) DecreaseAvailabilityBy(decreaseNum int) error {
+	p, _libError := lib.Get[Product](p.Id)
+	if _libError != nil {
+		return _libError
+	}
 	if p.QuantityAvailable-decreaseNum < 0 {
 		return errors.New("not enough quantity available")
 	}
 
 	p.QuantityAvailable = p.QuantityAvailable - decreaseNum
+	_libError = lib.Upsert(p, p.Id)
+	if _libError != nil {
+		return _libError
+	}
 	return nil
 }
