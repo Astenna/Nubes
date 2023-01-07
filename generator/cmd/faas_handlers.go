@@ -36,6 +36,7 @@ var handlersCmd = &cobra.Command{
 
 		GenerateStateChangingHandlers(generationDestination, stateChangingFuncs)
 		GenerateRepositoriesHandlers(generationDestination, customRepoFuncs, defaultRepoFuncs)
+		GenerateGetFieldMethodForGetters(generationDestination)
 
 		if generateDeploymentFiles {
 			serviceName := lastString(strings.Split(moduleName, "/"))
@@ -150,4 +151,12 @@ func GenerateStateChangingHandlers(path string, functions []parser.StateChanging
 		tp.CreateFileFromTemplate(templ, f, filepath)
 		tp.RunGoimportsOnFile(filepath)
 	}
+}
+
+func GenerateGetFieldMethodForGetters(path string) {
+	templ := tp.ParseOrExitOnError("templates/handlers/get_field_repo_template.go.tmpl")
+	generationDestPath := tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "repositories", "GetField"))
+	os.MkdirAll(generationDestPath, 0777)
+	filepath := filepath.Join(generationDestPath, "GetField.go")
+	tp.CreateFileFromTemplate(templ, nil, filepath)
 }

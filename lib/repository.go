@@ -85,9 +85,19 @@ func Delete[T Nobject](id string) error {
 	return err
 }
 
-func Get[T Nobject](id string) (*T, error) {
+func Get[T Nobject](id string, projections ...string) (*T, error) {
 	if id == "" {
 		return nil, fmt.Errorf("missing id of object to get")
+	}
+
+	var projectionExpr expression.Expression
+	if len(projections) > 0 {
+		expr, err := expression.NewBuilder().WithProjection(getProjection(projections)).Build()
+		projectionExpr = expr
+
+		if err != nil {
+			return nil, fmt.Errorf("error occurred when creating projection: %w", err)
+		}
 	}
 
 	input := &dynamodb.GetItemInput{
@@ -97,6 +107,8 @@ func Get[T Nobject](id string) (*T, error) {
 				S: aws.String(id),
 			},
 		},
+		ExpressionAttributeNames: projectionExpr.Names(),
+		ProjectionExpression:     projectionExpr.Projection(),
 	}
 
 	item, err := DBClient.GetItem(input)
@@ -105,6 +117,11 @@ func Get[T Nobject](id string) (*T, error) {
 	}
 
 	var parsedItem = new(T)
+	// in order not to leave the id empty
+	// in case the projection was used, but ID was not requested
+	item.Item["Id"] = &dynamodb.AttributeValue{
+		S: aws.String(id),
+	}
 	err = dynamodbattribute.UnmarshalMap(item.Item, parsedItem)
 	return parsedItem, err
 }
@@ -139,4 +156,56 @@ func Update[T Nobject](values aws.JSONValue) error {
 	})
 
 	return err
+}
+
+type GetFieldParam struct {
+	FieldName string
+	TypeName  string
+}
+
+func GetField(param HandlerParameters) (interface{}, error) {
+	getFielParam, castErr := param.Parameter.(GetFieldParam)
+	if castErr {
+		return *new(interface{}), fmt.Errorf("missing GetFieldParam")
+	}
+	if param.Id == "" {
+		return *new(interface{}), fmt.Errorf("missing id of object's field  to get")
+	}
+	if getFielParam.FieldName == "" {
+		return *new(interface{}), fmt.Errorf("missing field name of object's field to get")
+	}
+	if getFielParam.TypeName == "" {
+		return *new(interface{}), fmt.Errorf("missing type name of object's field to get")
+	}
+
+	input := &dynamodb.GetItemInput{
+		TableName: aws.String(getFielParam.TypeName),
+		Key: map[string]*dynamodb.AttributeValue{
+			"Id": {
+				S: aws.String(param.Id),
+			},
+		},
+		ProjectionExpression: &getFielParam.FieldName,
+	}
+
+	item, err := DBClient.GetItem(input)
+	if err != nil {
+		return *new(interface{}), err
+	}
+
+	var parsedItem interface{}
+	err = dynamodbattribute.Unmarshal(item.Item[getFielParam.FieldName], &parsedItem)
+	return parsedItem, err
+}
+
+func getProjection(names []string) expression.ProjectionBuilder {
+	if len(names) == 0 {
+		return *new(expression.ProjectionBuilder)
+	}
+
+	var builder expression.ProjectionBuilder
+	for _, name := range names {
+		builder = builder.AddNames(expression.Name(name))
+	}
+	return builder
 }

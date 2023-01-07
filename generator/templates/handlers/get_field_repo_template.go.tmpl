@@ -1,0 +1,19 @@
+package main
+
+import (
+	lib "github.com/Astenna/Nubes/lib"
+	"github.com/aws/aws-lambda-go/lambda"
+)
+
+func GetFieldHandler(input lib.HandlerParameters) (interface{}, error) {
+	output, err := lib.GetField(input)
+
+	if err != nil {
+		return *new(interface{}), err
+	}
+	return output, nil
+}
+
+func main() {
+	lambda.Start(GetFieldHandler)
+}

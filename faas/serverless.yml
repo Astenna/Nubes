@@ -28,6 +28,17 @@ package:
 
 functions:
 
+  GetField:
+    name: GetField
+    image:
+      name: faasimage	
+      command:
+        -  GetField
+      entryPoint:
+        - '/lambda-entrypoint.sh'
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
   CreateShipping:
     name: CreateShipping
     image:
