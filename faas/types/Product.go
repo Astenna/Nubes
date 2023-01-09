@@ -7,11 +7,11 @@ import (
 )
 
 type Product struct {
-	Id			string
-	Name			string
-	QuantityAvailable	int
-	SoldBy			lib.FaasReference[Shop]
-	Price			float32
+	Id                string
+	Name              string
+	QuantityAvailable int
+	SoldBy            lib.Reference[Shop]
+	Price             float32
 }
 
 func (Product) GetTypeName() string {

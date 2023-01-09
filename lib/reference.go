@@ -4,13 +4,13 @@ package lib
 // in while defining types and its methods
 // in the project where lambdas definitions
 // are to be generated
-type FaasReference[T Nobject] struct {
+type Reference[T Nobject] struct {
 	Id string
 }
 
-func NewFaasReference[T Nobject](id string) *FaasReference[T] {
+func NewReference[T Nobject](id string) *Reference[T] {
 	if id != "" {
-		newObj := &FaasReference[T]{
+		newObj := &Reference[T]{
 			Id: id,
 		}
 		return newObj
@@ -18,10 +18,6 @@ func NewFaasReference[T Nobject](id string) *FaasReference[T] {
 	return nil
 }
 
-func (r FaasReference[T]) Get() (*T, error) {
+func (r Reference[T]) Get() (*T, error) {
 	return Get[T](r.Id)
-}
-
-func (r *FaasReference[T]) Set(i string) {
-	r.Id = i
 }

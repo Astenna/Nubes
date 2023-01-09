@@ -35,6 +35,6 @@ func CreateOrder(order types.Order) (string, error) {
 	}
 
 	// CREATE ORDER
-	order.Shipping = *lib.NewFaasReference[types.Shipping](newShippingId)
+	order.Shipping = *lib.NewReference[types.Shipping](newShippingId)
 	return lib.Insert(order)
 }

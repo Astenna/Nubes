@@ -4,13 +4,13 @@ import "github.com/Astenna/Nubes/lib"
 
 type Order struct {
 	Id       string
-	Buyer    lib.FaasReference[User]
+	Buyer    lib.Reference[User]
 	Products []OrderedProduct
-	Shipping lib.FaasReference[Shipping]
+	Shipping lib.Reference[Shipping]
 }
 
 type OrderedProduct struct {
-	Product  lib.FaasReference[Product]
+	Product  lib.Reference[Product]
 	Quantity int
 }
 
