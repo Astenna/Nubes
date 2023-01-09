@@ -85,19 +85,9 @@ func Delete[T Nobject](id string) error {
 	return err
 }
 
-func Get[T Nobject](id string, projections ...string) (*T, error) {
+func Get[T Nobject](id string) (*T, error) {
 	if id == "" {
 		return nil, fmt.Errorf("missing id of object to get")
-	}
-
-	var projectionExpr expression.Expression
-	if len(projections) > 0 {
-		expr, err := expression.NewBuilder().WithProjection(getProjection(projections)).Build()
-		projectionExpr = expr
-
-		if err != nil {
-			return nil, fmt.Errorf("error occurred when creating projection: %w", err)
-		}
 	}
 
 	input := &dynamodb.GetItemInput{
@@ -107,8 +97,6 @@ func Get[T Nobject](id string, projections ...string) (*T, error) {
 				S: aws.String(id),
 			},
 		},
-		ExpressionAttributeNames: projectionExpr.Names(),
-		ProjectionExpression:     projectionExpr.Projection(),
 	}
 
 	item, err := DBClient.GetItem(input)
@@ -117,13 +105,7 @@ func Get[T Nobject](id string, projections ...string) (*T, error) {
 	}
 
 	var parsedItem = new(T)
-	// in order not to leave the id empty
-	// in case the projection was used, but ID was not requested
 	if item.Item != nil {
-		item.Item["Id"] = &dynamodb.AttributeValue{
-			S: aws.String(id),
-		}
-
 		err = dynamodbattribute.UnmarshalMap(item.Item, parsedItem)
 		return parsedItem, err
 	}
@@ -131,19 +113,9 @@ func Get[T Nobject](id string, projections ...string) (*T, error) {
 	return nil, err
 }
 
-func GetBatch[T Nobject](ids []string, projections ...string) (*[]T, error) {
+func GetBatch[T Nobject](ids []string) (*[]T, error) {
 	if ids == nil {
 		return nil, fmt.Errorf("missing id of object to get")
-	}
-
-	var projectionExpr expression.Expression
-	if len(projections) > 0 {
-		expr, err := expression.NewBuilder().WithProjection(getProjection(projections)).Build()
-		projectionExpr = expr
-
-		if err != nil {
-			return nil, fmt.Errorf("error occurred when creating projection: %w", err)
-		}
 	}
 
 	keysToRetrieve := make([]map[string]*dynamodb.AttributeValue, len(ids))
@@ -157,9 +129,7 @@ func GetBatch[T Nobject](ids []string, projections ...string) (*[]T, error) {
 	input := &dynamodb.BatchGetItemInput{
 		RequestItems: map[string]*dynamodb.KeysAndAttributes{
 			tableName: {
-				Keys:                     keysToRetrieve,
-				ProjectionExpression:     projectionExpr.Projection(),
-				ExpressionAttributeNames: projectionExpr.Names(),
+				Keys: keysToRetrieve,
 			},
 		},
 	}
@@ -170,12 +140,7 @@ func GetBatch[T Nobject](ids []string, projections ...string) (*[]T, error) {
 	}
 
 	var parsedItem = new([]T)
-	// in order not to leave the id empty
-	// in case the projection was used, but ID was not requested
 	if items.Responses[tableName] != nil {
-		// items.Item["Id"] = &dynamodb.AttributeValue{
-		// 	S: aws.String(id),
-		// }
 
 		err = dynamodbattribute.UnmarshalListOfMaps(items.Responses[tableName], parsedItem)
 		return parsedItem, err
