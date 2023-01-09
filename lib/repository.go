@@ -119,11 +119,16 @@ func Get[T Nobject](id string, projections ...string) (*T, error) {
 	var parsedItem = new(T)
 	// in order not to leave the id empty
 	// in case the projection was used, but ID was not requested
-	item.Item["Id"] = &dynamodb.AttributeValue{
-		S: aws.String(id),
+	if item.Item != nil {
+		item.Item["Id"] = &dynamodb.AttributeValue{
+			S: aws.String(id),
+		}
+
+		err = dynamodbattribute.UnmarshalMap(item.Item, parsedItem)
+		return parsedItem, err
 	}
-	err = dynamodbattribute.UnmarshalMap(item.Item, parsedItem)
-	return parsedItem, err
+
+	return nil, err
 }
 
 func Update[T Nobject](values aws.JSONValue) error {
@@ -193,9 +198,14 @@ func GetField(param HandlerParameters) (interface{}, error) {
 		return *new(interface{}), err
 	}
 
-	var parsedItem interface{}
-	err = dynamodbattribute.Unmarshal(item.Item[getFielParam.FieldName], &parsedItem)
-	return parsedItem, err
+	if item.Item != nil {
+		var parsedItem interface{}
+		err = dynamodbattribute.Unmarshal(item.Item[getFielParam.FieldName], &parsedItem)
+		return parsedItem, err
+
+	}
+
+	return nil, err
 }
 
 func getProjection(names []string) expression.ProjectionBuilder {
