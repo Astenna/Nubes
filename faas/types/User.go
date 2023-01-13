@@ -1,6 +1,8 @@
 package types
 
-import "github.com/Astenna/Nubes/lib"
+import (
+	"github.com/Astenna/Nubes/lib"
+)
 
 type User struct {
 	FirstName	string
@@ -8,6 +10,25 @@ type User struct {
 	Email		string	`dynamodbav:"Id" nubes:"readonly"`
 	Password	string	`nubes:"readonly"`
 	Address		string
+}
+
+func NewUser(user User) (User, error) {
+	out, _libError := lib.Insert(user)
+	if _libError != nil {
+		return *new(User), _libError
+	}
+	user.Email = out
+	return user, nil
+}
+
+func ReNewUser(id string) User {
+	user := new(User)
+	user.Email = id
+	return *user
+}
+
+func DeleteUser(id string) {
+
 }
 
 func (User) GetTypeName() string {

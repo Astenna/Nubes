@@ -14,6 +14,7 @@ import (
 type ParsedPackage struct {
 	ImportPath                string
 	IsNobjectInOrginalPackage map[string]bool
+	TypesIndexes              map[string][]string
 	TypesWithCustomId         map[string]string
 }
 
@@ -25,6 +26,7 @@ func GetPackageTypes(path string, moduleName string) ParsedPackage {
 	result := ParsedPackage{
 		IsNobjectInOrginalPackage: make(map[string]bool),
 		TypesWithCustomId:         map[string]string{},
+		TypesIndexes:              map[string][]string{},
 	}
 
 	for packageName, pack := range packs {
@@ -53,12 +55,35 @@ func GetPackageTypes(path string, moduleName string) ParsedPackage {
 							if _, isPresent := result.IsNobjectInOrginalPackage[typeName]; !isPresent {
 								result.IsNobjectInOrginalPackage[typeName] = false
 							}
+
+							if strctType, ok := typeSpec.Type.(*ast.StructType); ok {
+								indexes := getStructIndexes(strctType)
+								if indexes != nil {
+									result.TypesIndexes[typeName] = indexes
+								}
+							}
 						}
 					}
 				}
 			}
 		}
 		result.ImportPath = moduleName + "/" + packageName
+	}
+
+	return result
+}
+
+func getStructIndexes(strctType *ast.StructType) []string {
+
+	if strctType == nil || strctType.Fields == nil || len(strctType.Fields.List) == 0 {
+		return nil
+	}
+
+	var result []string
+	for _, field := range strctType.Fields.List {
+		if isIndex(field) {
+			result = append(result, field.Names[0].Name)
+		}
 	}
 
 	return result

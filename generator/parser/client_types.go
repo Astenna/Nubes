@@ -194,8 +194,10 @@ func GetFieldDefinitions(typeName string, strctType *ast.StructType) []FieldDefi
 			newFieldDefinition.IsReference = true
 		}
 
-		if field.Tag != nil && strings.Contains(field.Tag.Value, ReadonlyTag) {
-			newFieldDefinition.IsReadonly = true
+		if field.Tag != nil {
+			if isReadonly(field) {
+				newFieldDefinition.IsReadonly = true
+			}
 			newFieldDefinition.Tags = field.Tag.Value
 		}
 

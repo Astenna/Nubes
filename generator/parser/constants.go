@@ -4,11 +4,15 @@ package parser
 // implement the interface with the NobjectImplementationMethod method
 const NobjectImplementationMethod = "GetTypeName"
 const CustomIdImplementationMethod = "GetId"
+const ConstructorPrefix = "New"
+const ReConstructorPrefix = "ReNew"
 
 const OrginalPackageAlias = "org"
 const HandlerInputParameterType = "lib.HandlerParameters"
 const ReferenceType = "lib.FaasReference"
-const ReadonlyTag = "nubes:\"readonly\""
+const ReadonlyTag = "\"readonly\""
+const IndexTag = "\"index\""
+const TagKey = "nubes"
 const HandlerInputParameterName = "input"
 const HandlerParameters = "(" + HandlerInputParameterName + " " + HandlerInputParameterType + ")"
 const HandlerInputEmbededOrginalFunctionParameterName = "Parameter"

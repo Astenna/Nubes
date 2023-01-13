@@ -32,7 +32,7 @@ var handlersCmd = &cobra.Command{
 		parsedPackage := parser.GetPackageTypes(typesPath, moduleName)
 		stateChangingFuncs := parser.ParseStateChangingHandlers(typesPath, parsedPackage)
 		customRepoFuncs, defaultRepoFuncs := parser.ParseRepoHandlers(repositoriesPath, parsedPackage)
-		parser.AddReadWriteOpToMethods(typesPath, parsedPackage)
+		parser.AddDBOperationsToMethods(typesPath, parsedPackage)
 
 		GenerateStateChangingHandlers(generationDestination, stateChangingFuncs)
 		GenerateRepositoriesHandlers(generationDestination, customRepoFuncs, defaultRepoFuncs)
