@@ -56,17 +56,10 @@ func getErrorCheckExpr(fn *ast.FuncDecl, errorVariableName string) ast.IfStmt {
 	return ifStmt
 }
 
-func getNewCtorStmts(fn *ast.FuncDecl, typeName string, typesWithCustomId map[string]string) ([]ast.Stmt, error) {
-	toInsertVariableName, err := getObjectVariableName(fn.Type.Params)
+func getNewCtorStmts(fn *ast.FuncDecl, typeName, idFieldName string) ([]ast.Stmt, error) {
+	toInsertVariableName, err := getFirstParamVariableName(fn.Type.Params)
 	if err != nil {
 		return nil, err
-	}
-
-	idFieldName := ""
-	if idField, isPresent := typesWithCustomId[typeName]; isPresent {
-		idFieldName = idField
-	} else {
-		idFieldName = "Id"
 	}
 
 	insertInLib := ast.AssignStmt{
@@ -101,7 +94,7 @@ func getNewCtorStmts(fn *ast.FuncDecl, typeName string, typesWithCustomId map[st
 	return []ast.Stmt{&insertInLib, &errorCheck, &idAssign}, nil
 }
 
-func getObjectVariableName(params *ast.FieldList) (string, error) {
+func getFirstParamVariableName(params *ast.FieldList) (string, error) {
 	if params.List == nil || len(params.List) == 0 {
 		return "", fmt.Errorf("object to be inserted not found in the parameters list")
 	} else if len(params.List) > 1 {
@@ -202,4 +195,154 @@ func getReadFromLibExpr(fn *ast.FuncDecl, typesWithCustomId map[string]string) (
 	}
 
 	return assignStmt, isPointerReceiver
+}
+
+type getDBStmtsParam struct {
+	idFieldName          string
+	typeName             string
+	receiverVariableName string
+	fieldName            string
+	fieldType            string
+}
+
+func getGetterDBStmts(fn *ast.FuncDecl, input getDBStmtsParam) []ast.Stmt {
+	getFieldFromLib := ast.AssignStmt{
+		Tok: token.DEFINE,
+		Lhs: []ast.Expr{
+			&ast.Ident{Name: "fieldValue"},
+			&ast.Ident{Name: LibErrorVariableName},
+		},
+		Rhs: []ast.Expr{
+			&ast.CallExpr{
+				Fun: &ast.SelectorExpr{
+					X:   &ast.Ident{Name: "lib"},
+					Sel: &ast.Ident{Name: "GetField"},
+				},
+				Args: []ast.Expr{
+					&ast.CompositeLit{
+						Type: &ast.SelectorExpr{
+							X:   &ast.Ident{Name: "lib"},
+							Sel: &ast.Ident{Name: "HandlerParameters"},
+						},
+						Elts: []ast.Expr{
+							&ast.KeyValueExpr{
+								Key: &ast.Ident{Name: "Id"},
+								Value: &ast.SelectorExpr{
+									X:   &ast.Ident{Name: input.receiverVariableName},
+									Sel: &ast.Ident{Name: input.idFieldName},
+								},
+							},
+							&ast.KeyValueExpr{
+								Key: &ast.Ident{Name: "Parameter"},
+								Value: &ast.CompositeLit{
+									Type: &ast.SelectorExpr{
+										X:   &ast.Ident{Name: "lib"},
+										Sel: &ast.Ident{Name: "GetFieldParam"},
+									},
+									Elts: []ast.Expr{
+										&ast.KeyValueExpr{
+											Key: &ast.Ident{Name: "TypeName"},
+											Value: &ast.BasicLit{
+												Kind:  token.STRING,
+												Value: "\"" + input.typeName + "\"",
+											},
+										},
+										&ast.KeyValueExpr{
+											Key: &ast.Ident{Name: "FieldName"},
+											Value: &ast.BasicLit{
+												Kind:  token.STRING,
+												Value: "\"" + input.fieldName + "\"",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}}}
+	errorCheck := getErrorCheckExpr(fn, LibErrorVariableName)
+	fieldAssign := ast.AssignStmt{
+		Tok: token.ASSIGN,
+		Lhs: []ast.Expr{
+			&ast.SelectorExpr{
+				X:   &ast.Ident{Name: input.receiverVariableName},
+				Sel: &ast.Ident{Name: input.fieldName},
+			},
+		},
+		Rhs: []ast.Expr{
+			&ast.TypeAssertExpr{
+				Type: &ast.Ident{Name: input.fieldType},
+				X:    &ast.Ident{Name: "fieldValue"},
+			},
+		}}
+
+	return []ast.Stmt{&getFieldFromLib, &errorCheck, &fieldAssign}
+}
+
+func getSetterDBStmts(fn *ast.FuncDecl, input getDBStmtsParam) []ast.Stmt {
+	getFieldFromLib := ast.AssignStmt{
+		Tok: token.DEFINE,
+		Lhs: []ast.Expr{
+			&ast.Ident{Name: LibErrorVariableName},
+		},
+		Rhs: []ast.Expr{
+			&ast.CallExpr{
+				Fun: &ast.SelectorExpr{
+					X:   &ast.Ident{Name: "lib"},
+					Sel: &ast.Ident{Name: "SetField"},
+				},
+				Args: []ast.Expr{
+					&ast.CompositeLit{
+						Type: &ast.SelectorExpr{
+							X:   &ast.Ident{Name: "lib"},
+							Sel: &ast.Ident{Name: "HandlerParameters"},
+						},
+						Elts: []ast.Expr{
+							&ast.KeyValueExpr{
+								Key: &ast.Ident{Name: "Id"},
+								Value: &ast.SelectorExpr{
+									X:   &ast.Ident{Name: input.receiverVariableName},
+									Sel: &ast.Ident{Name: input.idFieldName},
+								},
+							},
+							&ast.KeyValueExpr{
+								Key: &ast.Ident{Name: "Parameter"},
+								Value: &ast.CompositeLit{
+									Type: &ast.SelectorExpr{
+										X:   &ast.Ident{Name: "lib"},
+										Sel: &ast.Ident{Name: "SetFieldParam"},
+									},
+									Elts: []ast.Expr{
+										&ast.KeyValueExpr{
+											Key: &ast.Ident{Name: "TypeName"},
+											Value: &ast.BasicLit{
+												Kind:  token.STRING,
+												Value: "\"" + input.typeName + "\"",
+											},
+										},
+										&ast.KeyValueExpr{
+											Key: &ast.Ident{Name: "FieldName"},
+											Value: &ast.BasicLit{
+												Kind:  token.STRING,
+												Value: "\"" + input.fieldName + "\"",
+											},
+										},
+										&ast.KeyValueExpr{
+											Key: &ast.Ident{Name: "Value"},
+											Value: &ast.SelectorExpr{
+												X:   &ast.Ident{Name: input.receiverVariableName},
+												Sel: &ast.Ident{Name: input.fieldName},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}}}
+	errorCheck := getErrorCheckExpr(fn, LibErrorVariableName)
+
+	return []ast.Stmt{&getFieldFromLib, &errorCheck}
 }

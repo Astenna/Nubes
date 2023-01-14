@@ -37,40 +37,45 @@ func ParseStateChangingHandlers(path string, parsedPackage ParsedPackage) []Stat
 	for _, functions := range fileFunctionsMap {
 		for _, detectedFunction := range functions {
 			f := detectedFunction.Function
-			if f.Recv == nil || f.Name.Name == NobjectImplementationMethod || f.Name.Name == CustomIdImplementationMethod {
+
+			if f.Name.Name == NobjectImplementationMethod || f.Name.Name == CustomIdImplementationMethod {
 				continue
-			}
+			} else if f.Recv == nil {
 
-			ownerType := getFunctionReceiverTypeAsString(f.Recv)
-			if isNobject := isNobjectInOrgPkg[ownerType]; !isNobject {
-				fmt.Println("Member type does not implement Nobject interface. Handler generation for " + f.Name.Name + "skipped")
-				continue
-			}
+				// TODO: detect & generate handler(s) with CTORs
 
-			newHandler := StateChangingHandler{
-				OrginalPackage:      parsedPackage.ImportPath,
-				OrginalPackageAlias: OrginalPackageAlias,
-				MethodName:          f.Name.Name,
-				ReceiverType:        ownerType,
-				Imports:             getImportsAsString(set, detectedFunction.Imports),
-			}
+			} else {
+				ownerType := getFunctionReceiverTypeAsString(f.Recv)
+				if isNobject := isNobjectInOrgPkg[ownerType]; !isNobject {
+					fmt.Println("Member type does not implement Nobject interface. Handler generation for " + f.Name.Name + "skipped")
+					continue
+				}
 
-			if retParamsVerifier.Check(f) {
-				if len(f.Type.Results.List) > 1 {
-					newHandler.OptionalReturnType = types.ExprString(f.Type.Results.List[0].Type)
-					if _, isPresent := isNobjectInOrgPkg[newHandler.OptionalReturnType]; isPresent {
-						newHandler.OptionalReturnType = newHandler.OrginalPackageAlias + "." + newHandler.OptionalReturnType
+				newHandler := StateChangingHandler{
+					OrginalPackage:      parsedPackage.ImportPath,
+					OrginalPackageAlias: OrginalPackageAlias,
+					MethodName:          f.Name.Name,
+					ReceiverType:        ownerType,
+					Imports:             getImportsAsString(set, detectedFunction.Imports),
+				}
+
+				if retParamsVerifier.Check(f) {
+					if len(f.Type.Results.List) > 1 {
+						newHandler.OptionalReturnType = types.ExprString(f.Type.Results.List[0].Type)
+						if _, isPresent := isNobjectInOrgPkg[newHandler.OptionalReturnType]; isPresent {
+							newHandler.OptionalReturnType = newHandler.OrginalPackageAlias + "." + newHandler.OptionalReturnType
+						}
 					}
 				}
-			}
 
-			parameters, err := getStateChangingFuncParams(f.Type.Params, isNobjectInOrgPkg)
-			if err != nil {
-				fmt.Println("Maximum allowed number of parameters is 1. Handler generation for " + f.Name.Name + "skipped")
-				continue
+				parameters, err := getStateChangingFuncParams(f.Type.Params, isNobjectInOrgPkg)
+				if err != nil {
+					fmt.Println("Maximum allowed number of parameters is 1. Handler generation for " + f.Name.Name + "skipped")
+					continue
+				}
+				newHandler.Invocation = f.Name.Name + "(" + parameters + ")"
+				handlerFuncs = append(handlerFuncs, newHandler)
 			}
-			newHandler.Invocation = f.Name.Name + "(" + parameters + ")"
-			handlerFuncs = append(handlerFuncs, newHandler)
 		}
 	}
 

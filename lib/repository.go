@@ -187,8 +187,8 @@ type GetFieldParam struct {
 }
 
 func GetField(param HandlerParameters) (interface{}, error) {
-	getFielParam, castErr := param.Parameter.(GetFieldParam)
-	if castErr {
+	getFielParam, castSuccess := param.Parameter.(GetFieldParam)
+	if !castSuccess {
 		return *new(interface{}), fmt.Errorf("missing GetFieldParam")
 	}
 	if param.Id == "" {
@@ -226,14 +226,45 @@ func GetField(param HandlerParameters) (interface{}, error) {
 	return nil, err
 }
 
-func getProjection(names []string) expression.ProjectionBuilder {
-	if len(names) == 0 {
-		return *new(expression.ProjectionBuilder)
+type SetFieldParam struct {
+	FieldName string
+	TypeName  string
+	Value     interface{}
+}
+
+func SetField(param HandlerParameters) error {
+	setFielParam, castSuccess := param.Parameter.(SetFieldParam)
+	if !castSuccess {
+		return fmt.Errorf("missing SetFieldParam")
+	}
+	if param.Id == "" {
+		return fmt.Errorf("missing id of object's field  to get")
+	}
+	if setFielParam.FieldName == "" {
+		return fmt.Errorf("missing field name of object's field to get")
+	}
+	if setFielParam.TypeName == "" {
+		return fmt.Errorf("missing type name of object's field to get")
 	}
 
-	var builder expression.ProjectionBuilder
-	for _, name := range names {
-		builder = builder.AddNames(expression.Name(name))
+	update := expression.UpdateBuilder{}
+	update = update.Set(expression.Name(setFielParam.FieldName), expression.Value(setFielParam.Value))
+	expr, err := expression.NewBuilder().WithUpdate(update).Build()
+	if err != nil {
+		return fmt.Errorf("error occurred when building dynamodb update expression %w", err)
 	}
-	return builder
+
+	_, err = DBClient.UpdateItem(&dynamodb.UpdateItemInput{
+		TableName: aws.String(setFielParam.TypeName),
+		Key: map[string]*dynamodb.AttributeValue{
+			"Id": {
+				S: aws.String(param.Id),
+			},
+		},
+		UpdateExpression:          expr.Update(),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+	})
+
+	return err
 }

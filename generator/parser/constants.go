@@ -23,6 +23,7 @@ const LibImportPath = "\"github.com/Astenna/Nubes/lib\""
 // Prefixes of repository operations
 const (
 	GetPrefix    = "Get"
+	SetPrefix    = "Set"
 	CreatePrefix = "Create"
 	DeletePrefix = "Delete"
 	UpdatePrefix = "Update"

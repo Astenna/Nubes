@@ -30,8 +30,9 @@ func AddDBOperationsToMethods(path string, parsedPackage ParsedPackage) {
 						if strings.HasPrefix(fn.Name.Name, ConstructorPrefix) {
 							typeName := strings.TrimPrefix(fn.Name.Name, ConstructorPrefix)
 							if parsedPackage.IsNobjectInOrginalPackage[typeName] {
-								if !areDBOperationsAddedToNewCtor(fn.Body.List, set) {
-									stmtsToInsert, err := getNewCtorStmts(fn, typeName, parsedPackage.TypesWithCustomId)
+								if !areDBOperationsAlreadyAddedToNewCtor(fn.Body, set) {
+									idFieldName := getIdFieldNameOfType(typeName, parsedPackage.TypesWithCustomId)
+									stmtsToInsert, err := getNewCtorStmts(fn, typeName, idFieldName)
 									if err != nil {
 										fmt.Println("wrong constructor definition of ", fn.Name.Name, ": ", err)
 										continue
@@ -50,9 +51,48 @@ func AddDBOperationsToMethods(path string, parsedPackage ParsedPackage) {
 					} else if fn.Name.Name != NobjectImplementationMethod && f.Name.Name != CustomIdImplementationMethod {
 						typeName := getFunctionReceiverTypeAsString(fn.Recv)
 
-						if isNobject := parsedPackage.IsNobjectInOrginalPackage[typeName]; isNobject && !isFunctionStateless(fn.Recv) {
-							if retParamsVerifier.Check(fn) && !isReadOperationAlreadyAdded(fn, set) {
+						if isNobject := parsedPackage.IsNobjectInOrginalPackage[typeName]; isNobject {
 
+							if strings.HasPrefix(fn.Name.Name, GetPrefix) {
+
+								fieldName := strings.TrimPrefix(fn.Name.Name, GetPrefix)
+								if _, fieldExist := parsedPackage.TypeFields[typeName][fieldName]; fieldExist {
+									if !isGetFieldStmtAlreadyAdded(fn.Body, set) {
+										idFieldName := getIdFieldNameOfType(typeName, parsedPackage.TypesWithCustomId)
+										stmtsToInsert := getGetterDBStmts(fn, getDBStmtsParam{
+											idFieldName:          idFieldName,
+											typeName:             typeName,
+											fieldName:            fieldName,
+											fieldType:            getFirstFunctionReturnTypeAsString(fn),
+											receiverVariableName: fn.Recv.List[0].Names[0].Name,
+										})
+										fn.Body.List = prependList(fn.Body.List, stmtsToInsert)
+										fileModified = true
+									}
+									continue
+								}
+
+							} else if strings.HasPrefix(fn.Name.Name, SetPrefix) {
+								fieldName := strings.TrimPrefix(fn.Name.Name, SetPrefix)
+								if _, fieldExists := parsedPackage.TypeFields[typeName][fieldName]; fieldExists {
+
+									if !isSetFieldStmtAlreadyAdded(fn.Body, set) {
+										idFieldName := getIdFieldNameOfType(typeName, parsedPackage.TypesWithCustomId)
+										stmtsToInsert := getSetterDBStmts(fn, getDBStmtsParam{
+											idFieldName:          idFieldName,
+											typeName:             typeName,
+											fieldName:            fieldName,
+											fieldType:            getFirstFunctionReturnTypeAsString(fn),
+											receiverVariableName: fn.Recv.List[0].Names[0].Name,
+										})
+										fn.Body.List = appendListBeforeLastElem(fn.Body.List, stmtsToInsert)
+										fileModified = true
+									}
+									continue
+								}
+							}
+
+							if !isFunctionStateless(fn.Recv) && retParamsVerifier.Check(fn) && !isDBGetOperationAlreadyAddedToMethod(fn.Body, set) {
 								fileModified = true
 
 								SaveExpr := getUpsertInLibExpr(fn, parsedPackage.TypesWithCustomId)
@@ -72,8 +112,6 @@ func AddDBOperationsToMethods(path string, parsedPackage ParsedPackage) {
 					}
 				}
 			}
-
-			printWarningIfCtorMissing(IsTypeNewCtorImplemented, IsTypeReNewCtorImplemented, parsedPackage.IsNobjectInOrginalPackage)
 
 			if fileModified {
 				libImported := false
@@ -106,6 +144,8 @@ func AddDBOperationsToMethods(path string, parsedPackage ParsedPackage) {
 			}
 		}
 	}
+
+	printWarningIfCtorMissing(IsTypeNewCtorImplemented, IsTypeReNewCtorImplemented, parsedPackage.IsNobjectInOrginalPackage)
 }
 
 func printWarningIfCtorMissing(isTypeNewCtorImpl, isTypeReNewCtorImpl, isNobjectInOrgPkg map[string]bool) {
@@ -122,22 +162,48 @@ func printWarningIfCtorMissing(isTypeNewCtorImpl, isTypeReNewCtorImpl, isNobject
 	}
 }
 
-func areDBOperationsAddedToNewCtor(body []ast.Stmt, set *token.FileSet) bool {
-	if len(body) > 3 {
-		assign, _ := body[len(body)-4].(*ast.AssignStmt)
+func areDBOperationsAlreadyAddedToNewCtor(funcBlock *ast.BlockStmt, set *token.FileSet) bool {
+	if funcBlock != nil && funcBlock.List != nil && len(funcBlock.List) > 3 {
+		assign, _ := funcBlock.List[len(funcBlock.List)-4].(*ast.AssignStmt)
 		secLastElem, _ := getFunctionBodyStmtAsString(set, assign)
 		return strings.Contains(secLastElem, "lib.Insert")
 	}
 	return false
 }
 
-func isReadOperationAlreadyAdded(fn *ast.FuncDecl, set *token.FileSet) bool {
-	if len(fn.Body.List) > 2 {
-		assign, _ := fn.Body.List[0].(*ast.AssignStmt)
+func isDBGetOperationAlreadyAddedToMethod(funcBlock *ast.BlockStmt, set *token.FileSet) bool {
+	if funcBlock != nil && funcBlock.List != nil && len(funcBlock.List) > 2 {
+		assign, _ := funcBlock.List[0].(*ast.AssignStmt)
 		secLastElem, _ := getFunctionBodyStmtAsString(set, assign)
 		return strings.Contains(secLastElem, "lib.Get")
 	}
 	return false
+}
+
+func isGetFieldStmtAlreadyAdded(blockStmt *ast.BlockStmt, set *token.FileSet) bool {
+	if blockStmt != nil && blockStmt.List != nil && len(blockStmt.List) > 0 {
+		assign, _ := blockStmt.List[0].(*ast.AssignStmt)
+		firstStmtString, _ := getFunctionBodyStmtAsString(set, assign)
+		return strings.Contains(firstStmtString, "lib.GetField")
+	}
+	return false
+}
+
+func isSetFieldStmtAlreadyAdded(blockStmt *ast.BlockStmt, set *token.FileSet) bool {
+	if blockStmt != nil && blockStmt.List != nil && len(blockStmt.List) > 2 {
+		assign, _ := blockStmt.List[len(blockStmt.List)-3].(*ast.AssignStmt)
+		stmtString, _ := getFunctionBodyStmtAsString(set, assign)
+		return strings.Contains(stmtString, "lib.SetField")
+	}
+	return false
+}
+
+func getIdFieldNameOfType(typeName string, typesWithCustomId map[string]string) string {
+	if idField, isPresent := typesWithCustomId[typeName]; isPresent {
+		return idField
+	}
+
+	return "Id"
 }
 
 func prependBeforeLastElem[T any](stmtList []T, toInsert T) []T {
@@ -160,5 +226,13 @@ func prepend[T any](list []T, toPrepend T) []T {
 	x := append(list, *new(T))
 	copy(x[1:], x)
 	x[0] = toPrepend
+	return x
+}
+
+func prependList[T any](list []T, toPrepend []T) []T {
+	toPrependNum := len(toPrepend)
+	x := make([]T, len(list)+toPrependNum)
+	copy(x[:], toPrepend[:])
+	copy(x[toPrependNum:], list[:])
 	return x
 }
