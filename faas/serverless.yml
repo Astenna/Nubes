@@ -27,7 +27,6 @@ package:
   individually: false
 
 functions:
-
   GetField:
     name: GetField
     image:
@@ -38,243 +37,31 @@ functions:
         - '/lambda-entrypoint.sh'
     maximumRetryAttempts: 0
     maximumEventAge: 60
-
-  CreateShipping:
-    name: CreateShipping
+  SetField:
+    name: SetField
     image:
       name: faasimage	
       command:
-        -  CreateShipping
+        -  SetField
       entryPoint:
         - '/lambda-entrypoint.sh'
     maximumRetryAttempts: 0
     maximumEventAge: 60
-
-  DeleteShipping:
-    name: DeleteShipping
-    image:
-      name: faasimage	
-      command:
-        -  DeleteShipping
-      entryPoint:
-        - '/lambda-entrypoint.sh'
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
-  UpdateShipping:
-    name: UpdateShipping
-    image:
-      name: faasimage	
-      command:
-        -  UpdateShipping
-      entryPoint:
-        - '/lambda-entrypoint.sh'
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
-  GetShipping:
-    name: GetShipping
-    image:
-      name: faasimage	
-      command:
-        -  GetShipping
-      entryPoint:
-        - '/lambda-entrypoint.sh'
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
-  GetShop:
-    name: GetShop
-    image:
-      name: faasimage	
-      command:
-        -  GetShop
-      entryPoint:
-        - '/lambda-entrypoint.sh'
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
-  CreateShop:
-    name: CreateShop
-    image:
-      name: faasimage	
-      command:
-        -  CreateShop
-      entryPoint:
-        - '/lambda-entrypoint.sh'
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
-  DeleteShop:
-    name: DeleteShop
-    image:
-      name: faasimage	
-      command:
-        -  DeleteShop
-      entryPoint:
-        - '/lambda-entrypoint.sh'
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
-  UpdateShop:
-    name: UpdateShop
-    image:
-      name: faasimage	
-      command:
-        -  UpdateShop
-      entryPoint:
-        - '/lambda-entrypoint.sh'
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
-  UpdateUser:
-    name: UpdateUser
-    image:
-      name: faasimage	
-      command:
-        -  UpdateUser
-      entryPoint:
-        - '/lambda-entrypoint.sh'
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
-  GetUser:
-    name: GetUser
-    image:
-      name: faasimage	
-      command:
-        -  GetUser
-      entryPoint:
-        - '/lambda-entrypoint.sh'
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
-  CreateUser:
-    name: CreateUser
-    image:
-      name: faasimage	
-      command:
-        -  CreateUser
-      entryPoint:
-        - '/lambda-entrypoint.sh'
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
-  DeleteUser:
-    name: DeleteUser
-    image:
-      name: faasimage	
-      command:
-        -  DeleteUser
-      entryPoint:
-        - '/lambda-entrypoint.sh'
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
-  CreateOrder:
-    name: CreateOrder
-    image:
-      name: faasimage	
-      command:
-        -  CreateOrder
-      entryPoint:
-        - '/lambda-entrypoint.sh'
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
-  DeleteOrder:
-    name: DeleteOrder
-    image:
-      name: faasimage	
-      command:
-        -  DeleteOrder
-      entryPoint:
-        - '/lambda-entrypoint.sh'
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
-  UpdateOrder:
-    name: UpdateOrder
-    image:
-      name: faasimage	
-      command:
-        -  UpdateOrder
-      entryPoint:
-        - '/lambda-entrypoint.sh'
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
-  GetOrder:
-    name: GetOrder
-    image:
-      name: faasimage	
-      command:
-        -  GetOrder
-      entryPoint:
-        - '/lambda-entrypoint.sh'
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
-  DeleteProduct:
-    name: DeleteProduct
-    image:
-      name: faasimage	
-      command:
-        -  DeleteProduct
-      entryPoint:
-        - '/lambda-entrypoint.sh'
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
-  UpdateProduct:
-    name: UpdateProduct
-    image:
-      name: faasimage	
-      command:
-        -  UpdateProduct
-      entryPoint:
-        - '/lambda-entrypoint.sh'
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
-  GetProduct:
-    name: GetProduct
-    image:
-      name: faasimage	
-      command:
-        -  GetProduct
-      entryPoint:
-        - '/lambda-entrypoint.sh'
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
-  CreateProduct:
-    name: CreateProduct
-    image:
-      name: faasimage	
-      command:
-        -  CreateProduct
-      entryPoint:
-        - '/lambda-entrypoint.sh'
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
-
 
   ProductDecreaseAvailabilityBy:
-    name: ProductDecreaseAvailabilityBy
+    name:  ProductDecreaseAvailabilityBy
     image:
       name: faasimage	
       command:
-        -  ProductDecreaseAvailabilityBy
+        - ProductDecreaseAvailabilityBy
     maximumRetryAttempts: 0
     maximumEventAge: 60
 
   UserVerifyPassword:
-    name: UserVerifyPassword
+    name:  UserVerifyPassword
     image:
       name: faasimage	
       command:
-        -  UserVerifyPassword
+        - UserVerifyPassword
     maximumRetryAttempts: 0
     maximumEventAge: 60

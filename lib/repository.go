@@ -186,29 +186,25 @@ type GetFieldParam struct {
 	TypeName  string
 }
 
-func GetField(param HandlerParameters) (interface{}, error) {
-	getFielParam, castSuccess := param.Parameter.(GetFieldParam)
-	if !castSuccess {
-		return *new(interface{}), fmt.Errorf("missing GetFieldParam")
-	}
-	if param.Id == "" {
+func GetField(id string, param GetFieldParam) (interface{}, error) {
+	if id == "" {
 		return *new(interface{}), fmt.Errorf("missing id of object's field  to get")
 	}
-	if getFielParam.FieldName == "" {
+	if param.FieldName == "" {
 		return *new(interface{}), fmt.Errorf("missing field name of object's field to get")
 	}
-	if getFielParam.TypeName == "" {
+	if param.TypeName == "" {
 		return *new(interface{}), fmt.Errorf("missing type name of object's field to get")
 	}
 
 	input := &dynamodb.GetItemInput{
-		TableName: aws.String(getFielParam.TypeName),
+		TableName: aws.String(param.TypeName),
 		Key: map[string]*dynamodb.AttributeValue{
 			"Id": {
-				S: aws.String(param.Id),
+				S: aws.String(id),
 			},
 		},
-		ProjectionExpression: &getFielParam.FieldName,
+		ProjectionExpression: &param.FieldName,
 	}
 
 	item, err := DBClient.GetItem(input)
@@ -218,7 +214,7 @@ func GetField(param HandlerParameters) (interface{}, error) {
 
 	if item.Item != nil {
 		var parsedItem interface{}
-		err = dynamodbattribute.Unmarshal(item.Item[getFielParam.FieldName], &parsedItem)
+		err = dynamodbattribute.Unmarshal(item.Item[param.FieldName], &parsedItem)
 		return parsedItem, err
 
 	}
@@ -232,33 +228,29 @@ type SetFieldParam struct {
 	Value     interface{}
 }
 
-func SetField(param HandlerParameters) error {
-	setFielParam, castSuccess := param.Parameter.(SetFieldParam)
-	if !castSuccess {
-		return fmt.Errorf("missing SetFieldParam")
-	}
-	if param.Id == "" {
+func SetField(id string, param SetFieldParam) error {
+	if id == "" {
 		return fmt.Errorf("missing id of object's field  to get")
 	}
-	if setFielParam.FieldName == "" {
+	if param.FieldName == "" {
 		return fmt.Errorf("missing field name of object's field to get")
 	}
-	if setFielParam.TypeName == "" {
+	if param.TypeName == "" {
 		return fmt.Errorf("missing type name of object's field to get")
 	}
 
 	update := expression.UpdateBuilder{}
-	update = update.Set(expression.Name(setFielParam.FieldName), expression.Value(setFielParam.Value))
+	update = update.Set(expression.Name(param.FieldName), expression.Value(param.Value))
 	expr, err := expression.NewBuilder().WithUpdate(update).Build()
 	if err != nil {
 		return fmt.Errorf("error occurred when building dynamodb update expression %w", err)
 	}
 
 	_, err = DBClient.UpdateItem(&dynamodb.UpdateItemInput{
-		TableName: aws.String(setFielParam.TypeName),
+		TableName: aws.String(param.TypeName),
 		Key: map[string]*dynamodb.AttributeValue{
 			"Id": {
-				S: aws.String(param.Id),
+				S: aws.String(id),
 			},
 		},
 		UpdateExpression:          expr.Update(),

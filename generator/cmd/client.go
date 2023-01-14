@@ -17,10 +17,8 @@ var clientCmd = &cobra.Command{
 
 	Run: func(cmd *cobra.Command, args []string) {
 		typesPath, _ := cmd.Flags().GetString("types")
-		repositoriesPath, _ := cmd.Flags().GetString("repositories")
 		output, _ := cmd.Flags().GetString("output")
 		projectName, _ := cmd.Flags().GetString("project-name")
-		_ = repositoriesPath
 
 		definedTypes, otherDecls := parser.PrepareTypes(tp.MakePathAbosoluteOrExitOnError(typesPath))
 
@@ -63,12 +61,10 @@ func init() {
 	rootCmd.AddCommand(clientCmd)
 
 	var typesPath string
-	var repositoriesPath string
 	var outputPath string
 	var projectName string
 
 	clientCmd.Flags().StringVarP(&typesPath, "types", "t", ".", "path to directory with types")
-	clientCmd.Flags().StringVarP(&repositoriesPath, "repositories", "r", ".", "path to directory with repositories")
 	clientCmd.Flags().StringVarP(&outputPath, "output", "o", ".", "path where directory with client library will be created")
 	clientCmd.Flags().StringVarP(&projectName, "project-name", "p", "client_lib", "name of the client library project")
 

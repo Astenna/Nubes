@@ -11,7 +11,8 @@ import (
 type {{if eq .NobjectImplementation ""}} {{.TypeNameUpper}} {{else}} {{.TypeNameLower}} {{end}} struct {
 	{{if eq .NobjectImplementation ""}}
 		{{range .FieldDefinitions}}
-    		{{if .IsReference}} {{.FieldNameUpper}} lib.Reference[{{.FieldTypeUpper}}Stub] 
+    		{{if .IsReference}} {{.FieldNameUpper}} lib.Reference[{{.FieldType}}] 
+    		{{else if .IsReferenceList}} {{.FieldNameUpper}} lib.ReferenceList[{{.FieldType}}] 
 			{{else}} {{.FieldNameUpper}} {{.FieldType}} {{end}} 
 		{{end}}
 	{{else}}
@@ -57,7 +58,7 @@ func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}() ({{.FieldType}}, error) {
 	}
 	jsonParam, err := json.Marshal(params)
 	if err != nil {
-		return *new(string), err
+		return *new({{.FieldType}}), err
 	}
 
 	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
@@ -65,16 +66,20 @@ func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}() ({{.FieldType}}, error) {
 		return *new({{.FieldType}}), _err
 	}
 
+	{{if .IsReference}}
+	result := new(lib.Reference[{{.FieldType}}])
+	err = json.Unmarshal(out.Payload, result)
+	if err != nil {
+		return *new({{.FieldType}}), err
+	}
+	var referenceResult = New{{.FieldTypeUpper}}(result.Id)
+	return referenceResult, err
+	{{else}}
 	result := new({{.FieldType}})
 	err = json.Unmarshal(out.Payload, result)
 	if err != nil {
 		return *new({{.FieldType}}), err
 	}
-
-	{{if .IsReference}}
-	var referenceResult = New{{.FieldTypeUpper}}(result.Id)
-	return referenceResult, err
-	{{else}}
 	return *result, err
 	{{end}}
 } {{end}}
@@ -94,13 +99,13 @@ func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}Id() (string, error) {
 		return "", _err
 	}
 
-	result := new({{$.TypeNameUpper}}Stub)
+	result := new(lib.Reference[{{.FieldType}}])
 	err = json.Unmarshal(out.Payload, result)
 	if err != nil {
 		return "", err
 	}
 
-	return result.{{.FieldNameUpper}}.Id, err
+	return result.Id, err
 }
 {{end}}
 {{if eq .IsReadonly false}}
@@ -109,12 +114,20 @@ func (s {{$.TypeNameLower}}) Set{{.FieldNameUpper}}(newValue {{if .IsReference}}
 		return errors.New("id of the type not set, use New{{$.TypeNameUpper}} constructor to create new instance of the type")
 	}
 	
-	jsonParam, err := json.Marshal(aws.JSONValue{"{{.FieldNameUpper}}": newValue, "Id": s.id})
+	params := lib.HandlerParameters{
+		Id: s.GetId(),
+		Parameter: lib.SetFieldParam{
+			FieldName: "{{.FieldNameUpper}}",
+			TypeName:  s.GetTypeName(),
+			Value: newValue,
+		},
+	}
+	jsonParam, err := json.Marshal(params)
 	if err != nil {
 		return err
 	}
 
-	_, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("Update{{$.TypeNameUpper}}"), Payload: jsonParam})
+	_, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("SetField"), Payload: jsonParam})
 	return _err
 } 
 {{end}}{{end}}

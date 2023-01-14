@@ -37,35 +37,23 @@ functions:
         - '/lambda-entrypoint.sh'
     maximumRetryAttempts: 0
     maximumEventAge: 60
-{{range .DefaultRepos}}
-  {{.OperationName}}{{.TypeName}}:
-    name: {{.OperationName}}{{.TypeName}}
+  SetField:
+    name: SetField
     image:
       name: faasimage	
       command:
-        - {{.OperationName}}{{.TypeName}}
+        -  SetField
       entryPoint:
         - '/lambda-entrypoint.sh'
     maximumRetryAttempts: 0
     maximumEventAge: 60
-{{end}}
-{{range .CustomRepos}}
-  {{.OperationName}}{{.TypeName}}:
-    name: {{.OperationName}}{{.TypeName}}
-    image:
-      name: faasimage	
-      command:
-        - {{.OperationName}}{{.TypeName}}
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-{{end}}
 {{range .StateFuncs}}
-  {{.OwnerType}}{{.HandlerNameWithoutSuffix}}:
-    name:  {{.OwnerType}}{{.HandlerNameWithoutSuffix}}
+  {{.ReceiverType}}{{.MethodName}}:
+    name:  {{.ReceiverType}}{{.MethodName}}
     image:
       name: faasimage	
       command:
-        - {{.OwnerType}}{{.HandlerNameWithoutSuffix}}
+        - {{.ReceiverType}}{{.MethodName}}
     maximumRetryAttempts: 0
     maximumEventAge: 60
 {{end}}

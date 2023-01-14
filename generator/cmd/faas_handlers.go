@@ -4,7 +4,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"text/template"
 
 	"github.com/Astenna/Nubes/generator/database"
 	"github.com/Astenna/Nubes/generator/parser"
@@ -20,7 +19,6 @@ var handlersCmd = &cobra.Command{
 
 	Run: func(cmd *cobra.Command, args []string) {
 		typesPath, _ := cmd.Flags().GetString("types")
-		_, _ = cmd.Flags().GetString("repositories")
 		generationDestination, _ := cmd.Flags().GetString("output")
 		moduleName, _ := cmd.Flags().GetString("module")
 		dbInit, _ := cmd.Flags().GetBool("dbInit")
@@ -33,11 +31,11 @@ var handlersCmd = &cobra.Command{
 		parser.AddDBOperationsToMethods(typesPath, parsedPackage)
 
 		GenerateStateChangingHandlers(generationDestination, stateChangingFuncs)
-		GenerateGetFieldMethodForGetters(generationDestination)
+		GenerateGetAndSetFieldHandlers(generationDestination)
 
 		if generateDeploymentFiles {
 			serviceName := lastString(strings.Split(moduleName, "/"))
-			serverlessInput := ServerlessTemplateInput{ServiceName: serviceName, DefaultRepos: nil, CustomRepos: nil, StateFuncs: stateChangingFuncs}
+			serverlessInput := ServerlessTemplateInput{ServiceName: serviceName, StateFuncs: stateChangingFuncs}
 			GenerateDeploymentFiles(generationDestination, serverlessInput)
 		}
 
@@ -55,14 +53,12 @@ func init() {
 	rootCmd.AddCommand(handlersCmd)
 
 	var typesPath string
-	var repositoriesPath string
 	var handlersPath string
 	var moduleName string
 	var dbInit bool
 	var generateDeploymentFiles bool
 
 	handlersCmd.Flags().StringVarP(&typesPath, "types", "t", ".", "path to directory with types")
-	handlersCmd.Flags().StringVarP(&repositoriesPath, "repositories", "r", ".", "path to directory with repositories")
 	handlersCmd.Flags().StringVarP(&handlersPath, "output", "o", ".", "path where directory with handlers will be created")
 	handlersCmd.Flags().StringVarP(&moduleName, "module", "m", "MISSING_MODULE_NAME", "module name of the source project")
 	handlersCmd.Flags().BoolVarP(&dbInit, "dbInit", "i", false, "boolean, indicates whether database should be initialized by creation of tables based on type names")
@@ -72,10 +68,8 @@ func init() {
 }
 
 type ServerlessTemplateInput struct {
-	ServiceName  string
-	DefaultRepos []parser.DefaultRepoHandler
-	CustomRepos  []parser.CustomRepoHandler
-	StateFuncs   []parser.StateChangingHandler
+	ServiceName string
+	StateFuncs  []parser.StateChangingHandler
 }
 
 func GenerateDeploymentFiles(path string, templateInput ServerlessTemplateInput) {
@@ -92,48 +86,6 @@ func GenerateDeploymentFiles(path string, templateInput ServerlessTemplateInput)
 	tp.CreateFileFromTemplate(dockerfileTempl, nil, fileName)
 }
 
-func GenerateRepositoriesHandlers(path string, customFuncs []parser.CustomRepoHandler, defaultFuncs []parser.DefaultRepoHandler) {
-	var fileName string
-	var handlerDir string
-	var operationTypeCombined string
-	templ := tp.ParseOrExitOnError("templates/handlers/custom_repo_template.go.tmpl")
-	repositoriesDirectoryPath := tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "repositories"))
-
-	for _, f := range customFuncs {
-		operationTypeCombined = f.OperationName + f.TypeName
-		handlerDir = filepath.Join(repositoriesDirectoryPath, operationTypeCombined)
-		os.MkdirAll(handlerDir, 0777)
-		fileName = filepath.Join(handlerDir, operationTypeCombined+".go")
-		tp.CreateFileFromTemplate(templ, f, fileName)
-	}
-
-	getTempl := tp.ParseOrExitOnError("templates/handlers/get_repo_template.go.tmpl")
-	createTempl := tp.ParseOrExitOnError("templates/handlers/create_repo_template.go.tmpl")
-	deleteTempl := tp.ParseOrExitOnError("templates/handlers/delete_repo_template.go.tmpl")
-	updateTempl := tp.ParseOrExitOnError("templates/handlers/update_repo_template.go.tmpl")
-
-	var tmpl template.Template
-	for _, f := range defaultFuncs {
-		switch {
-		case f.OperationName == parser.GetPrefix:
-			tmpl = getTempl
-		case f.OperationName == parser.CreatePrefix:
-			tmpl = createTempl
-		case f.OperationName == parser.DeletePrefix:
-			tmpl = deleteTempl
-		case f.OperationName == parser.UpdatePrefix:
-			tmpl = updateTempl
-		}
-
-		operationTypeCombined = f.OperationName + f.TypeName
-		handlerDir = filepath.Join(repositoriesDirectoryPath, operationTypeCombined)
-		os.MkdirAll(handlerDir, 0777)
-		fileName = filepath.Join(handlerDir, operationTypeCombined+".go")
-		tp.CreateFileFromTemplate(tmpl, f, fileName)
-		tp.RunGoimportsOnFile(fileName)
-	}
-}
-
 func GenerateStateChangingHandlers(path string, functions []parser.StateChangingHandler) {
 	var handlerDir string
 	var ownerHandlerNameCombined string
@@ -144,16 +96,22 @@ func GenerateStateChangingHandlers(path string, functions []parser.StateChanging
 		ownerHandlerNameCombined = f.ReceiverType + f.MethodName
 		handlerDir = filepath.Join(generationDestPath, ownerHandlerNameCombined)
 		os.MkdirAll(handlerDir, 0777)
-		filepath := filepath.Join(handlerDir, ownerHandlerNameCombined+".go")
-		tp.CreateFileFromTemplate(templ, f, filepath)
-		tp.RunGoimportsOnFile(filepath)
+		path = filepath.Join(handlerDir, ownerHandlerNameCombined+".go")
+		tp.CreateFileFromTemplate(templ, f, path)
+		tp.RunGoimportsOnFile(path)
 	}
 }
 
-func GenerateGetFieldMethodForGetters(path string) {
-	templ := tp.ParseOrExitOnError("templates/handlers/get_field_repo_template.go.tmpl")
-	generationDestPath := tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "repositories", "GetField"))
+func GenerateGetAndSetFieldHandlers(path string) {
+	templ := tp.ParseOrExitOnError("templates/handlers/get_field_template.go.tmpl")
+	generationDestPath := tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "generics", "GetField"))
 	os.MkdirAll(generationDestPath, 0777)
-	filepath := filepath.Join(generationDestPath, "GetField.go")
-	tp.CreateFileFromTemplate(templ, nil, filepath)
+	getPath := filepath.Join(generationDestPath, "GetField.go")
+	tp.CreateFileFromTemplate(templ, nil, getPath)
+
+	templ = tp.ParseOrExitOnError("templates/handlers/set_field_template.go.tmpl")
+	generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "generics", "SetField"))
+	os.MkdirAll(generationDestPath, 0777)
+	setPath := filepath.Join(generationDestPath, "SetField.go")
+	tp.CreateFileFromTemplate(templ, nil, setPath)
 }

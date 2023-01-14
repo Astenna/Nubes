@@ -1,0 +1,23 @@
+package main
+
+import (
+	lib "github.com/Astenna/Nubes/lib"
+	"github.com/aws/aws-lambda-go/lambda"
+)
+
+func SetFieldHandler(input lib.HandlerParameters) error {
+	// it is really annoying that golang does not support it out-of-the-box
+	// (direct casting input.Parameter to lib.SetFieldParam throws error)
+	setFieldMap := input.Parameter.(map[string]interface{})
+	setFieldParam := lib.SetFieldParam{
+		FieldName: setFieldMap["FieldName"].(string),
+		TypeName:  setFieldMap["TypeName"].(string),
+		Value:     setFieldMap["Value"],
+	}
+
+	return lib.SetField(input.Id, setFieldParam)
+}
+
+func main() {
+	lambda.Start(SetFieldHandler)
+}

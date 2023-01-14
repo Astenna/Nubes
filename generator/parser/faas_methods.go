@@ -26,8 +26,7 @@ func AddDBOperationsToMethods(path string, parsedPackage ParsedPackage) {
 				if fn, isFn := d.(*ast.FuncDecl); isFn {
 					if fn.Recv == nil {
 
-						ctorDetected, modified := addDBOperationsIfCtor(fn, parsedPackage, set, isTypeNewCtorImplemented, isTypeReNewCtorImplemented)
-						fileModified = modified
+						ctorDetected := addDBOperationsIfCtor(fn, parsedPackage, set, isTypeNewCtorImplemented, isTypeReNewCtorImplemented, &fileModified)
 						if ctorDetected {
 							continue
 						}
@@ -36,8 +35,7 @@ func AddDBOperationsToMethods(path string, parsedPackage ParsedPackage) {
 						typeName := getFunctionReceiverTypeAsString(fn.Recv)
 						if isNobject := parsedPackage.IsNobjectInOrginalPackage[typeName]; isNobject {
 
-							isGetterOrSetter, modified := addDBOperationsIfGetterOrSetter(fn, parsedPackage, set)
-							fileModified = modified
+							isGetterOrSetter := addDBOperationsIfGetterOrSetter(fn, parsedPackage, set, &fileModified)
 							if isGetterOrSetter {
 								continue
 							}
@@ -105,8 +103,8 @@ func addDBOperationsToStateChangingMethod(fn *ast.FuncDecl, parsedPackage Parsed
 	fn.Body.List = prependBeforeLastElem[ast.Stmt](fn.Body.List, &ErrorCheck)
 }
 
-func addDBOperationsIfGetterOrSetter(fn *ast.FuncDecl, parsedPackage ParsedPackage, set *token.FileSet) (bool, bool) {
-	var isGetterOrSetter, fileModified bool
+func addDBOperationsIfGetterOrSetter(fn *ast.FuncDecl, parsedPackage ParsedPackage, set *token.FileSet, fileModified *bool) bool {
+	var isGetterOrSetter bool
 	typeName := getFunctionReceiverTypeAsString(fn.Recv)
 
 	if strings.HasPrefix(fn.Name.Name, GetPrefix) {
@@ -125,7 +123,7 @@ func addDBOperationsIfGetterOrSetter(fn *ast.FuncDecl, parsedPackage ParsedPacka
 					receiverVariableName: fn.Recv.List[0].Names[0].Name,
 				})
 				fn.Body.List = prependList(fn.Body.List, stmtsToInsert)
-				fileModified = true
+				*fileModified = true
 			}
 		}
 
@@ -144,16 +142,16 @@ func addDBOperationsIfGetterOrSetter(fn *ast.FuncDecl, parsedPackage ParsedPacka
 					receiverVariableName: fn.Recv.List[0].Names[0].Name,
 				})
 				fn.Body.List = appendListBeforeLastElem(fn.Body.List, stmtsToInsert)
-				fileModified = true
+				*fileModified = true
 			}
 		}
 	}
 
-	return isGetterOrSetter, fileModified
+	return isGetterOrSetter
 }
 
-func addDBOperationsIfCtor(fn *ast.FuncDecl, parsedPackage ParsedPackage, set *token.FileSet, IsTypeNewCtorImplemented map[string]bool, IsTypeReNewCtorImplemented map[string]bool) (bool, bool) {
-	var ctorDetected, fileModified bool
+func addDBOperationsIfCtor(fn *ast.FuncDecl, parsedPackage ParsedPackage, set *token.FileSet, IsTypeNewCtorImplemented map[string]bool, IsTypeReNewCtorImplemented map[string]bool, fileModified *bool) bool {
+	var ctorDetected bool
 
 	if strings.HasPrefix(fn.Name.Name, ConstructorPrefix) {
 		typeName := strings.TrimPrefix(fn.Name.Name, ConstructorPrefix)
@@ -163,9 +161,9 @@ func addDBOperationsIfCtor(fn *ast.FuncDecl, parsedPackage ParsedPackage, set *t
 				stmtsToInsert, err := getNewCtorStmts(fn, typeName, idFieldName)
 				if err != nil {
 					fmt.Println("wrong constructor definition of ", fn.Name.Name, ": ", err)
-					return true, false
+					return true
 				}
-				fileModified = true
+				*fileModified = true
 				fn.Body.List = appendListBeforeLastElem(fn.Body.List, stmtsToInsert)
 			}
 
@@ -178,7 +176,7 @@ func addDBOperationsIfCtor(fn *ast.FuncDecl, parsedPackage ParsedPackage, set *t
 		ctorDetected = true
 	}
 
-	return ctorDetected, fileModified
+	return ctorDetected
 }
 
 func printWarningIfCtorMissing(isTypeNewCtorImpl, isTypeReNewCtorImpl, isNobjectInOrgPkg map[string]bool) {

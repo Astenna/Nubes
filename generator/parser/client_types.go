@@ -35,13 +35,14 @@ type MemberFunction struct {
 }
 
 type FieldDefinition struct {
-	FieldNameUpper string
-	FieldName      string
-	FieldType      string
-	FieldTypeUpper string
-	Tags           string
-	IsReference    bool
-	IsReadonly     bool
+	FieldNameUpper  string
+	FieldName       string
+	FieldType       string
+	FieldTypeUpper  string
+	Tags            string
+	IsReference     bool
+	IsReferenceList bool
+	IsReadonly      bool
 }
 
 type OtherDecls struct {
@@ -134,6 +135,10 @@ func PrepareTypes(path string) ([]*TypeDefinition, OtherDecls) {
 						continue
 					}
 
+					if isGetterOrSetterMethod(fn, typeName, definedTypes) {
+						continue
+					}
+
 					memberFunction, err := PrepareMemberFunction(fn)
 					if err != nil {
 						fmt.Println("Function "+fn.Name.Name+"not generated in client lib", err)
@@ -149,11 +154,33 @@ func PrepareTypes(path string) ([]*TypeDefinition, OtherDecls) {
 		}
 	}
 
-	DetectAndSetNobjectsReturnTypes(definedTypes)
+	detectAndSetNobjectsReturnTypes(definedTypes)
 	return maps.Values(definedTypes), otherTypesDecls
 }
 
-func DetectAndSetNobjectsReturnTypes(definedTypes map[string]*TypeDefinition) {
+func isGetterOrSetterMethod(fn *ast.FuncDecl, typeName string, definedTypes map[string]*TypeDefinition) bool {
+	if strings.HasPrefix(fn.Name.Name, GetPrefix) {
+		fieldName := strings.TrimPrefix(fn.Name.Name, GetPrefix)
+
+		for _, field := range definedTypes[typeName].FieldDefinitions {
+			if field.FieldNameUpper == fieldName {
+				return true
+			}
+		}
+	} else if strings.HasPrefix(fn.Name.Name, SetPrefix) {
+		fieldName := strings.TrimPrefix(fn.Name.Name, SetPrefix)
+
+		for _, field := range definedTypes[typeName].FieldDefinitions {
+			if field.FieldNameUpper == fieldName {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func detectAndSetNobjectsReturnTypes(definedTypes map[string]*TypeDefinition) {
 	for _, typeDefinition := range definedTypes {
 		for i, function := range typeDefinition.MemberFunctions {
 			if isReturnTypeDefined(function) && isReturnTypeNobject(function, definedTypes) {
@@ -187,7 +214,12 @@ func GetFieldDefinitions(typeName string, strctType *ast.StructType) []FieldDefi
 		}
 
 		newFieldDefinition.FieldType = strings.TrimPrefix(types.ExprString(field.Type), "*")
-		if strings.Contains(newFieldDefinition.FieldType, ReferenceType) {
+		if strings.Contains(newFieldDefinition.FieldType, ReferenceListType) {
+			newFieldDefinition.FieldType = strings.TrimPrefix(newFieldDefinition.FieldType, ReferenceListType)
+			newFieldDefinition.FieldTypeUpper = strings.Trim(newFieldDefinition.FieldType, "[]")
+			newFieldDefinition.FieldType = MakeFirstCharacterLowerCase(newFieldDefinition.FieldTypeUpper)
+			newFieldDefinition.IsReferenceList = true
+		} else if strings.Contains(newFieldDefinition.FieldType, ReferenceType) {
 			newFieldDefinition.FieldType = strings.TrimPrefix(newFieldDefinition.FieldType, ReferenceType)
 			newFieldDefinition.FieldTypeUpper = strings.Trim(newFieldDefinition.FieldType, "[]")
 			newFieldDefinition.FieldType = MakeFirstCharacterLowerCase(newFieldDefinition.FieldTypeUpper)
