@@ -99,11 +99,11 @@ func AddDBOperationsToMethods(path string, parsedPackage ParsedPackage) {
 								ReadFromLibExpr, isPointerReceiver := getReadFromLibExpr(fn, parsedPackage.TypesWithCustomId)
 								ErrorCheck := getErrorCheckExpr(fn, LibErrorVariableName)
 
-								fn.Body.List = prepend[ast.Stmt](fn.Body.List, &ErrorCheck)
 								if !isPointerReceiver {
 									pointerStms := getPointerAssignStmt(fn.Recv.List[0].Names[0].Name)
 									fn.Body.List = prepend[ast.Stmt](fn.Body.List, &pointerStms)
 								}
+								fn.Body.List = prepend[ast.Stmt](fn.Body.List, &ErrorCheck)
 								fn.Body.List = prepend[ast.Stmt](fn.Body.List, &ReadFromLibExpr)
 								fn.Body.List = prependBeforeLastElem[ast.Stmt](fn.Body.List, &SaveExpr)
 								fn.Body.List = prependBeforeLastElem[ast.Stmt](fn.Body.List, &ErrorCheck)
