@@ -20,27 +20,24 @@ var handlersCmd = &cobra.Command{
 
 	Run: func(cmd *cobra.Command, args []string) {
 		typesPath, _ := cmd.Flags().GetString("types")
-		repositoriesPath, _ := cmd.Flags().GetString("repositories")
+		_, _ = cmd.Flags().GetString("repositories")
 		generationDestination, _ := cmd.Flags().GetString("output")
 		moduleName, _ := cmd.Flags().GetString("module")
 		dbInit, _ := cmd.Flags().GetBool("dbInit")
 		generateDeploymentFiles, _ := cmd.Flags().GetBool("deplFiles")
 
 		typesPath = tp.MakePathAbosoluteOrExitOnError(typesPath)
-		repositoriesPath = tp.MakePathAbosoluteOrExitOnError(repositoriesPath)
 
 		parsedPackage := parser.GetPackageTypes(typesPath, moduleName)
 		stateChangingFuncs := parser.ParseStateChangingHandlers(typesPath, parsedPackage)
-		customRepoFuncs, defaultRepoFuncs := parser.ParseRepoHandlers(repositoriesPath, parsedPackage)
 		parser.AddDBOperationsToMethods(typesPath, parsedPackage)
 
 		GenerateStateChangingHandlers(generationDestination, stateChangingFuncs)
-		GenerateRepositoriesHandlers(generationDestination, customRepoFuncs, defaultRepoFuncs)
 		GenerateGetFieldMethodForGetters(generationDestination)
 
 		if generateDeploymentFiles {
 			serviceName := lastString(strings.Split(moduleName, "/"))
-			serverlessInput := ServerlessTemplateInput{ServiceName: serviceName, DefaultRepos: defaultRepoFuncs, CustomRepos: customRepoFuncs, StateFuncs: stateChangingFuncs}
+			serverlessInput := ServerlessTemplateInput{ServiceName: serviceName, DefaultRepos: nil, CustomRepos: nil, StateFuncs: stateChangingFuncs}
 			GenerateDeploymentFiles(generationDestination, serverlessInput)
 		}
 
