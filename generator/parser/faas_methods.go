@@ -16,97 +16,35 @@ func AddDBOperationsToMethods(path string, parsedPackage ParsedPackage) {
 	packs, err := parser.ParseDir(set, path, nil, 0)
 	assertDirParsed(err)
 
-	IsTypeNewCtorImplemented := make(map[string]bool)
-	IsTypeReNewCtorImplemented := make(map[string]bool)
+	isTypeNewCtorImplemented := make(map[string]bool)
+	isTypeReNewCtorImplemented := make(map[string]bool)
 
 	for _, pack := range packs {
 		for filePath, f := range pack.Files {
 			fileModified := false
 			for _, d := range f.Decls {
 				if fn, isFn := d.(*ast.FuncDecl); isFn {
-
 					if fn.Recv == nil {
 
-						if strings.HasPrefix(fn.Name.Name, ConstructorPrefix) {
-							typeName := strings.TrimPrefix(fn.Name.Name, ConstructorPrefix)
-							if parsedPackage.IsNobjectInOrginalPackage[typeName] {
-								if !areDBOperationsAlreadyAddedToNewCtor(fn.Body, set) {
-									idFieldName := getIdFieldNameOfType(typeName, parsedPackage.TypesWithCustomId)
-									stmtsToInsert, err := getNewCtorStmts(fn, typeName, idFieldName)
-									if err != nil {
-										fmt.Println("wrong constructor definition of ", fn.Name.Name, ": ", err)
-										continue
-									}
-									fileModified = true
-									fn.Body.List = appendListBeforeLastElem(fn.Body.List, stmtsToInsert)
-								}
-
-								IsTypeNewCtorImplemented[typeName] = true
-							}
+						ctorDetected, modified := addDBOperationsIfCtor(fn, parsedPackage, set, isTypeNewCtorImplemented, isTypeReNewCtorImplemented)
+						fileModified = modified
+						if ctorDetected {
+							continue
 						}
-						if strings.HasPrefix(fn.Name.Name, ReConstructorPrefix) {
-							IsTypeReNewCtorImplemented[strings.TrimPrefix(fn.Name.Name, ConstructorPrefix)] = true
-						}
-
 					} else if fn.Name.Name != NobjectImplementationMethod && f.Name.Name != CustomIdImplementationMethod {
-						typeName := getFunctionReceiverTypeAsString(fn.Recv)
 
+						typeName := getFunctionReceiverTypeAsString(fn.Recv)
 						if isNobject := parsedPackage.IsNobjectInOrginalPackage[typeName]; isNobject {
 
-							if strings.HasPrefix(fn.Name.Name, GetPrefix) {
-
-								fieldName := strings.TrimPrefix(fn.Name.Name, GetPrefix)
-								if _, fieldExist := parsedPackage.TypeFields[typeName][fieldName]; fieldExist {
-									if !isGetFieldStmtAlreadyAdded(fn.Body, set) {
-										idFieldName := getIdFieldNameOfType(typeName, parsedPackage.TypesWithCustomId)
-										stmtsToInsert := getGetterDBStmts(fn, getDBStmtsParam{
-											idFieldName:          idFieldName,
-											typeName:             typeName,
-											fieldName:            fieldName,
-											fieldType:            getFirstFunctionReturnTypeAsString(fn),
-											receiverVariableName: fn.Recv.List[0].Names[0].Name,
-										})
-										fn.Body.List = prependList(fn.Body.List, stmtsToInsert)
-										fileModified = true
-									}
-									continue
-								}
-
-							} else if strings.HasPrefix(fn.Name.Name, SetPrefix) {
-								fieldName := strings.TrimPrefix(fn.Name.Name, SetPrefix)
-								if _, fieldExists := parsedPackage.TypeFields[typeName][fieldName]; fieldExists {
-
-									if !isSetFieldStmtAlreadyAdded(fn.Body, set) {
-										idFieldName := getIdFieldNameOfType(typeName, parsedPackage.TypesWithCustomId)
-										stmtsToInsert := getSetterDBStmts(fn, getDBStmtsParam{
-											idFieldName:          idFieldName,
-											typeName:             typeName,
-											fieldName:            fieldName,
-											fieldType:            getFirstFunctionReturnTypeAsString(fn),
-											receiverVariableName: fn.Recv.List[0].Names[0].Name,
-										})
-										fn.Body.List = appendListBeforeLastElem(fn.Body.List, stmtsToInsert)
-										fileModified = true
-									}
-									continue
-								}
+							isGetterOrSetter, modified := addDBOperationsIfGetterOrSetter(fn, parsedPackage, set)
+							fileModified = modified
+							if isGetterOrSetter {
+								continue
 							}
 
 							if !isFunctionStateless(fn.Recv) && retParamsVerifier.Check(fn) && !isDBGetOperationAlreadyAddedToMethod(fn.Body, set) {
 								fileModified = true
-
-								SaveExpr := getUpsertInLibExpr(fn, parsedPackage.TypesWithCustomId)
-								ReadFromLibExpr, isPointerReceiver := getReadFromLibExpr(fn, parsedPackage.TypesWithCustomId)
-								ErrorCheck := getErrorCheckExpr(fn, LibErrorVariableName)
-
-								if !isPointerReceiver {
-									pointerStms := getPointerAssignStmt(fn.Recv.List[0].Names[0].Name)
-									fn.Body.List = prepend[ast.Stmt](fn.Body.List, &pointerStms)
-								}
-								fn.Body.List = prepend[ast.Stmt](fn.Body.List, &ErrorCheck)
-								fn.Body.List = prepend[ast.Stmt](fn.Body.List, &ReadFromLibExpr)
-								fn.Body.List = prependBeforeLastElem[ast.Stmt](fn.Body.List, &SaveExpr)
-								fn.Body.List = prependBeforeLastElem[ast.Stmt](fn.Body.List, &ErrorCheck)
+								addDBOperationsToStateChangingMethod(fn, parsedPackage)
 							}
 						}
 					}
@@ -114,38 +52,133 @@ func AddDBOperationsToMethods(path string, parsedPackage ParsedPackage) {
 			}
 
 			if fileModified {
-				libImported := false
-				for _, imp := range f.Imports {
-					if strings.Contains(imp.Path.Value, LibImportPath) {
-						libImported = true
-						break
-					}
-				}
-				if !libImported {
-					importNubes := &ast.GenDecl{
-						TokPos: f.Package,
-						Tok:    token.IMPORT,
-						Specs:  []ast.Spec{&ast.ImportSpec{Path: &ast.BasicLit{Kind: token.STRING, Value: LibImportPath}}},
-					}
-					f.Decls = prepend[ast.Decl](f.Decls, importNubes)
-				}
-
-				var buf bytes.Buffer
-				err := printer.Fprint(&buf, set, f)
-				if err != nil {
-					fmt.Println(err)
-				}
-				nobjectTypeFile, err := os.Create(filePath)
-				if err != nil {
-					fmt.Println(err)
-				}
-				buf.WriteTo(nobjectTypeFile)
-				nobjectTypeFile.Close()
+				saveAstChangesInFile(f, set, filePath)
 			}
 		}
 	}
 
-	printWarningIfCtorMissing(IsTypeNewCtorImplemented, IsTypeReNewCtorImplemented, parsedPackage.IsNobjectInOrginalPackage)
+	printWarningIfCtorMissing(isTypeNewCtorImplemented, isTypeReNewCtorImplemented, parsedPackage.IsNobjectInOrginalPackage)
+}
+
+func saveAstChangesInFile(f *ast.File, set *token.FileSet, filePath string) {
+	libImported := false
+	for _, imp := range f.Imports {
+		if strings.Contains(imp.Path.Value, LibImportPath) {
+			libImported = true
+			break
+		}
+	}
+	if !libImported {
+		importNubes := &ast.GenDecl{
+			TokPos: f.Package,
+			Tok:    token.IMPORT,
+			Specs:  []ast.Spec{&ast.ImportSpec{Path: &ast.BasicLit{Kind: token.STRING, Value: LibImportPath}}},
+		}
+		f.Decls = prepend[ast.Decl](f.Decls, importNubes)
+	}
+
+	var buf bytes.Buffer
+	err := printer.Fprint(&buf, set, f)
+	if err != nil {
+		fmt.Println(err)
+	}
+	nobjectTypeFile, err := os.Create(filePath)
+	if err != nil {
+		fmt.Println(err)
+	}
+	buf.WriteTo(nobjectTypeFile)
+	nobjectTypeFile.Close()
+}
+
+func addDBOperationsToStateChangingMethod(fn *ast.FuncDecl, parsedPackage ParsedPackage) {
+	SaveExpr := getUpsertInLibExpr(fn, parsedPackage.TypesWithCustomId)
+	ReadFromLibExpr, isPointerReceiver := getReadFromLibExpr(fn, parsedPackage.TypesWithCustomId)
+	ErrorCheck := getErrorCheckExpr(fn, LibErrorVariableName)
+
+	if !isPointerReceiver {
+		pointerStms := getPointerAssignStmt(fn.Recv.List[0].Names[0].Name)
+		fn.Body.List = prepend[ast.Stmt](fn.Body.List, &pointerStms)
+	}
+	fn.Body.List = prepend[ast.Stmt](fn.Body.List, &ErrorCheck)
+	fn.Body.List = prepend[ast.Stmt](fn.Body.List, &ReadFromLibExpr)
+	fn.Body.List = prependBeforeLastElem[ast.Stmt](fn.Body.List, &SaveExpr)
+	fn.Body.List = prependBeforeLastElem[ast.Stmt](fn.Body.List, &ErrorCheck)
+}
+
+func addDBOperationsIfGetterOrSetter(fn *ast.FuncDecl, parsedPackage ParsedPackage, set *token.FileSet) (bool, bool) {
+	var isGetterOrSetter, fileModified bool
+	typeName := getFunctionReceiverTypeAsString(fn.Recv)
+
+	if strings.HasPrefix(fn.Name.Name, GetPrefix) {
+
+		fieldName := strings.TrimPrefix(fn.Name.Name, GetPrefix)
+		if _, fieldExist := parsedPackage.TypeFields[typeName][fieldName]; fieldExist {
+			isGetterOrSetter = true
+
+			if !isGetFieldStmtAlreadyAdded(fn.Body, set) {
+				idFieldName := getIdFieldNameOfType(typeName, parsedPackage.TypesWithCustomId)
+				stmtsToInsert := getGetterDBStmts(fn, getDBStmtsParam{
+					idFieldName:          idFieldName,
+					typeName:             typeName,
+					fieldName:            fieldName,
+					fieldType:            getFirstFunctionReturnTypeAsString(fn),
+					receiverVariableName: fn.Recv.List[0].Names[0].Name,
+				})
+				fn.Body.List = prependList(fn.Body.List, stmtsToInsert)
+				fileModified = true
+			}
+		}
+
+	} else if strings.HasPrefix(fn.Name.Name, SetPrefix) {
+		fieldName := strings.TrimPrefix(fn.Name.Name, SetPrefix)
+		if _, fieldExists := parsedPackage.TypeFields[typeName][fieldName]; fieldExists {
+			isGetterOrSetter = true
+
+			if !isSetFieldStmtAlreadyAdded(fn.Body, set) {
+				idFieldName := getIdFieldNameOfType(typeName, parsedPackage.TypesWithCustomId)
+				stmtsToInsert := getSetterDBStmts(fn, getDBStmtsParam{
+					idFieldName:          idFieldName,
+					typeName:             typeName,
+					fieldName:            fieldName,
+					fieldType:            getFirstFunctionReturnTypeAsString(fn),
+					receiverVariableName: fn.Recv.List[0].Names[0].Name,
+				})
+				fn.Body.List = appendListBeforeLastElem(fn.Body.List, stmtsToInsert)
+				fileModified = true
+			}
+		}
+	}
+
+	return isGetterOrSetter, fileModified
+}
+
+func addDBOperationsIfCtor(fn *ast.FuncDecl, parsedPackage ParsedPackage, set *token.FileSet, IsTypeNewCtorImplemented map[string]bool, IsTypeReNewCtorImplemented map[string]bool) (bool, bool) {
+	var ctorDetected, fileModified bool
+
+	if strings.HasPrefix(fn.Name.Name, ConstructorPrefix) {
+		typeName := strings.TrimPrefix(fn.Name.Name, ConstructorPrefix)
+		if parsedPackage.IsNobjectInOrginalPackage[typeName] {
+			if !areDBOperationsAlreadyAddedToNewCtor(fn.Body, set) {
+				idFieldName := getIdFieldNameOfType(typeName, parsedPackage.TypesWithCustomId)
+				stmtsToInsert, err := getNewCtorStmts(fn, typeName, idFieldName)
+				if err != nil {
+					fmt.Println("wrong constructor definition of ", fn.Name.Name, ": ", err)
+					return true, false
+				}
+				fileModified = true
+				fn.Body.List = appendListBeforeLastElem(fn.Body.List, stmtsToInsert)
+			}
+
+			IsTypeNewCtorImplemented[typeName] = true
+			ctorDetected = true
+		}
+	}
+	if strings.HasPrefix(fn.Name.Name, ReConstructorPrefix) {
+		IsTypeReNewCtorImplemented[strings.TrimPrefix(fn.Name.Name, ConstructorPrefix)] = true
+		ctorDetected = true
+	}
+
+	return ctorDetected, fileModified
 }
 
 func printWarningIfCtorMissing(isTypeNewCtorImpl, isTypeReNewCtorImpl, isNobjectInOrgPkg map[string]bool) {
