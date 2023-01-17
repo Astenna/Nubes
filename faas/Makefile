@@ -1,4 +1,3 @@
 deploy:
-	cp -R ../lib .
+	./build_handlers.sh generated/
 	sls deploy --verbose
-	rm -R lib/

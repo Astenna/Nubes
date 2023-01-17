@@ -80,10 +80,6 @@ func GenerateDeploymentFiles(path string, templateInput ServerlessTemplateInput)
 	buildScriptTempl := tp.ParseOrExitOnError("templates/handlers/deployment/build_handlers.sh.tmpl")
 	fileName = filepath.Join(tp.MakePathAbosoluteOrExitOnError(path), "build_handlers.sh")
 	tp.CreateFileFromTemplate(buildScriptTempl, nil, fileName)
-
-	dockerfileTempl := tp.ParseOrExitOnError("templates/handlers/deployment/Dockerfile.tmpl")
-	fileName = filepath.Join(tp.MakePathAbosoluteOrExitOnError(path), "Dockerfile")
-	tp.CreateFileFromTemplate(dockerfileTempl, nil, fileName)
 }
 
 func GenerateStateChangingHandlers(path string, functions []parser.StateChangingHandler) {

@@ -3,10 +3,6 @@ frameworkVersion: '>3.24.0'
 service: faas
 provider:
   name: aws
-  ecr:
-    images:
-      faasimage:
-        path: ./
   runtime: go1.x
   # Default memory size for functions (default: 1024MB)
   memorySize: 1024
@@ -24,44 +20,43 @@ provider:
         - "*"
 
 package:
-  individually: false
+  individually: true
+  exclude:
+    - "bin/*"
+    - "**/**"
 
 functions:
   GetField:
     name: GetField
-    image:
-      name: faasimage	
-      command:
-        -  GetField
-      entryPoint:
-        - '/lambda-entrypoint.sh'
+    handler: bin/GetField
+    package:
+      include:
+        - bin/GetField
     maximumRetryAttempts: 0
     maximumEventAge: 60
   SetField:
     name: SetField
-    image:
-      name: faasimage	
-      command:
-        -  SetField
-      entryPoint:
-        - '/lambda-entrypoint.sh'
+    handler: bin/SetField
+    package:
+      include:
+        - bin/SetField
     maximumRetryAttempts: 0
     maximumEventAge: 60
 
-  ProductDecreaseAvailabilityBy:
-    name:  ProductDecreaseAvailabilityBy
-    image:
-      name: faasimage	
-      command:
-        - ProductDecreaseAvailabilityBy
+  ProductSetSoldBy:
+    name:  ProductSetSoldBy
+    handler: bin/ProductSetSoldBy
+    package:
+      include:
+        - bin/ProductSetSoldBy
     maximumRetryAttempts: 0
     maximumEventAge: 60
 
   UserVerifyPassword:
     name:  UserVerifyPassword
-    image:
-      name: faasimage	
-      command:
-        - UserVerifyPassword
+    handler: bin/UserVerifyPassword
+    package:
+      include:
+        - bin/UserVerifyPassword
     maximumRetryAttempts: 0
     maximumEventAge: 60
