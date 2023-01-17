@@ -94,6 +94,37 @@ func getNewCtorStmts(fn *ast.FuncDecl, typeName, idFieldName string) ([]ast.Stmt
 	return []ast.Stmt{&insertInLib, &errorCheck, &idAssign}, nil
 }
 
+func getNewDestructorStmts(fn *ast.FuncDecl, typeName, idFieldName string) ([]ast.Stmt, error) {
+	idVariableName, err := getFirstParamVariableName(fn.Type.Params)
+	if err != nil {
+		return nil, err
+	}
+
+	deleteLibCall := ast.AssignStmt{
+		Tok: token.DEFINE,
+		Lhs: []ast.Expr{
+			&ast.Ident{Name: LibErrorVariableName},
+		},
+		Rhs: []ast.Expr{
+			&ast.CallExpr{
+				Fun: &ast.IndexExpr{
+					Index: &ast.Ident{Name: typeName},
+					X: &ast.SelectorExpr{
+						X:   &ast.Ident{Name: "lib"},
+						Sel: &ast.Ident{Name: "Delete"},
+					},
+				},
+				Args: []ast.Expr{
+					&ast.Ident{Name: idVariableName},
+				},
+			},
+		},
+	}
+	errorCheck := getErrorCheckExpr(fn, LibErrorVariableName)
+
+	return []ast.Stmt{&deleteLibCall, &errorCheck}, nil
+}
+
 func getFirstParamVariableName(params *ast.FieldList) (string, error) {
 	if params.List == nil || len(params.List) == 0 {
 		return "", fmt.Errorf("object to be inserted not found in the parameters list")

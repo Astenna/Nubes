@@ -10,6 +10,7 @@ type User struct {
 	Email		string	`dynamodbav:"Id" nubes:"readonly"`
 	Password	string	`nubes:"readonly"`
 	Address		string
+	Shops		lib.ReferenceList[Shop]	`nubes:"has-many-Owners"`
 }
 
 func NewUser(user User) (User, error) {
@@ -27,8 +28,12 @@ func ReNewUser(id string) User {
 	return *user
 }
 
-func DeleteUser(id string) {
-
+func DeleteUser(id string) error {
+	_libError := lib.Delete[User](id)
+	if _libError != nil {
+		return _libError
+	}
+	return nil
 }
 
 func (User) GetTypeName() string {

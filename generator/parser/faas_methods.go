@@ -18,6 +18,7 @@ func AddDBOperationsToMethods(path string, parsedPackage ParsedPackage) {
 
 	isTypeNewCtorImplemented := make(map[string]bool)
 	isTypeReNewCtorImplemented := make(map[string]bool)
+	isTypeDestructorImplemented := make(map[string]bool)
 
 	for _, pack := range packs {
 		for filePath, f := range pack.Files {
@@ -30,6 +31,12 @@ func AddDBOperationsToMethods(path string, parsedPackage ParsedPackage) {
 						if ctorDetected {
 							continue
 						}
+
+						destructorDetected := addDbOperationsIfDestructor(fn, parsedPackage, set, isTypeDestructorImplemented, &fileModified)
+						if destructorDetected {
+							continue
+						}
+
 					} else if fn.Name.Name != NobjectImplementationMethod && f.Name.Name != CustomIdImplementationMethod {
 
 						typeName := getFunctionReceiverTypeAsString(fn.Recv)
@@ -179,6 +186,31 @@ func addDBOperationsIfCtor(fn *ast.FuncDecl, parsedPackage ParsedPackage, set *t
 	return ctorDetected
 }
 
+func addDbOperationsIfDestructor(fn *ast.FuncDecl, parsedPackage ParsedPackage, set *token.FileSet, isTypeDestructorImplemented map[string]bool, fileModified *bool) bool {
+	var destructorDetected bool
+
+	if strings.HasPrefix(fn.Name.Name, DestructorPrefix) {
+		typeName := strings.TrimPrefix(fn.Name.Name, DestructorPrefix)
+		if parsedPackage.IsNobjectInOrginalPackage[typeName] {
+			if !areDBOperationsAlreadyAddedToDestructor(fn.Body, set) {
+				idFieldName := getIdFieldNameOfType(typeName, parsedPackage.TypesWithCustomId)
+				stmtsToInsert, err := getNewDestructorStmts(fn, typeName, idFieldName)
+				if err != nil {
+					fmt.Println("wrong destructor definition of ", fn.Name.Name, ": ", err)
+					return true
+				}
+				*fileModified = true
+				fn.Body.List = appendListBeforeLastElem(fn.Body.List, stmtsToInsert)
+			}
+
+			isTypeDestructorImplemented[typeName] = true
+			destructorDetected = true
+		}
+	}
+
+	return destructorDetected
+}
+
 func printWarningIfCtorMissing(isTypeNewCtorImpl, isTypeReNewCtorImpl, isNobjectInOrgPkg map[string]bool) {
 	for typeName, isNobject := range isNobjectInOrgPkg {
 		if isNobject {
@@ -196,6 +228,15 @@ func printWarningIfCtorMissing(isTypeNewCtorImpl, isTypeReNewCtorImpl, isNobject
 func areDBOperationsAlreadyAddedToNewCtor(funcBlock *ast.BlockStmt, set *token.FileSet) bool {
 	if funcBlock != nil && funcBlock.List != nil && len(funcBlock.List) > 3 {
 		assign, _ := funcBlock.List[len(funcBlock.List)-4].(*ast.AssignStmt)
+		secLastElem, _ := getFunctionBodyStmtAsString(set, assign)
+		return strings.Contains(secLastElem, "lib.Insert")
+	}
+	return false
+}
+
+func areDBOperationsAlreadyAddedToDestructor(funcBlock *ast.BlockStmt, set *token.FileSet) bool {
+	if funcBlock != nil && funcBlock.List != nil && len(funcBlock.List) > 2 {
+		assign, _ := funcBlock.List[len(funcBlock.List)-2].(*ast.AssignStmt)
 		secLastElem, _ := getFunctionBodyStmtAsString(set, assign)
 		return strings.Contains(secLastElem, "lib.Insert")
 	}
