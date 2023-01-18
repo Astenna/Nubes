@@ -200,7 +200,7 @@ func getReadFromLibExpr(fn *ast.FuncDecl, typesWithCustomId map[string]string) (
 					Index: &ast.Ident{Name: typeName},
 					X: &ast.SelectorExpr{
 						X:   &ast.Ident{Name: "lib"},
-						Sel: &ast.Ident{Name: "Get"},
+						Sel: &ast.Ident{Name: LibraryGetObjectStateMethod},
 					},
 				},
 				Args: []ast.Expr{

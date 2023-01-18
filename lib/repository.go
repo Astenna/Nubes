@@ -85,7 +85,7 @@ func Delete[T Nobject](id string) error {
 	return err
 }
 
-func Get[T Nobject](id string) (*T, error) {
+func GetObjectState[T Nobject](id string) (*T, error) {
 	if id == "" {
 		return nil, fmt.Errorf("missing id of object to get")
 	}

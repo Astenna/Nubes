@@ -15,5 +15,5 @@ func NewReference[T Nobject](id string) *Reference[T] {
 }
 
 func (r Reference[T]) Get() (*T, error) {
-	return Get[T](r.Id)
+	return GetObjectState[T](r.Id)
 }

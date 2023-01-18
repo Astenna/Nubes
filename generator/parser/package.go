@@ -130,7 +130,7 @@ func getPackageFuncs(packs map[string]*ast.Package) map[string][]detectedFunctio
 		for path, f := range pack.Files {
 			for _, d := range f.Decls {
 				if fn, isFn := d.(*ast.FuncDecl); isFn {
-					detectedFunctions[path] = append(detectedFunctions[f.Name.Name], detectedFunction{
+					detectedFunctions[path] = append(detectedFunctions[path], detectedFunction{
 						Function: fn,
 						Imports:  f.Imports,
 					})

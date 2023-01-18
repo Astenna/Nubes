@@ -43,12 +43,12 @@ functions:
     maximumRetryAttempts: 0
     maximumEventAge: 60
 
-  ProductSetSoldBy:
-    name:  ProductSetSoldBy
-    handler: bin/ProductSetSoldBy
+  ProductDecreaseAvailabilityBy:
+    name:  ProductDecreaseAvailabilityBy
+    handler: bin/ProductDecreaseAvailabilityBy
     package:
       include:
-        - bin/ProductSetSoldBy
+        - bin/ProductDecreaseAvailabilityBy
     maximumRetryAttempts: 0
     maximumEventAge: 60
 

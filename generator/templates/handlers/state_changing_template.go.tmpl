@@ -7,7 +7,8 @@ import (
 )
 
 func {{.MethodName}}Handler(input lib.HandlerParameters) {{if .OptionalReturnType}} ({{.OptionalReturnType}}, error) {{else}} error {{end}} {
-	instance := new({{.OrginalPackageAlias}}.{{.ReceiverType}}) 
+	instance := new({{.OrginalPackageAlias}}.{{.ReceiverType}})
+	instance.{{.ReceiverIdFieldName}} = input.Id 
 
 	{{if .OptionalReturnType}} result, {{end}}_err := instance.{{.Invocation}} 
 	if _err != nil {

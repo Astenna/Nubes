@@ -14,27 +14,12 @@ type Product struct {
 	Price             float32
 }
 
-func NewProduct(product Product) (Product, error) {
-	out, _libError := lib.Insert(product)
-	if _libError != nil {
-		return *new(Product), _libError
-	}
-	product.Id = out
-	return product, nil
-}
-
-func ReNewProduct(id string) (Product, error) {
-	product := new(Product)
-	product.Id = id
-	return *product, nil
-}
-
 func (Product) GetTypeName() string {
 	return "Product"
 }
 
 func (p *Product) DecreaseAvailabilityBy(decreaseNum int) error {
-	p, _libError := lib.Get[Product](p.Id)
+	p, _libError := lib.GetObjectState[Product](p.Id)
 	if _libError != nil {
 		return _libError
 	}
@@ -44,6 +29,26 @@ func (p *Product) DecreaseAvailabilityBy(decreaseNum int) error {
 
 	p.QuantityAvailable = p.QuantityAvailable - decreaseNum
 	_libError = lib.Upsert(p, p.Id)
+	if _libError != nil {
+		return _libError
+	}
+	return nil
+}
+
+func (p Product) GetSoldBy() (lib.Reference[Shop], error) {
+	fieldValue, _libError := lib.GetField(p.Id, lib.GetFieldParam{TypeName: "Product", FieldName: "SoldBy"})
+	if _libError != nil {
+		return *new(lib.Reference[Shop]), _libError
+	}
+
+	fieldMap, _ := fieldValue.(map[string]string)
+	p.SoldBy = *lib.NewReference[Shop](fieldMap["Id"])
+	return p.SoldBy, nil
+}
+
+func (p *Product) SetSoldBy(id string) error {
+	p.SoldBy = *lib.NewReference[Shop](id)
+	_libError := lib.SetField(p.Id, lib.SetFieldParam{TypeName: "Product", FieldName: "SoldBy", Value: p.SoldBy})
 	if _libError != nil {
 		return _libError
 	}

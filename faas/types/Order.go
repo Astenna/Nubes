@@ -32,7 +32,7 @@ func NewOrder(order Order) (Order, error) {
 	if err != nil {
 		return *new(Order), errors.New("unable to retrieve user's address for shipping")
 	}
-	shipping, err := NewShipping(Shipping{
+	shipping, err := lib.Create[Shipping](Shipping{
 		State:   InPreparation,
 		Address: buyer.Address,
 	})

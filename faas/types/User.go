@@ -5,27 +5,12 @@ import (
 )
 
 type User struct {
-	FirstName	string
-	LastName	string
-	Email		string	`dynamodbav:"Id" nubes:"readonly"`
-	Password	string	`nubes:"readonly"`
-	Address		string
-	Shops		lib.ReferenceList[Shop]	`nubes:"has-many-Owners"`
-}
-
-func NewUser(user User) (User, error) {
-	out, _libError := lib.Insert(user)
-	if _libError != nil {
-		return *new(User), _libError
-	}
-	user.Email = out
-	return user, nil
-}
-
-func ReNewUser(id string) User {
-	user := new(User)
-	user.Email = id
-	return *user
+	FirstName string
+	LastName  string
+	Email     string `dynamodbav:"Id" nubes:"id,readonly"`
+	Password  string `nubes:"readonly"`
+	Address   string
+	Shops     lib.ReferenceList[Shop] `nubes:"has-many-Owners"`
 }
 
 func DeleteUser(id string) error {
@@ -63,12 +48,11 @@ func (u *User) SetAddress(adr string) error {
 }
 
 func (u User) VerifyPassword(password string) (bool, error) {
-	tempReceiverName, _libError := lib.Get[User](u.Email)
+	tempReceiverName, _libError := lib.GetObjectState[User](u.Email)
 	if _libError != nil {
 		return *new(bool), _libError
 	}
 	u = *tempReceiverName
-
 	if u.Password == password {
 		return true, nil
 	}

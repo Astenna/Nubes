@@ -236,9 +236,9 @@ func areDBOperationsAlreadyAddedToNewCtor(funcBlock *ast.BlockStmt, set *token.F
 
 func areDBOperationsAlreadyAddedToDestructor(funcBlock *ast.BlockStmt, set *token.FileSet) bool {
 	if funcBlock != nil && funcBlock.List != nil && len(funcBlock.List) > 2 {
-		assign, _ := funcBlock.List[len(funcBlock.List)-2].(*ast.AssignStmt)
+		assign, _ := funcBlock.List[len(funcBlock.List)-3].(*ast.AssignStmt)
 		secLastElem, _ := getFunctionBodyStmtAsString(set, assign)
-		return strings.Contains(secLastElem, "lib.Insert")
+		return strings.Contains(secLastElem, "lib.Delete")
 	}
 	return false
 }
@@ -247,7 +247,7 @@ func isDBGetOperationAlreadyAddedToMethod(funcBlock *ast.BlockStmt, set *token.F
 	if funcBlock != nil && funcBlock.List != nil && len(funcBlock.List) > 2 {
 		assign, _ := funcBlock.List[0].(*ast.AssignStmt)
 		secLastElem, _ := getFunctionBodyStmtAsString(set, assign)
-		return strings.Contains(secLastElem, "lib.Get")
+		return strings.Contains(secLastElem, "lib."+LibraryGetObjectStateMethod)
 	}
 	return false
 }

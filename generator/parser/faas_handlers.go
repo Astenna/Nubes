@@ -8,6 +8,7 @@ import (
 	"go/printer"
 	"go/token"
 	"go/types"
+	"strings"
 )
 
 type StateChangingHandler struct {
@@ -16,6 +17,7 @@ type StateChangingHandler struct {
 	Imports             string
 	MethodName          string
 	ReceiverType        string
+	ReceiverIdFieldName string
 	OptionalReturnType  string
 	Invocation          string
 }
@@ -38,15 +40,15 @@ func ParseStateChangingHandlers(path string, parsedPackage ParsedPackage) []Stat
 		for _, detectedFunction := range functions {
 			f := detectedFunction.Function
 
-			if f.Name.Name == NobjectImplementationMethod || f.Name.Name == CustomIdImplementationMethod {
+			if f.Name.Name == NobjectImplementationMethod || f.Name.Name == CustomIdImplementationMethod || strings.HasPrefix(f.Name.Name, SetPrefix) || strings.HasPrefix(f.Name.Name, GetPrefix) {
 				continue
 			} else if f.Recv == nil {
 
 				// TODO: detect & generate handler(s) with CTORs
 
 			} else {
-				ownerType := getFunctionReceiverTypeAsString(f.Recv)
-				if isNobject := isNobjectInOrgPkg[ownerType]; !isNobject {
+				receiverTypeName := getFunctionReceiverTypeAsString(f.Recv)
+				if isNobject := isNobjectInOrgPkg[receiverTypeName]; !isNobject {
 					fmt.Println("Member type does not implement Nobject interface. Handler generation for " + f.Name.Name + "skipped")
 					continue
 				}
@@ -55,8 +57,13 @@ func ParseStateChangingHandlers(path string, parsedPackage ParsedPackage) []Stat
 					OrginalPackage:      parsedPackage.ImportPath,
 					OrginalPackageAlias: OrginalPackageAlias,
 					MethodName:          f.Name.Name,
-					ReceiverType:        ownerType,
+					ReceiverType:        receiverTypeName,
+					ReceiverIdFieldName: "Id",
 					Imports:             getImportsAsString(set, detectedFunction.Imports),
+				}
+
+				if customIdFieldName, hasCustomId := parsedPackage.TypesWithCustomId[receiverTypeName]; hasCustomId {
+					newHandler.ReceiverIdFieldName = customIdFieldName
 				}
 
 				if retParamsVerifier.Check(f) {
