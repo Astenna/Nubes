@@ -8,6 +8,7 @@ const ConstructorPrefix = "New"
 const ReConstructorPrefix = "ReNew"
 const DestructorPrefix = "Delete"
 const LibraryGetObjectStateMethod = "GetObjectState"
+const LibraryReferenceNavigationList = "ReferenceNavigationList"
 
 const OrginalPackageAlias = "org"
 const HandlerInputParameterType = "lib.HandlerParameters"

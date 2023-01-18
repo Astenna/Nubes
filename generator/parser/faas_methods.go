@@ -117,7 +117,7 @@ func addDBOperationsIfGetterOrSetter(fn *ast.FuncDecl, parsedPackage ParsedPacka
 	if strings.HasPrefix(fn.Name.Name, GetPrefix) {
 
 		fieldName := strings.TrimPrefix(fn.Name.Name, GetPrefix)
-		if _, fieldExist := parsedPackage.TypeFields[typeName][fieldName]; fieldExist {
+		if fieldType, fieldExist := parsedPackage.TypeFields[typeName][fieldName]; fieldExist {
 			isGetterOrSetter = true
 
 			if !isGetFieldStmtAlreadyAdded(fn.Body, set) {
@@ -126,7 +126,7 @@ func addDBOperationsIfGetterOrSetter(fn *ast.FuncDecl, parsedPackage ParsedPacka
 					idFieldName:          idFieldName,
 					typeName:             typeName,
 					fieldName:            fieldName,
-					fieldType:            getFirstFunctionReturnTypeAsString(fn),
+					fieldType:            fieldType,
 					receiverVariableName: fn.Recv.List[0].Names[0].Name,
 				})
 				fn.Body.List = prependList(fn.Body.List, stmtsToInsert)
@@ -136,7 +136,7 @@ func addDBOperationsIfGetterOrSetter(fn *ast.FuncDecl, parsedPackage ParsedPacka
 
 	} else if strings.HasPrefix(fn.Name.Name, SetPrefix) {
 		fieldName := strings.TrimPrefix(fn.Name.Name, SetPrefix)
-		if _, fieldExists := parsedPackage.TypeFields[typeName][fieldName]; fieldExists {
+		if fieldType, fieldExists := parsedPackage.TypeFields[typeName][fieldName]; fieldExists {
 			isGetterOrSetter = true
 
 			if !isSetFieldStmtAlreadyAdded(fn.Body, set) {
@@ -145,7 +145,7 @@ func addDBOperationsIfGetterOrSetter(fn *ast.FuncDecl, parsedPackage ParsedPacka
 					idFieldName:          idFieldName,
 					typeName:             typeName,
 					fieldName:            fieldName,
-					fieldType:            getFirstFunctionReturnTypeAsString(fn),
+					fieldType:            fieldType,
 					receiverVariableName: fn.Recv.List[0].Names[0].Name,
 				})
 				fn.Body.List = appendListBeforeLastElem(fn.Body.List, stmtsToInsert)

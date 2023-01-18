@@ -14,8 +14,8 @@ import (
 type ParsedPackage struct {
 	ImportPath                string
 	IsNobjectInOrginalPackage map[string]bool
-	TypeFields                map[string]map[string]struct{}
-	TypesIndexes              map[string][]string
+	TypeFields                map[string]map[string]string
+	TypeAttributesIndexes     map[string][]string
 	TypesWithCustomId         map[string]string
 }
 
@@ -27,8 +27,8 @@ func GetPackageTypes(path string, moduleName string) ParsedPackage {
 	result := ParsedPackage{
 		IsNobjectInOrginalPackage: make(map[string]bool),
 		TypesWithCustomId:         map[string]string{},
-		TypesIndexes:              map[string][]string{},
-		TypeFields:                map[string]map[string]struct{}{},
+		TypeAttributesIndexes:     map[string][]string{},
+		TypeFields:                map[string]map[string]string{},
 	}
 
 	for packageName, pack := range packs {
@@ -59,12 +59,7 @@ func GetPackageTypes(path string, moduleName string) ParsedPackage {
 							}
 
 							if strctType, ok := typeSpec.Type.(*ast.StructType); ok {
-								indexes := getStructIndexes(strctType)
-								if indexes != nil {
-									result.TypesIndexes[typeName] = indexes
-								}
-
-								result.TypeFields[typeName] = getStructFieldNames(strctType.Fields.List)
+								parseStructFields(strctType, typeName, &result)
 							}
 						}
 					}
@@ -74,36 +69,27 @@ func GetPackageTypes(path string, moduleName string) ParsedPackage {
 		result.ImportPath = moduleName + "/" + packageName
 	}
 
+	// TODO: loop over all detected indexes, to verify if the attributes are named according to the convention
 	return result
 }
 
-func getStructFieldNames(fields []*ast.Field) map[string]struct{} {
-	if fields == nil {
-		return nil
-	}
-
-	result := make(map[string]struct{}, len(fields))
-	for _, field := range fields {
-		result[field.Names[0].Name] = struct{}{}
-	}
-
-	return result
-}
-
-func getStructIndexes(strctType *ast.StructType) []string {
-
+func parseStructFields(strctType *ast.StructType, typeName string, parsedPackage *ParsedPackage) {
 	if strctType == nil || strctType.Fields == nil || len(strctType.Fields.List) == 0 {
-		return nil
+		return
 	}
 
-	var result []string
+	parsedPackage.TypeFields[typeName] = make(map[string]string, len(strctType.Fields.List))
 	for _, field := range strctType.Fields.List {
-		if isIndex(field) {
-			result = append(result, field.Names[0].Name)
+		fieldType := types.ExprString(field.Type)
+		parsedPackage.TypeFields[typeName][field.Names[0].Name] = fieldType
+
+		if strings.Contains(fieldType, LibraryReferenceNavigationList) {
+			relationshipOrginalOwner := strings.Split(fieldType, ",")[1]
+			relationshipOrginalOwner = strings.TrimRight(relationshipOrginalOwner, "]")
+
+			parsedPackage.TypeAttributesIndexes[relationshipOrginalOwner] = append(parsedPackage.TypeAttributesIndexes[relationshipOrginalOwner], typeName)
 		}
 	}
-
-	return result
 }
 
 func getIdFieldNameFromCustomIdImpl(fn *ast.FuncDecl) (string, error) {

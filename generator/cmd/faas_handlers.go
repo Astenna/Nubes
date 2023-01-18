@@ -40,7 +40,7 @@ var handlersCmd = &cobra.Command{
 		}
 
 		if dbInit {
-			database.CreateTypeTables(parsedPackage.IsNobjectInOrginalPackage)
+			database.CreateTypeTables(parsedPackage)
 		}
 	},
 }

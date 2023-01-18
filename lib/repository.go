@@ -113,6 +113,22 @@ func GetObjectState[T Nobject](id string) (*T, error) {
 	return nil, err
 }
 
+func GetByIndex[T Nobject](attributeName string, attributeValue string) ([]string, error) {
+	if attributeName == "" {
+		return nil, fmt.Errorf("missing attributeName")
+	}
+
+	queryInput := &dynamodb.QueryInput{
+		TableName:              aws.String((*new(T)).GetTypeName()),
+		IndexName:              aws.String((*new(T)).GetTypeName() + attributeName),
+		KeyConditionExpression: aws.String("gsi1pk = :gsi1pk and gsi1sk > :gsi1sk"),
+	}
+
+	items, err := DBClient.Query(queryInput)
+	_ = items
+	return nil, err
+}
+
 func GetBatch[T Nobject](ids []string) (*[]T, error) {
 	if ids == nil {
 		return nil, fmt.Errorf("missing id of object to get")

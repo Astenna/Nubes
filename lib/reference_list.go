@@ -30,7 +30,7 @@ func (r ReferenceList[T]) Get() ([]T, error) {
 	return result, nil
 }
 
-func (r ReferenceList[T]) GetByIndex(index int) (*T, error) {
+func (r ReferenceList[T]) GetAt(index int) (*T, error) {
 	if len(r.Ids)-1 < index || index < 0 {
 		return nil, fmt.Errorf("provided index: %d is out of bounds of the list", index)
 	}
