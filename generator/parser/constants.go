@@ -23,6 +23,9 @@ const ReadonlyTag = "readonly"
 const IndexTag = "index"
 const HasOneTag = "hasOne"
 const HasManyTag = "hasMany"
+const DynamoDBIgnoreTag = "dynamodbav:\"-\""
+const DynamoDBIgnoreValueTag = "-"
+const DynamoDBKeyTag = "dynamodbav"
 
 // PARAMETER NAMES
 const HandlerInputParameterName = "input"

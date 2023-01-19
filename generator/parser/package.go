@@ -9,6 +9,8 @@ import (
 	"go/types"
 	"os"
 	"strings"
+
+	"github.com/fatih/structtag"
 )
 
 type ParsedPackage struct {
@@ -39,7 +41,7 @@ func GetPackageTypes(path string, moduleName string) ParsedPackage {
 	}
 
 	for packageName, pack := range packs {
-		for _, f := range pack.Files {
+		for path, f := range pack.Files {
 			for _, d := range f.Decls {
 				if fn, isFn := d.(*ast.FuncDecl); isFn {
 					if fn.Recv != nil && fn.Name.Name == NobjectImplementationMethod {
@@ -66,7 +68,10 @@ func GetPackageTypes(path string, moduleName string) ParsedPackage {
 							}
 
 							if strctType, ok := typeSpec.Type.(*ast.StructType); ok {
-								parseStructFields(strctType, typeName, &result)
+								fileModified := parseStructFields(strctType, typeName, &result)
+								if fileModified {
+									saveAstChangesInFile(f, set, path)
+								}
 							}
 						}
 					}
@@ -79,9 +84,10 @@ func GetPackageTypes(path string, moduleName string) ParsedPackage {
 	return result
 }
 
-func parseStructFields(strctType *ast.StructType, typeName string, parsedPackage *ParsedPackage) {
+func parseStructFields(strctType *ast.StructType, typeName string, parsedPackage *ParsedPackage) bool {
+	structDefinitionModified := false
 	if strctType == nil || strctType.Fields == nil || len(strctType.Fields.List) == 0 {
-		return
+		return structDefinitionModified
 	}
 
 	parsedPackage.TypeFields[typeName] = make(map[string]string, len(strctType.Fields.List))
@@ -89,33 +95,48 @@ func parseStructFields(strctType *ast.StructType, typeName string, parsedPackage
 		fieldType := types.ExprString(field.Type)
 		parsedPackage.TypeFields[typeName][field.Names[0].Name] = fieldType
 
-		tag, err := getNubesTagOrDefault(field)
+		tags, err := getParsedTags(field)
 		if err != nil {
 			fmt.Println("error occured while checking struct tags of:", typeName, " field: ", field.Names[0].Name, ". Error: ", err)
-		} else if tag != nil {
-			if strings.Contains(tag.Name, HasOneTag) {
+		} else if tags != nil {
+			if tag, _ := tags.Get(NubesTagKey); tag != nil {
+				if strings.Contains(tag.Name, HasOneTag) {
 
-				splitted := strings.Split(tag.Name, "-")
-				navigationToFieldName := ""
-				if len(splitted) > 0 {
-					navigationToFieldName = splitted[1]
-				} else {
-					fmt.Println(HasOneTag, " detected, but missing reffering field name. Referring field name should be specified after - charcter, e.g.: ", HasOneTag, "<referring_field_name>")
-					continue
-				}
+					splitted := strings.Split(tag.Name, "-")
+					navigationToFieldName := ""
+					if len(splitted) > 0 {
+						navigationToFieldName = splitted[1]
+					} else {
+						fmt.Println(HasOneTag, " detected, but missing reffering field name. Referring field name should be specified after - charcter, e.g.: ", HasOneTag, "<referring_field_name>")
+						continue
+					}
 
-				if strings.Contains(fieldType, LibraryReferenceNavigationList) {
-					navigationToTypeName := strings.TrimPrefix(fieldType, LibraryReferenceNavigationList)
-					navigationToTypeName = strings.Trim(navigationToTypeName, "[]")
+					if strings.Contains(fieldType, LibraryReferenceNavigationList) {
+						navigationToTypeName := strings.TrimPrefix(fieldType, LibraryReferenceNavigationList)
+						navigationToTypeName = strings.Trim(navigationToTypeName, "[]")
 
-					parsedPackage.TypeAttributesIndexes[navigationToTypeName] = append(parsedPackage.TypeAttributesIndexes[navigationToTypeName], navigationToFieldName)
-					parsedPackage.TypeNavListsReferringFieldName[typeName] = append(parsedPackage.TypeNavListsReferringFieldName[typeName], NavigationToField{TypeName: navigationToTypeName, FieldName: navigationToFieldName})
-				} else {
-					fmt.Println(HasManyTag, " or ", HasOneTag, " can be used only with ", LibraryReferenceNavigationList, " fields!")
+						parsedPackage.TypeAttributesIndexes[navigationToTypeName] = append(parsedPackage.TypeAttributesIndexes[navigationToTypeName], navigationToFieldName)
+						parsedPackage.TypeNavListsReferringFieldName[typeName] = append(parsedPackage.TypeNavListsReferringFieldName[typeName], NavigationToField{TypeName: navigationToTypeName, FieldName: navigationToFieldName})
+
+						dynamoTag, _ := tags.Get(DynamoDBKeyTag)
+						if dynamoTag == nil {
+							field.Tag.Value = field.Tag.Value[0:len(field.Tag.Value)-1] + " " + DynamoDBIgnoreTag + "`"
+							return true
+						}
+						if dynamoTag.Name != "-" {
+							fmt.Println("invalid definition of dynamodb struct tag fixed in", typeName, "field:", field.Names[0].Name, " replaced with mandatory ignore tag for", LibraryReferenceNavigationList)
+							tags.Set(&structtag.Tag{Key: DynamoDBKeyTag, Name: DynamoDBIgnoreValueTag})
+							field.Tag.Value = "`" + tags.String() + "`"
+							return true
+						}
+					} else {
+						fmt.Println(HasManyTag, " or ", HasOneTag, " can be used only with ", LibraryReferenceNavigationList, " fields!")
+					}
 				}
 			}
 		}
 	}
+	return false
 }
 
 func getIdFieldNameFromCustomIdImpl(fn *ast.FuncDecl) (string, error) {
