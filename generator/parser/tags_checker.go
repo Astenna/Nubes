@@ -2,13 +2,32 @@ package parser
 
 import (
 	"go/ast"
+	"go/token"
+	"strconv"
 	"strings"
+
+	"github.com/fatih/structtag"
 )
 
 func isReadonly(field *ast.Field) bool {
-	return field.Tag != nil && strings.Contains(field.Tag.Value, ReadonlyTag) && strings.Contains(field.Tag.Value, TagKey)
+	return field.Tag != nil && strings.Contains(field.Tag.Value, ReadonlyTag) && strings.Contains(field.Tag.Value, NubesTagKey)
+}
+
+func getNubesTagOrDefault(field *ast.Field) (*structtag.Tag, error) {
+	if field.Tag != nil && field.Tag.Kind == token.STRING && strings.Contains(field.Tag.Value, NubesTagKey) {
+		unquotedTag, err := strconv.Unquote(field.Tag.Value)
+		if err != nil {
+			return nil, err
+		}
+		tags, err := structtag.Parse(unquotedTag)
+		if err != nil {
+			return nil, err
+		}
+		return tags.Get(NubesTagKey)
+	}
+	return nil, nil
 }
 
 func isIndex(field *ast.Field) bool {
-	return field.Tag != nil && strings.Contains(field.Tag.Value, IndexTag) && strings.Contains(field.Tag.Value, TagKey)
+	return field.Tag != nil && strings.Contains(field.Tag.Value, IndexTag) && strings.Contains(field.Tag.Value, NubesTagKey)
 }

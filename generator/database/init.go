@@ -39,8 +39,8 @@ func CreateTypeTables(parsedPackage parser.ParsedPackage) {
 				TableName: aws.String(typeName),
 			}
 
-			if typeWithRefNavList, ok := parsedPackage.TypeAttributesIndexes[typeName]; ok {
-				for _, attributeName := range typeWithRefNavList {
+			if typeIndexes, ok := parsedPackage.TypeAttributesIndexes[typeName]; ok {
+				for _, attributeName := range typeIndexes {
 					createTableInput.GlobalSecondaryIndexes = []*dynamodb.GlobalSecondaryIndex{
 						{
 							IndexName: aws.String(typeName + attributeName),
@@ -53,14 +53,28 @@ func CreateTypeTables(parsedPackage parser.ParsedPackage) {
 							Projection: &dynamodb.Projection{
 								ProjectionType: aws.String("KEYS_ONLY"),
 							},
+							ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
+								ReadCapacityUnits:  aws.Int64(1),
+								WriteCapacityUnits: aws.Int64(1),
+							},
 						},
 					}
+					createTableInput.AttributeDefinitions = append(createTableInput.AttributeDefinitions,
+						&dynamodb.AttributeDefinition{
+							AttributeName: aws.String(attributeName),
+							AttributeType: aws.String("S"),
+						},
+					)
 				}
 			}
 
 			_, err := dblient.CreateTable(createTableInput)
 
 			if err != nil {
+				if _, ok := err.(*dynamodb.ResourceInUseException); ok {
+					fmt.Println("Table for type: ", typeName, " already created")
+					continue
+				}
 				fmt.Println(err)
 			}
 		}

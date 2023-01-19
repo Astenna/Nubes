@@ -23,7 +23,7 @@ func NewOrder(order Order) (Order, error) {
 	for _, orderedProduct := range order.Products {
 		product, err := orderedProduct.Product.Get()
 		if err != nil {
-			return *new(Order), errors.New("item " + orderedProduct.Product.Id + " not available")
+			return *new(Order), errors.New("item " + orderedProduct.Product.Id() + " not available")
 		}
 		product.DecreaseAvailabilityBy(orderedProduct.Quantity)
 	}
@@ -40,7 +40,7 @@ func NewOrder(order Order) (Order, error) {
 		return *new(Order), errors.New("failed to create shipping for the order: " + err.Error())
 	}
 
-	order.Shipping = *lib.NewReference[Shipping](shipping.Id)
+	order.Shipping = lib.Reference[Shipping](shipping.Id)
 	out, _libError := lib.Insert(order)
 	if _libError != nil {
 		return *new(Order), _libError

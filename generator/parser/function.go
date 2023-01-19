@@ -12,7 +12,7 @@ import (
 )
 
 func isErrorTypeReturned(f *ast.FuncDecl) bool {
-	return types.ExprString(f.Type.Results.List[len(f.Type.Results.List)-1].Type) == "error"
+	return len(f.Type.Results.List) > 0 && types.ExprString(f.Type.Results.List[len(f.Type.Results.List)-1].Type) == "error"
 }
 
 func getFunctionReceiverTypeAsString(fieldList *ast.FieldList) string {
@@ -93,7 +93,7 @@ func (v *returnParamsVerifier) Check(f *ast.FuncDecl) bool {
 		return f.Type.Results != nil && f.Type.Results.List != nil && isErrorTypeReturned(f) && len(f.Type.Results.List) <= 2
 	} else {
 		v.errorsPrinted = true
-		if f.Type.Results == nil && f.Type.Results.List == nil && !isErrorTypeReturned(f) {
+		if f.Type.Results == nil || f.Type.Results.List == nil || !isErrorTypeReturned(f) {
 			fmt.Println("error type must be defined as the last return type from type's method. Handler generation for " + f.Name.Name + "skipped")
 			return false
 		}

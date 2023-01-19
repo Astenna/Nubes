@@ -12,11 +12,17 @@ import (
 )
 
 type ParsedPackage struct {
-	ImportPath                string
-	IsNobjectInOrginalPackage map[string]bool
-	TypeFields                map[string]map[string]string
-	TypeAttributesIndexes     map[string][]string
-	TypesWithCustomId         map[string]string
+	ImportPath                     string
+	IsNobjectInOrginalPackage      map[string]bool
+	TypeFields                     map[string]map[string]string
+	TypeAttributesIndexes          map[string][]string
+	TypeNavListsReferringFieldName map[string][]NavigationToField
+	TypesWithCustomId              map[string]string
+}
+
+type NavigationToField struct {
+	TypeName  string
+	FieldName string
 }
 
 func GetPackageTypes(path string, moduleName string) ParsedPackage {
@@ -25,10 +31,11 @@ func GetPackageTypes(path string, moduleName string) ParsedPackage {
 	assertDirParsed(err)
 
 	result := ParsedPackage{
-		IsNobjectInOrginalPackage: make(map[string]bool),
-		TypesWithCustomId:         map[string]string{},
-		TypeAttributesIndexes:     map[string][]string{},
-		TypeFields:                map[string]map[string]string{},
+		IsNobjectInOrginalPackage:      make(map[string]bool),
+		TypesWithCustomId:              map[string]string{},
+		TypeAttributesIndexes:          map[string][]string{},
+		TypeNavListsReferringFieldName: map[string][]NavigationToField{},
+		TypeFields:                     map[string]map[string]string{},
 	}
 
 	for packageName, pack := range packs {
@@ -69,7 +76,6 @@ func GetPackageTypes(path string, moduleName string) ParsedPackage {
 		result.ImportPath = moduleName + "/" + packageName
 	}
 
-	// TODO: loop over all detected indexes, to verify if the attributes are named according to the convention
 	return result
 }
 
@@ -83,11 +89,31 @@ func parseStructFields(strctType *ast.StructType, typeName string, parsedPackage
 		fieldType := types.ExprString(field.Type)
 		parsedPackage.TypeFields[typeName][field.Names[0].Name] = fieldType
 
-		if strings.Contains(fieldType, LibraryReferenceNavigationList) {
-			relationshipOrginalOwner := strings.Split(fieldType, ",")[1]
-			relationshipOrginalOwner = strings.TrimRight(relationshipOrginalOwner, "]")
+		tag, err := getNubesTagOrDefault(field)
+		if err != nil {
+			fmt.Println("error occured while checking struct tags of:", typeName, " field: ", field.Names[0].Name, ". Error: ", err)
+		} else if tag != nil {
+			if strings.Contains(tag.Name, HasOneTag) {
 
-			parsedPackage.TypeAttributesIndexes[relationshipOrginalOwner] = append(parsedPackage.TypeAttributesIndexes[relationshipOrginalOwner], typeName)
+				splitted := strings.Split(tag.Name, "-")
+				navigationToFieldName := ""
+				if len(splitted) > 0 {
+					navigationToFieldName = splitted[1]
+				} else {
+					fmt.Println(HasOneTag, " detected, but missing reffering field name. Referring field name should be specified after - charcter, e.g.: ", HasOneTag, "<referring_field_name>")
+					continue
+				}
+
+				if strings.Contains(fieldType, LibraryReferenceNavigationList) {
+					navigationToTypeName := strings.TrimPrefix(fieldType, LibraryReferenceNavigationList)
+					navigationToTypeName = strings.Trim(navigationToTypeName, "[]")
+
+					parsedPackage.TypeAttributesIndexes[navigationToTypeName] = append(parsedPackage.TypeAttributesIndexes[navigationToTypeName], navigationToFieldName)
+					parsedPackage.TypeNavListsReferringFieldName[typeName] = append(parsedPackage.TypeNavListsReferringFieldName[typeName], NavigationToField{TypeName: navigationToTypeName, FieldName: navigationToFieldName})
+				} else {
+					fmt.Println(HasManyTag, " or ", HasOneTag, " can be used only with ", LibraryReferenceNavigationList, " fields!")
+				}
+			}
 		}
 	}
 }

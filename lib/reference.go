@@ -1,19 +1,11 @@
 package lib
 
-type Reference[T Nobject] struct {
-	Id string
-}
+type Reference[T Nobject] string
 
-func NewReference[T Nobject](id string) *Reference[T] {
-	if id != "" {
-		newObj := &Reference[T]{
-			Id: id,
-		}
-		return newObj
-	}
-	return new(Reference[T])
+func (r Reference[T]) Id() string {
+	return string(r)
 }
 
 func (r Reference[T]) Get() (*T, error) {
-	return GetObjectState[T](r.Id)
+	return GetObjectState[T](string(r))
 }

@@ -8,6 +8,8 @@ require (
 	golang.org/x/exp v0.0.0-20221217163422-3c43f8badb15
 )
 
+require github.com/fatih/structtag v1.2.0 // indirect
+
 require (
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect

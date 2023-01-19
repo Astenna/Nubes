@@ -1,18 +1,25 @@
 package lib
 
-type ReferenceNavigationList[Many, One Nobject] struct {
-	ids []string
+type ReferenceNavigationList[T Nobject] struct {
+	ownerId            string
+	ownerTypeName      string
+	referringFieldName string
 }
 
-func (r ReferenceNavigationList[Many, One]) GetIds() ([]string, error) {
-	// make call using index
-	//oneTypeName := (*new(One)).GetTypeName()
-	//out, err := GetByIndex[Many](oneTypeName)
-	//_, _ = out, err
-	return nil, nil
+func NewReferenceNavigationList[T Nobject](ownerId, ownerTypeName, referringFieldName string) *ReferenceNavigationList[T] {
+	result := new(ReferenceNavigationList[T])
+	result.ownerId = ownerId
+	result.ownerTypeName = ownerTypeName
+	result.referringFieldName = referringFieldName
+	return result
 }
 
-func (r ReferenceNavigationList[Many, One]) Get() ([]Many, error) {
+func (r ReferenceNavigationList[T]) GetIds() ([]string, error) {
+	out, err := GetByIndex[T](r.ownerId, r.referringFieldName, r.ownerTypeName)
+	return out, err
+}
+
+func (r ReferenceNavigationList[T]) Get() ([]T, error) {
 	// make call using index
 
 	return nil, nil

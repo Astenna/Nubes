@@ -42,12 +42,12 @@ func (p Product) GetSoldBy() (lib.Reference[Shop], error) {
 	}
 
 	fieldMap, _ := fieldValue.(map[string]string)
-	p.SoldBy = *lib.NewReference[Shop](fieldMap["Id"])
+	p.SoldBy = lib.Reference[Shop](fieldMap["Id"])
 	return p.SoldBy, nil
 }
 
 func (p *Product) SetSoldBy(id string) error {
-	p.SoldBy = *lib.NewReference[Shop](id)
+	p.SoldBy = lib.Reference[Shop](id)
 	_libError := lib.SetField(p.Id, lib.SetFieldParam{TypeName: "Product", FieldName: "SoldBy", Value: p.SoldBy})
 	if _libError != nil {
 		return _libError

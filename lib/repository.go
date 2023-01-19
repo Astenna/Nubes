@@ -113,20 +113,46 @@ func GetObjectState[T Nobject](id string) (*T, error) {
 	return nil, err
 }
 
-func GetByIndex[T Nobject](attributeName string, attributeValue string) ([]string, error) {
+func GetByIndex[T Nobject](attributeValue, attributeName, ownerTypeName string) ([]string, error) {
 	if attributeName == "" {
 		return nil, fmt.Errorf("missing attributeName")
 	}
+	if attributeValue == "" {
+		return nil, fmt.Errorf("missing attributeValue")
+	}
+	if ownerTypeName == "" {
+		return nil, fmt.Errorf("missing ownerTypeName")
+	}
 
+	keyCondition := expression.Key(attributeName).Equal(expression.Value(attributeValue))
+	expr, errExpression := expression.NewBuilder().
+		WithKeyCondition(keyCondition).
+		WithProjection(getProjection([]string{"Id"})).
+		Build()
+	if errExpression != nil {
+		fmt.Println("error: creating dynamo expression ", errExpression)
+		return nil, errExpression
+	}
 	queryInput := &dynamodb.QueryInput{
-		TableName:              aws.String((*new(T)).GetTypeName()),
-		IndexName:              aws.String((*new(T)).GetTypeName() + attributeName),
-		KeyConditionExpression: aws.String("gsi1pk = :gsi1pk and gsi1sk > :gsi1sk"),
+		TableName:                 aws.String((*new(T)).GetTypeName()),
+		IndexName:                 aws.String((*new(T)).GetTypeName() + attributeName),
+		ExpressionAttributeNames:  expr.Names(),
+		KeyConditionExpression:    expr.KeyCondition(),
+		ProjectionExpression:      expr.Projection(),
+		ExpressionAttributeValues: expr.Values(),
 	}
 
 	items, err := DBClient.Query(queryInput)
-	_ = items
-	return nil, err
+
+	if err != nil {
+		return nil, err
+	}
+
+	outputIds := make([]string, len(items.Items))
+	for index, attr := range items.Items {
+		outputIds[index] = *attr["Id"].S
+	}
+	return outputIds, nil
 }
 
 func GetBatch[T Nobject](ids []string) (*[]T, error) {
@@ -232,7 +258,6 @@ func GetField(id string, param GetFieldParam) (interface{}, error) {
 		var parsedItem interface{}
 		err = dynamodbattribute.Unmarshal(item.Item[param.FieldName], &parsedItem)
 		return parsedItem, err
-
 	}
 
 	return nil, err
@@ -275,4 +300,16 @@ func SetField(id string, param SetFieldParam) error {
 	})
 
 	return err
+}
+
+func getProjection(names []string) expression.ProjectionBuilder {
+	if len(names) == 0 {
+		return *new(expression.ProjectionBuilder)
+	}
+
+	var builder expression.ProjectionBuilder
+	for _, name := range names {
+		builder = builder.AddNames(expression.Name(name))
+	}
+	return builder
 }
