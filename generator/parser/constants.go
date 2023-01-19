@@ -30,7 +30,7 @@ const DynamoDBKeyTag = "dynamodbav"
 // PARAMETER NAMES
 const HandlerInputParameterName = "input"
 const HandlerParameters = "(" + HandlerInputParameterName + " " + HandlerInputParameterType + ")"
-const HandlerInputEmbededOrginalFunctionParameterName = "Parameter"
+const HandlerInputParameterFieldName = "Parameter"
 const LibErrorVariableName = "_libError"
 const TemporaryReceiverName = "tempReceiverName"
 

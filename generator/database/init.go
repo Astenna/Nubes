@@ -67,7 +67,6 @@ func CreateTypeTables(parsedPackage parser.ParsedPackage) {
 					)
 				}
 			}
-
 			_, err := dblient.CreateTable(createTableInput)
 
 			if err != nil {
@@ -76,6 +75,72 @@ func CreateTypeTables(parsedPackage parser.ParsedPackage) {
 					continue
 				}
 				fmt.Println(err)
+			}
+		}
+	}
+
+	tableCreated := map[string]struct{}{}
+	for _, typeManyToManyRelationship := range parsedPackage.ManyToManyRelationships {
+		for _, relationship := range typeManyToManyRelationship {
+
+			if _, exists := tableCreated[relationship.TableName]; !exists {
+				joinTable := &dynamodb.CreateTableInput{
+					BillingMode: aws.String("PROVISIONED"),
+					ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
+						ReadCapacityUnits:  aws.Int64(1),
+						WriteCapacityUnits: aws.Int64(1),
+					},
+					AttributeDefinitions: []*dynamodb.AttributeDefinition{
+						{
+							AttributeName: aws.String(relationship.PartionKeyName),
+							AttributeType: aws.String("S"),
+						},
+						{
+							AttributeName: aws.String(relationship.SortKeyName),
+							AttributeType: aws.String("S"),
+						},
+					},
+					KeySchema: []*dynamodb.KeySchemaElement{
+						{
+							AttributeName: aws.String(relationship.PartionKeyName),
+							KeyType:       aws.String("HASH"),
+						},
+						{
+							AttributeName: aws.String(relationship.SortKeyName),
+							KeyType:       aws.String("RANGE"),
+						},
+					},
+					TableName: aws.String(relationship.TableName),
+					GlobalSecondaryIndexes: []*dynamodb.GlobalSecondaryIndex{
+						{
+							IndexName: aws.String(relationship.TableName + "Reversed"),
+							KeySchema: []*dynamodb.KeySchemaElement{
+								{
+									AttributeName: aws.String(relationship.SortKeyName),
+									KeyType:       aws.String("HASH"),
+								},
+							},
+							Projection: &dynamodb.Projection{
+								ProjectionType: aws.String("KEYS_ONLY"),
+							},
+							ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
+								ReadCapacityUnits:  aws.Int64(1),
+								WriteCapacityUnits: aws.Int64(1),
+							},
+						},
+					},
+				}
+
+				_, err := dblient.CreateTable(joinTable)
+
+				if err != nil {
+					if _, ok := err.(*dynamodb.ResourceInUseException); ok {
+						fmt.Println("Join table for many-to-many relationship: ", relationship.TableName, " already created")
+						continue
+					}
+					fmt.Println(err)
+				}
+				tableCreated[relationship.TableName] = struct{}{}
 			}
 		}
 	}

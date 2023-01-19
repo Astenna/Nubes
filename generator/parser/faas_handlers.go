@@ -113,5 +113,5 @@ func getStateChangingFuncParams(params *ast.FieldList, isNobjectInOrgPkg map[str
 	if _, isPresent := isNobjectInOrgPkg[inputParamType]; isPresent {
 		inputParamType = OrginalPackageAlias + "." + inputParamType
 	}
-	return HandlerInputParameterName + "." + HandlerInputEmbededOrginalFunctionParameterName + ".(" + inputParamType + ")", nil
+	return HandlerInputParameterName + "." + HandlerInputParameterFieldName + ".(" + inputParamType + ")", nil
 }
