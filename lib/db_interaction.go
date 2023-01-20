@@ -67,24 +67,6 @@ func Upsert(objToInsert Nobject, id string) error {
 	return nil
 }
 
-func Delete[T Nobject](id string) error {
-	if id == "" {
-		return fmt.Errorf("missing id of object to delete")
-	}
-
-	input := &dynamodb.DeleteItemInput{
-		TableName: aws.String((*new(T)).GetTypeName()),
-		Key: map[string]*dynamodb.AttributeValue{
-			"Id": {
-				S: aws.String(id),
-			},
-		},
-	}
-
-	_, err := DBClient.DeleteItem(input)
-	return err
-}
-
 func GetObjectState[T Nobject](id string) (*T, error) {
 	if id == "" {
 		return nil, fmt.Errorf("missing id of object to get")
@@ -111,33 +93,6 @@ func GetObjectState[T Nobject](id string) (*T, error) {
 	}
 
 	return nil, err
-}
-
-type QueryByIndexParam struct {
-	TableName           string
-	IndexName           string
-	KeyAttributeName    string
-	KeyAttributeValue   string
-	OutputAttributeName string
-}
-
-func (q QueryByIndexParam) Validate() error {
-	if q.TableName == "" {
-		return fmt.Errorf("missing TableName")
-	}
-	if q.IndexName == "" {
-		return fmt.Errorf("missing IndexName")
-	}
-	if q.KeyAttributeName == "" {
-		return fmt.Errorf("missing KeyAttributeName")
-	}
-	if q.KeyAttributeValue == "" {
-		return fmt.Errorf("missing KeyAttributeValue")
-	}
-	if q.OutputAttributeName == "" {
-		return fmt.Errorf("missing OutputAttributeName")
-	}
-	return nil
 }
 
 func GetByIndex[T Nobject](param QueryByIndexParam) ([]string, error) {
@@ -174,29 +129,6 @@ func GetByIndex[T Nobject](param QueryByIndexParam) ([]string, error) {
 		outputIds[index] = *attr[param.OutputAttributeName].S
 	}
 	return outputIds, nil
-}
-
-type QueryByPartitionKeyParam struct {
-	TableName               string
-	PartitionAttributeName  string
-	PatritionAttributeValue string
-	OutputAttributeName     string
-}
-
-func (q QueryByPartitionKeyParam) Validate() error {
-	if q.TableName == "" {
-		return fmt.Errorf("missing TableName")
-	}
-	if q.PartitionAttributeName == "" {
-		return fmt.Errorf("missing PartitionAttributeName")
-	}
-	if q.PatritionAttributeValue == "" {
-		return fmt.Errorf("missing PatritionAttributeValue")
-	}
-	if q.OutputAttributeName == "" {
-		return fmt.Errorf("missing OutputAttributeName")
-	}
-	return nil
 }
 
 func GetSortKeysByPartitionKey[T Nobject](q QueryByPartitionKeyParam) ([]string, error) {
@@ -302,20 +234,12 @@ func Update[T Nobject](values aws.JSONValue) error {
 	return err
 }
 
-type GetFieldParam struct {
-	FieldName string
-	TypeName  string
-}
-
 func GetField(id string, param GetFieldParam) (interface{}, error) {
 	if id == "" {
 		return *new(interface{}), fmt.Errorf("missing id of object's field  to get")
 	}
-	if param.FieldName == "" {
-		return *new(interface{}), fmt.Errorf("missing field name of object's field to get")
-	}
-	if param.TypeName == "" {
-		return *new(interface{}), fmt.Errorf("missing type name of object's field to get")
+	if err := param.Validate(); err != nil {
+		return nil, err
 	}
 
 	input := &dynamodb.GetItemInput{
@@ -342,21 +266,12 @@ func GetField(id string, param GetFieldParam) (interface{}, error) {
 	return nil, err
 }
 
-type SetFieldParam struct {
-	FieldName string
-	TypeName  string
-	Value     interface{}
-}
-
 func SetField(id string, param SetFieldParam) error {
 	if id == "" {
 		return fmt.Errorf("missing id of object's field  to get")
 	}
-	if param.FieldName == "" {
-		return fmt.Errorf("missing field name of object's field to get")
-	}
-	if param.TypeName == "" {
-		return fmt.Errorf("missing type name of object's field to get")
+	if err := param.Validate(); err != nil {
+		return err
 	}
 
 	update := expression.UpdateBuilder{}

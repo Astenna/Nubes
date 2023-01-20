@@ -32,7 +32,7 @@ func NewOrder(order Order) (Order, error) {
 	if err != nil {
 		return *new(Order), errors.New("unable to retrieve user's address for shipping")
 	}
-	shipping, err := lib.Create[Shipping](Shipping{
+	shipping, err := lib.Export[Shipping](Shipping{
 		State:   InPreparation,
 		Address: buyer.Address,
 	})
@@ -46,13 +46,8 @@ func NewOrder(order Order) (Order, error) {
 		return *new(Order), _libError
 	}
 	order.Id = out
-	return order, nil
-}
 
-func ReNewOrder(id string) Order {
-	order := new(Order)
-	order.Id = id
-	return *order
+	return order, nil
 }
 
 func (o Order) GetTypeName() string {

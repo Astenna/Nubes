@@ -6,7 +6,6 @@ type ReferenceNavigationList[T Nobject] struct {
 	ownerId            string
 	ownerTypeName      string
 	referringFieldName string
-	tableName          string
 
 	isManyToMany             bool
 	usesIndex                bool
@@ -60,11 +59,6 @@ func (r *ReferenceNavigationList[T]) setupOneToManyRelationship() {
 
 func (r *ReferenceNavigationList[T]) setupManyToManyRelationship() {
 	otherTypeName := (*(new(T))).GetTypeName()
-	r.queryByIndexParam.KeyAttributeName = r.ownerTypeName
-	r.queryByIndexParam.OutputAttributeName = otherTypeName
-	r.QueryByPartitionKeyParam.PartitionAttributeName = r.ownerTypeName
-	r.QueryByPartitionKeyParam.PatritionAttributeValue = r.ownerId
-	r.QueryByPartitionKeyParam.OutputAttributeName = otherTypeName
 
 	for index := 0; ; index++ {
 
@@ -90,5 +84,14 @@ func (r *ReferenceNavigationList[T]) setupManyToManyRelationship() {
 			r.usesIndex = true
 			break
 		}
+	}
+
+	if r.usesIndex {
+		r.queryByIndexParam.KeyAttributeName = r.ownerTypeName
+		r.queryByIndexParam.OutputAttributeName = otherTypeName
+	} else {
+		r.QueryByPartitionKeyParam.PartitionAttributeName = r.ownerTypeName
+		r.QueryByPartitionKeyParam.PatritionAttributeValue = r.ownerId
+		r.QueryByPartitionKeyParam.OutputAttributeName = otherTypeName
 	}
 }

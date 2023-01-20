@@ -23,7 +23,7 @@ func (r ReferenceList[T]) Get() ([]T, error) {
 	}
 
 	for index, id := range r {
-		instance, err := Get[T](id)
+		instance, err := Load[T](id)
 		if err != nil {
 			return nil, fmt.Errorf("could not retrieve object with id: %d. Error: %w", index, err)
 		}
@@ -37,7 +37,7 @@ func (r ReferenceList[T]) GetAt(index int) (*T, error) {
 	if len(r)-1 < index || index < 0 {
 		return nil, fmt.Errorf("provided index: %d is out of bounds of the list", index)
 	}
-	instance, err := Get[T](r[index])
+	instance, err := Load[T](r[index])
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve object with id: %d. Error: %w", index, err)
 	}

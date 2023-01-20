@@ -2,6 +2,7 @@ package lib
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -9,7 +10,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func Get[T Nobject](id string) (*T, error) {
+func Load[T Nobject](id string) (*T, error) {
 	instance := *new(T)
 	dbIdAttributeName := "Id"
 
@@ -36,7 +37,7 @@ func Get[T Nobject](id string) (*T, error) {
 	return nil, nil
 }
 
-func Create[T Nobject](objToInsert Nobject) (*T, error) {
+func Export[T Nobject](objToInsert Nobject) (*T, error) {
 	var attributeVals, err = dynamodbattribute.MarshalMap(objToInsert)
 	if err != nil {
 		return new(T), err
@@ -71,4 +72,22 @@ func Create[T Nobject](objToInsert Nobject) (*T, error) {
 	var parsedItem = new(T)
 	err = dynamodbattribute.UnmarshalMap(attributeVals, parsedItem)
 	return parsedItem, err
+}
+
+func Delete[T Nobject](id string) error {
+	if id == "" {
+		return fmt.Errorf("missing id of object to delete")
+	}
+
+	input := &dynamodb.DeleteItemInput{
+		TableName: aws.String((*new(T)).GetTypeName()),
+		Key: map[string]*dynamodb.AttributeValue{
+			"Id": {
+				S: aws.String(id),
+			},
+		},
+	}
+
+	_, err := DBClient.DeleteItem(input)
+	return err
 }
