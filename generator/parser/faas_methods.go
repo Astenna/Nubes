@@ -61,8 +61,6 @@ func AddDBOperationsToMethods(path string, parsedPackage ParsedPackage) {
 			}
 		}
 	}
-
-	printWarningIfCtorMissing(isTypeNewCtorImplemented, isTypeReNewCtorImplemented, parsedPackage.IsNobjectInOrginalPackage)
 }
 
 func saveAstChangesInFile(f *ast.File, set *token.FileSet, filePath string) {
@@ -209,20 +207,6 @@ func addDbOperationsIfDestructor(fn *ast.FuncDecl, parsedPackage ParsedPackage, 
 	}
 
 	return destructorDetected
-}
-
-func printWarningIfCtorMissing(isTypeNewCtorImpl, isTypeReNewCtorImpl, isNobjectInOrgPkg map[string]bool) {
-	for typeName, isNobject := range isNobjectInOrgPkg {
-		if isNobject {
-			if !isTypeNewCtorImpl[typeName] {
-				fmt.Println("missing constructor definition for new instances of object type ", typeName)
-			}
-
-			if !isTypeReNewCtorImpl[typeName] {
-				fmt.Println("missing constructor definition for existing instances of object type ", typeName)
-			}
-		}
-	}
 }
 
 func areDBOperationsAlreadyAddedToNewCtor(funcBlock *ast.BlockStmt, set *token.FileSet) bool {

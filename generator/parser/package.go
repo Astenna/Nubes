@@ -113,8 +113,8 @@ func GetPackageTypes(path string, moduleName string) ParsedPackage {
 							}
 
 							if strctType, ok := typeSpec.Type.(*ast.StructType); ok {
-								fileModified := parseStructFields(strctType, typeName, &result)
-								if fileModified {
+								astModified := parseStructFields(strctType, typeName, &result)
+								if astModified {
 									saveAstChangesInFile(f, set, path)
 								}
 							}
@@ -129,6 +129,8 @@ func GetPackageTypes(path string, moduleName string) ParsedPackage {
 	return result
 }
 
+// parseStructFields returns the information if
+// the ast representing the struct was modified
 func parseStructFields(strctType *ast.StructType, typeName string, parsedPackage *ParsedPackage) bool {
 	structDefinitionModified := false
 	if strctType == nil || strctType.Fields == nil || len(strctType.Fields.List) == 0 {
@@ -136,63 +138,91 @@ func parseStructFields(strctType *ast.StructType, typeName string, parsedPackage
 	}
 
 	parsedPackage.TypeFields[typeName] = make(map[string]string, len(strctType.Fields.List))
+	fieldModified := false
 	for _, field := range strctType.Fields.List {
 		fieldType := types.ExprString(field.Type)
 		parsedPackage.TypeFields[typeName][field.Names[0].Name] = fieldType
 
-		tags, err := getParsedTags(field)
-		if err != nil {
-			fmt.Println("error occured while checking struct tags of:", typeName, " field: ", field.Names[0].Name, ". Error: ", err)
-		} else if tags != nil {
-			if tag, _ := tags.Get(NubesTagKey); tag != nil {
+		fieldModified = parseRelationshipsTags(field, typeName, fieldType, parsedPackage)
+		if !structDefinitionModified {
+			structDefinitionModified = fieldModified
+		}
+	}
+	return structDefinitionModified
+}
 
-				if strings.Contains(tag.Name, HasOneTag) {
+// parseRelationshipsTags detects Nubes' HasManyTag and HasOneTag tags
+// if tag is found, it adds dynamodbav:"-" tag to the field
+// so that the field is ignore in dynamodb interaction
+// if the dynamodb tag was already added, it does nothing.
+// parseRelationshipsTags returns whether the ast was modified
+// (= whether the dynamodb tag was added)
+func parseRelationshipsTags(field *ast.Field, typeName string, fieldType string, parsedPackage *ParsedPackage) bool {
+	tags, err := getParsedTags(field)
 
-					splitted := strings.Split(tag.Name, "-")
-					navigationToFieldName := ""
-					if len(splitted) > 0 {
-						navigationToFieldName = splitted[1]
-					} else {
-						fmt.Println(HasOneTag, " detected, but missing reffering field name. Referring field name should be specified after - charcter, e.g.: ", HasOneTag, "<referring_field_name>")
-						continue
-					}
+	if err != nil {
+		fmt.Println("error occured while checking struct tags of:", typeName, " field: ", field.Names[0].Name, ". Error: ", err)
+	} else if tags != nil {
+		if tag, _ := tags.Get(NubesTagKey); tag != nil {
 
-					if strings.Contains(fieldType, LibraryReferenceNavigationList) {
-						navigationToTypeName := strings.TrimPrefix(fieldType, LibraryReferenceNavigationList)
-						navigationToTypeName = strings.Trim(navigationToTypeName, "[]")
+			if strings.Contains(tag.Name, HasOneTag) {
 
-						parsedPackage.TypeAttributesIndexes[navigationToTypeName] = append(parsedPackage.TypeAttributesIndexes[navigationToTypeName], navigationToFieldName)
-						parsedPackage.TypeNavListsReferringFieldName[typeName] = append(parsedPackage.TypeNavListsReferringFieldName[typeName], NavigationToField{TypeName: navigationToTypeName, FieldName: navigationToFieldName})
+				splitted := strings.Split(tag.Name, "-")
+				navigationToFieldName := ""
+				if len(splitted) > 0 {
+					navigationToFieldName = splitted[1]
+				} else {
+					fmt.Println(HasOneTag, " detected, but missing reffering field name. Referring field name should be specified after - charcter, e.g.: ", HasOneTag, "<referring_field_name>")
+					return false
+				}
 
-						dynamoTag, _ := tags.Get(DynamoDBKeyTag)
-						if dynamoTag == nil {
-							field.Tag.Value = field.Tag.Value[0:len(field.Tag.Value)-1] + " " + DynamoDBIgnoreTag + "`"
-							return true
-						}
-						if dynamoTag.Name != "-" {
-							fmt.Println("invalid definition of dynamodb struct tag fixed in", typeName, "field:", field.Names[0].Name, " replaced with mandatory ignore tag for", LibraryReferenceNavigationList)
-							tags.Set(&structtag.Tag{Key: DynamoDBKeyTag, Name: DynamoDBIgnoreValueTag})
-							field.Tag.Value = "`" + tags.String() + "`"
-							return true
-						}
-					} else {
-						fmt.Println(HasManyTag, " or ", HasOneTag, " can be used only with ", LibraryReferenceNavigationList, " fields!")
-					}
-				} else if strings.Contains(tag.Name, HasManyTag) {
+				if strings.Contains(fieldType, LibraryReferenceNavigationList) {
+					navigationToTypeName := strings.TrimPrefix(fieldType, LibraryReferenceNavigationList)
+					navigationToTypeName = strings.Trim(navigationToTypeName, "[]")
 
-					if strings.Contains(fieldType, LibraryReferenceNavigationList) {
-						navigationToTypeName := strings.TrimPrefix(fieldType, LibraryReferenceNavigationList)
-						navigationToTypeName = strings.Trim(navigationToTypeName, "[]")
+					parsedPackage.TypeAttributesIndexes[navigationToTypeName] = append(parsedPackage.TypeAttributesIndexes[navigationToTypeName], navigationToFieldName)
+					parsedPackage.TypeNavListsReferringFieldName[typeName] = append(parsedPackage.TypeNavListsReferringFieldName[typeName], NavigationToField{TypeName: navigationToTypeName, FieldName: navigationToFieldName})
 
-						newManyToManyRelationship := NewManyToManyRelationshipField(typeName, navigationToTypeName, field.Names[0].Name)
-						parsedPackage.ManyToManyRelationships[typeName] = append(parsedPackage.ManyToManyRelationships[typeName], *newManyToManyRelationship)
-					} else {
-						fmt.Println(HasManyTag, " or ", HasOneTag, " can be used only with ", LibraryReferenceNavigationList, " fields!")
-					}
+					return addDynamoDBIgnoreTag(tags, field, typeName)
+				} else {
+					fmt.Println(HasManyTag, " or ", HasOneTag, " can be used only with ", LibraryReferenceNavigationList, " fields!")
+					return false
+				}
+			}
+			if strings.Contains(tag.Name, HasManyTag) {
+
+				if strings.Contains(fieldType, LibraryReferenceNavigationList) {
+					navigationToTypeName := strings.TrimPrefix(fieldType, LibraryReferenceNavigationList)
+					navigationToTypeName = strings.Trim(navigationToTypeName, "[]")
+
+					newManyToManyRelationship := NewManyToManyRelationshipField(typeName, navigationToTypeName, field.Names[0].Name)
+					parsedPackage.ManyToManyRelationships[typeName] = append(parsedPackage.ManyToManyRelationships[typeName], *newManyToManyRelationship)
+
+					return addDynamoDBIgnoreTag(tags, field, typeName)
+				} else {
+					fmt.Println(HasManyTag, " or ", HasOneTag, " can be used only with ", LibraryReferenceNavigationList, " fields!")
+					return false
 				}
 			}
 		}
 	}
+
+	return false
+}
+
+func addDynamoDBIgnoreTag(tags *structtag.Tags, field *ast.Field, typeName string) bool {
+	dynamoTag, _ := tags.Get(DynamoDBKeyTag)
+	if dynamoTag == nil {
+		field.Tag.Value = field.Tag.Value[0:len(field.Tag.Value)-1] + " " + DynamoDBIgnoreTag + "`"
+		return true
+	}
+	if dynamoTag.Name != "-" {
+		fmt.Println("invalid definition of dynamodb struct tag fixed in", typeName, "field:", field.Names[0].Name, " replaced with mandatory ignore tag for", LibraryReferenceNavigationList)
+		tags.Set(&structtag.Tag{Key: DynamoDBKeyTag, Name: DynamoDBIgnoreValueTag})
+		field.Tag.Value = "`" + tags.String() + "`"
+		return true
+	}
+
 	return false
 }
 

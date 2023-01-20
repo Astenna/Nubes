@@ -27,7 +27,3 @@ func getParsedTags(field *ast.Field) (*structtag.Tags, error) {
 	}
 	return nil, nil
 }
-
-func isIndex(field *ast.Field) bool {
-	return field.Tag != nil && strings.Contains(field.Tag.Value, IndexTag) && strings.Contains(field.Tag.Value, NubesTagKey)
-}
