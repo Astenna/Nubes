@@ -5,12 +5,13 @@ import (
 )
 
 type User struct {
-	FirstName string
-	LastName  string
-	Email     string `dynamodbav:"Id" nubes:"id,readonly"`
-	Password  string `nubes:"readonly"`
-	Address   string
-	Shops     lib.ReferenceNavigationList[Shop] `nubes:"hasMany-Owners"`
+	FirstName     string
+	LastName      string
+	Email         string `dynamodbav:"Id" nubes:"id,readonly"`
+	Password      string `nubes:"readonly"`
+	Address       string
+	Shops         lib.ReferenceNavigationList[Shop] `nubes:"hasMany-Owners" dynamodbav:"-"`
+	isInitialized bool
 }
 
 func DeleteUser(id string) error {
@@ -29,7 +30,7 @@ func (u User) GetId() string {
 	return u.Email
 }
 
-func (u *User) Init() error {
-	u.Shops = *lib.NewReferenceNavigationList[Shop](u.Email, u.GetTypeName(), "", true)
-	return nil
+func (receiver *User) Init() {
+	receiver.isInitialized = true
+	receiver.Shops = *lib.NewReferenceNavigationList[Shop](receiver.Email, receiver.GetTypeName(), "", true)
 }

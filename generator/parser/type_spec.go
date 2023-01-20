@@ -15,10 +15,11 @@ type TypeSpecParser struct {
 	Output   ParsedPackage
 	Handlers []StateChangingHandler
 
-	tokenSet          *token.FileSet
-	packs             map[string]*ast.Package
-	detectedFunctions map[string][]detectedFunction
-	fileChanged       map[string]bool
+	tokenSet           *token.FileSet
+	packs              map[string]*ast.Package
+	detectedFunctions  map[string][]detectedFunction
+	isInitAlreadyAdded map[string]bool
+	fileChanged        map[string]bool
 }
 
 type ParsedPackage struct {
@@ -35,6 +36,10 @@ func NewTypeSpecParser(path string) (*TypeSpecParser, error) {
 	typeSpecParser := new(TypeSpecParser)
 	typeSpecParser.tokenSet = token.NewFileSet()
 	packg, err := parser.ParseDir(typeSpecParser.tokenSet, path, nil, 0)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse package in path %s. Error: %w", path, err)
+	}
+
 	typeSpecParser.packs = packg
 
 	typeSpecParser.Output = ParsedPackage{
@@ -48,10 +53,8 @@ func NewTypeSpecParser(path string) (*TypeSpecParser, error) {
 	typeSpecParser.Handlers = []StateChangingHandler{}
 	typeSpecParser.fileChanged = map[string]bool{}
 	typeSpecParser.detectedFunctions = make(map[string][]detectedFunction)
+	typeSpecParser.isInitAlreadyAdded = map[string]bool{}
 
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse package in path %s. Error: %w", path, err)
-	}
 	return typeSpecParser, nil
 }
 
@@ -64,7 +67,7 @@ func (t TypeSpecParser) Run(moduleName string) ParsedPackage {
 	isTypeReNewCtorImplemented := make(map[string]bool)
 	isTypeDestructorImplemented := make(map[string]bool)
 
-	t.detectAndAdjustMethods(isTypeNewCtorImplemented, isTypeReNewCtorImplemented, isTypeDestructorImplemented)
+	t.adjustMethods(isTypeNewCtorImplemented, isTypeReNewCtorImplemented, isTypeDestructorImplemented)
 	t.prepareHandleres()
 	t.saveChangesInAst()
 
@@ -73,21 +76,30 @@ func (t TypeSpecParser) Run(moduleName string) ParsedPackage {
 
 func (t *TypeSpecParser) detectNobjectTypes(moduleName string) {
 	for packageName, pack := range t.packs {
-		for _, f := range pack.Files {
+		for path, f := range pack.Files {
 			for _, d := range f.Decls {
 				if fn, isFn := d.(*ast.FuncDecl); isFn {
-					if fn.Recv != nil && fn.Name.Name == NobjectImplementationMethod {
+
+					t.detectedFunctions[path] = append(t.detectedFunctions[path], detectedFunction{
+						Function: fn,
+						Imports:  f.Imports,
+					})
+
+					if fn.Recv != nil {
 						ownerType := getFunctionReceiverTypeAsString(fn.Recv)
-						t.Output.IsNobjectInOrginalPackage[ownerType] = true
-					}
-					if fn.Recv != nil && fn.Name.Name == CustomIdImplementationMethod {
-						ownerType := getFunctionReceiverTypeAsString(fn.Recv)
-						idFieldName, err := getIdFieldNameFromCustomIdImpl(fn)
-						if err != nil {
-							fmt.Println(err)
-							continue
+						switch fn.Name.Name {
+						case NobjectImplementationMethod:
+							t.Output.IsNobjectInOrginalPackage[ownerType] = true
+						case InitFunctionName:
+							t.isInitAlreadyAdded[ownerType] = true
+						case CustomIdImplementationMethod:
+							idFieldName, err := getIdFieldNameFromCustomIdImpl(fn)
+							if err != nil {
+								fmt.Println(err)
+								continue
+							}
+							t.Output.TypesWithCustomId[ownerType] = idFieldName
 						}
-						t.Output.TypesWithCustomId[ownerType] = idFieldName
 					}
 				}
 			}

@@ -9,6 +9,8 @@ const ConstructorPrefix = "New"
 const ReConstructorPrefix = "ReNew"
 const DestructorPrefix = "Delete"
 const LibraryGetObjectStateMethod = "GetObjectState"
+const InitFunctionName = "Init"
+const ReferenceNavigationListCtor = "NewReferenceNavigationList"
 
 // FIELDS
 const OrginalPackageAlias = "org"

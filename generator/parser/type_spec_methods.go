@@ -7,45 +7,43 @@ import (
 	"strings"
 )
 
-func (t TypeSpecParser) detectAndAdjustMethods(isTypeNewCtorImplemented map[string]bool, isTypeReNewCtorImplemented map[string]bool, isTypeDestructorImplemented map[string]bool) {
-	for _, pack := range t.packs {
-		for path, f := range pack.Files {
+func (t TypeSpecParser) adjustMethods(isTypeNewCtorImplemented map[string]bool, isTypeReNewCtorImplemented map[string]bool, isTypeDestructorImplemented map[string]bool) {
+
+	for path, detectedFunctionsList := range t.detectedFunctions {
+		for _, detectedFunction := range detectedFunctionsList {
 			fileModified := false
-			for _, d := range f.Decls {
-				if fn, isFn := d.(*ast.FuncDecl); isFn {
 
-					t.detectedFunctions[path] = append(t.detectedFunctions[path], detectedFunction{
-						Function: fn,
-						Imports:  f.Imports,
-					})
+			fn := detectedFunction.Function
+			if fn.Name.Name == "Init" {
+				continue
+			}
 
-					if fn.Recv == nil {
+			if fn.Recv == nil {
 
-						ctorDetected := addDBOperationsIfCtor(fn, t.Output, t.tokenSet, isTypeNewCtorImplemented, isTypeReNewCtorImplemented, &fileModified)
-						if ctorDetected {
-							continue
-						}
+				ctorDetected := addDBOperationsIfCtor(fn, t.Output, t.tokenSet, isTypeNewCtorImplemented, isTypeReNewCtorImplemented, &fileModified)
+				if ctorDetected {
+					continue
+				}
 
-						destructorDetected := addDbOperationsIfDestructor(fn, t.Output, t.tokenSet, isTypeDestructorImplemented, &fileModified)
-						if destructorDetected {
-							continue
-						}
+				destructorDetected := addDbOperationsIfDestructor(fn, t.Output, t.tokenSet, isTypeDestructorImplemented, &fileModified)
+				if destructorDetected {
+					_ = destructorDetected
+					continue
+				}
 
-					} else if fn.Name.Name != NobjectImplementationMethod && f.Name.Name != CustomIdImplementationMethod {
+			} else if fn.Name.Name != NobjectImplementationMethod && fn.Name.Name != CustomIdImplementationMethod {
 
-						typeName := getFunctionReceiverTypeAsString(fn.Recv)
-						if isNobject := t.Output.IsNobjectInOrginalPackage[typeName]; isNobject {
+				typeName := getFunctionReceiverTypeAsString(fn.Recv)
+				if isNobject := t.Output.IsNobjectInOrginalPackage[typeName]; isNobject {
 
-							isGetterOrSetter := addDBOperationsIfGetterOrSetter(fn, t.Output, t.tokenSet, &fileModified)
-							if isGetterOrSetter {
-								continue
-							}
+					isGetterOrSetter := addDBOperationsIfGetterOrSetter(fn, t.Output, t.tokenSet, &fileModified)
+					if isGetterOrSetter {
+						continue
+					}
 
-							if !isFunctionStateless(fn.Recv) && retParamsVerifier.Check(fn) && !isDBGetOperationAlreadyAddedToMethod(fn.Body, t.tokenSet) {
-								fileModified = true
-								addDBOperationsToStateChangingMethod(fn, t.Output)
-							}
-						}
+					if !isFunctionStateless(fn.Recv) && retParamsVerifier.Check(fn) && !isDBGetOperationAlreadyAddedToMethod(fn.Body, t.tokenSet) {
+						fileModified = true
+						addDBOperationsToStateChangingMethod(fn, t.Output)
 					}
 				}
 			}

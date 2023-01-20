@@ -18,7 +18,9 @@ func (t *TypeSpecParser) detectAndAdjustDecls() {
 					for _, elem := range genDecl.Specs {
 						if typeSpec, ok := elem.(*ast.TypeSpec); ok {
 							typeName := strings.TrimPrefix(typeSpec.Name.Name, "*")
-							if _, isPresent := t.Output.IsNobjectInOrginalPackage[typeName]; !isPresent {
+							isNobjectType, isPresent := t.Output.IsNobjectInOrginalPackage[typeName]
+
+							if !isPresent {
 								t.Output.IsNobjectInOrginalPackage[typeName] = false
 							}
 
@@ -28,6 +30,11 @@ func (t *TypeSpecParser) detectAndAdjustDecls() {
 								if !t.fileChanged[path] {
 									t.fileChanged[path] = modified
 								}
+
+								if isNobjectType && !t.isInitAlreadyAdded[typeName] {
+									t.addInitFunctionDefinition(f, typeName)
+									t.fileChanged[path] = true
+								}
 							}
 						}
 					}
@@ -35,6 +42,12 @@ func (t *TypeSpecParser) detectAndAdjustDecls() {
 			}
 		}
 	}
+}
+
+func (t *TypeSpecParser) addInitFunctionDefinition(f *ast.File, typeName string) {
+	idFieldName := getIdFieldNameOfType(typeName, t.Output.TypesWithCustomId)
+	function := getInitFunctionForType(typeName, idFieldName, t.Output.TypeNavListsReferringFieldName[typeName], t.Output.ManyToManyRelationships[typeName])
+	f.Decls = append(f.Decls, function)
 }
 
 // The parseStructFields returns true if the ast representing

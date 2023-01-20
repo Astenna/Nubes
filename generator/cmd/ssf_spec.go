@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -26,7 +27,11 @@ var ssfSpecCmd = &cobra.Command{
 
 		typesPath = tp.MakePathAbosoluteOrExitOnError(typesPath)
 
-		typeSpecParser, _ := parser.NewTypeSpecParser(typesPath)
+		typeSpecParser, err := parser.NewTypeSpecParser(typesPath)
+		if err != nil {
+			fmt.Println("Fatal occurred initialising type spec parser: %w", err)
+			os.Exit(1)
+		}
 		typeSpecParser.Run(moduleName)
 
 		GenerateStateChangingHandlers(generationDestination, typeSpecParser.Handlers)

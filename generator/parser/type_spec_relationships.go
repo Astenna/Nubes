@@ -10,14 +10,16 @@ import (
 
 type ManyToManyRelationshipField struct {
 	FieldName      string
+	FromFieldName  string
 	PartionKeyName string
 	SortKeyName    string
 	TableName      string
 }
 
 type NavigationToField struct {
-	TypeName  string
-	FieldName string
+	TypeName      string
+	FieldName     string
+	FromFieldName string
 }
 
 func NewManyToManyRelationshipField(typeName1, typeName2, fieldName string) *ManyToManyRelationshipField {
@@ -86,7 +88,8 @@ func parseRelationshipsTags(field *ast.Field, typeName string, fieldType string,
 					navigationToTypeName = strings.Trim(navigationToTypeName, "[]")
 
 					parsedPackage.TypeAttributesIndexes[navigationToTypeName] = append(parsedPackage.TypeAttributesIndexes[navigationToTypeName], navigationToFieldName)
-					parsedPackage.TypeNavListsReferringFieldName[typeName] = append(parsedPackage.TypeNavListsReferringFieldName[typeName], NavigationToField{TypeName: navigationToTypeName, FieldName: navigationToFieldName})
+					navToField := NavigationToField{TypeName: navigationToTypeName, FieldName: navigationToFieldName, FromFieldName: field.Names[0].Name}
+					parsedPackage.TypeNavListsReferringFieldName[typeName] = append(parsedPackage.TypeNavListsReferringFieldName[typeName], navToField)
 
 					return addDynamoDBIgnoreTag(tags, field, typeName)
 				} else {
@@ -101,6 +104,7 @@ func parseRelationshipsTags(field *ast.Field, typeName string, fieldType string,
 					navigationToTypeName = strings.Trim(navigationToTypeName, "[]")
 
 					newManyToManyRelationship := NewManyToManyRelationshipField(typeName, navigationToTypeName, field.Names[0].Name)
+					newManyToManyRelationship.FromFieldName = field.Names[0].Name
 					parsedPackage.ManyToManyRelationships[typeName] = append(parsedPackage.ManyToManyRelationships[typeName], *newManyToManyRelationship)
 
 					return addDynamoDBIgnoreTag(tags, field, typeName)

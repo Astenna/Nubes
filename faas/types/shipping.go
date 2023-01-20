@@ -10,11 +10,15 @@ const (
 )
 
 type Shipping struct {
-	Id      string
-	Address string
-	State   ShippingState
+	Id            string
+	Address       string
+	State         ShippingState
+	isInitialized bool
 }
 
 func (s Shipping) GetTypeName() string {
 	return "Shipping"
+}
+func (receiver *Shipping) Init() {
+	receiver.isInitialized = true
 }

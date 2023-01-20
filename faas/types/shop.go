@@ -5,18 +5,19 @@ import (
 )
 
 type Shop struct {
-	Id       string
-	Name     string
-	Owners   lib.ReferenceNavigationList[User]    `nubes:"hasMany-Shops" dynamodbav:"-"`
-	Products lib.ReferenceNavigationList[Product] `nubes:"hasOne-SoldBy,readonly" dynamodbav:"-"`
+	Id            string
+	Name          string
+	Owners        lib.ReferenceNavigationList[User]    `nubes:"hasMany-Shops" dynamodbav:"-"`
+	Products      lib.ReferenceNavigationList[Product] `nubes:"hasOne-SoldBy,readonly" dynamodbav:"-"`
+	isInitialized bool
 }
 
 func (Shop) GetTypeName() string {
 	return "Shop"
 }
 
-func (s *Shop) Init() error {
-	s.Products = *lib.NewReferenceNavigationList[Product](s.Id, s.GetTypeName(), "SoldBy", false)
-	s.Owners = *lib.NewReferenceNavigationList[User](s.Id, s.GetTypeName(), "", true)
-	return nil
+func (receiver *Shop) Init() {
+	receiver.isInitialized = true
+	receiver.Products = *lib.NewReferenceNavigationList[Product](receiver.Id, receiver.GetTypeName(), "SoldBy", false)
+	receiver.Owners = *lib.NewReferenceNavigationList[User](receiver.Id, receiver.GetTypeName(), "", true)
 }

@@ -7,11 +7,12 @@ import (
 )
 
 type Product struct {
-	Id                string
-	Name              string
-	QuantityAvailable int
-	SoldBy            lib.Reference[Shop]
-	Price             float32
+	Id			string
+	Name			string
+	QuantityAvailable	int
+	SoldBy			lib.Reference[Shop]
+	Price			float32
+	isInitialized		bool
 }
 
 func (Product) GetTypeName() string {
@@ -53,4 +54,7 @@ func (p *Product) SetSoldBy(id string) error {
 		return _libError
 	}
 	return nil
+}
+func (receiver *Product) Init() {
+	receiver.isInitialized = true
 }
