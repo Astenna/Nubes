@@ -129,8 +129,8 @@ func GetPackageTypes(path string, moduleName string) ParsedPackage {
 	return result
 }
 
-// parseStructFields returns the information if
-// the ast representing the struct was modified
+// The parseStructFields returns true if the ast representing
+// the struct was modified, otherwise false
 func parseStructFields(strctType *ast.StructType, typeName string, parsedPackage *ParsedPackage) bool {
 	structDefinitionModified := false
 	if strctType == nil || strctType.Fields == nil || len(strctType.Fields.List) == 0 {
@@ -139,24 +139,35 @@ func parseStructFields(strctType *ast.StructType, typeName string, parsedPackage
 
 	parsedPackage.TypeFields[typeName] = make(map[string]string, len(strctType.Fields.List))
 	fieldModified := false
+	isNobject := parsedPackage.IsNobjectInOrginalPackage[typeName]
 	for _, field := range strctType.Fields.List {
 		fieldType := types.ExprString(field.Type)
 		parsedPackage.TypeFields[typeName][field.Names[0].Name] = fieldType
 
-		fieldModified = parseRelationshipsTags(field, typeName, fieldType, parsedPackage)
-		if !structDefinitionModified {
-			structDefinitionModified = fieldModified
+		if isNobject {
+			fieldModified = parseRelationshipsTags(field, typeName, fieldType, parsedPackage)
+			if !structDefinitionModified {
+				structDefinitionModified = fieldModified
+			}
 		}
 	}
+
+	if _, exists := parsedPackage.TypeFields[typeName][IsInitializedFieldName]; !exists && isNobject {
+		strctType.Fields.List = append(strctType.Fields.List, &ast.Field{
+			Names: []*ast.Ident{{Name: IsInitializedFieldName}}, Type: &ast.Ident{Name: "bool"},
+		})
+		return true
+	}
+
 	return structDefinitionModified
 }
 
-// parseRelationshipsTags detects Nubes' HasManyTag and HasOneTag tags
-// if tag is found, it adds dynamodbav:"-" tag to the field
-// so that the field is ignore in dynamodb interaction
-// if the dynamodb tag was already added, it does nothing.
-// parseRelationshipsTags returns whether the ast was modified
-// (= whether the dynamodb tag was added)
+// The parseRelationshipsTags detects Nubes' HasManyTag and HasOneTag tags.
+// If tag is found, it adds dynamodbav:"-" tag
+// so that the field is ignored in dynamodb interaction.
+// If the dynamodb tag was already added, it does nothing.
+// The parseRelationshipsTags return value indicates whether
+// the ast was modified (= whether the dynamodb tag was added).
 func parseRelationshipsTags(field *ast.Field, typeName string, fieldType string, parsedPackage *ParsedPackage) bool {
 	tags, err := getParsedTags(field)
 

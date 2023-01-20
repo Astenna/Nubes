@@ -16,6 +16,7 @@ const HandlerInputParameterType = "lib.HandlerParameters"
 const ReferenceType = "lib.Reference"
 const ReferenceListType = "lib.ReferenceList"
 const LibraryReferenceNavigationList = "lib.ReferenceNavigationList"
+const IsInitializedFieldName = "isInitialized"
 
 // TAGS
 const NubesTagKey = "nubes"

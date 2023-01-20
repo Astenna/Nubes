@@ -68,15 +68,6 @@ func getFunctionBodyAsString(fset *token.FileSet, body *ast.BlockStmt) (string, 
 	return buf.String(), nil
 }
 
-func getFirstFunctionReturnTypeAsString(fn *ast.FuncDecl) string {
-
-	if fn.Type.Results == nil || fn.Type.Results.List == nil || len(fn.Type.Results.List) == 0 {
-		return ""
-	}
-
-	return types.ExprString(fn.Type.Results.List[0].Type)
-}
-
 type returnParamsVerifier struct {
 	errorsPrinted bool
 }

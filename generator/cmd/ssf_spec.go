@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/cobra-cli/cmd"
 )
 
-var handlersCmd = &cobra.Command{
+var ssfSpecCmd = &cobra.Command{
 	Use:   "handlers",
 	Short: "Generates handlers' definitions for AWS lambda deployment",
 	Long:  `Generates handlers' definitions for AWS lambda deployment based on types and repositories indicated by the path`,
@@ -50,7 +50,7 @@ func lastString(ss []string) string {
 }
 
 func init() {
-	rootCmd.AddCommand(handlersCmd)
+	rootCmd.AddCommand(ssfSpecCmd)
 
 	var typesPath string
 	var handlersPath string
@@ -58,11 +58,11 @@ func init() {
 	var dbInit bool
 	var generateDeploymentFiles bool
 
-	handlersCmd.Flags().StringVarP(&typesPath, "types", "t", ".", "path to directory with types")
-	handlersCmd.Flags().StringVarP(&handlersPath, "output", "o", ".", "path where directory with handlers will be created")
-	handlersCmd.Flags().StringVarP(&moduleName, "module", "m", "MISSING_MODULE_NAME", "module name of the source project")
-	handlersCmd.Flags().BoolVarP(&dbInit, "dbInit", "i", false, "boolean, indicates whether database should be initialized by creation of tables based on type names")
-	handlersCmd.Flags().BoolVarP(&generateDeploymentFiles, "deplFiles", "g", true, "boolean, indicates whether deployment files for AWS lambdas are to be created")
+	ssfSpecCmd.Flags().StringVarP(&typesPath, "types", "t", ".", "path to directory with types")
+	ssfSpecCmd.Flags().StringVarP(&handlersPath, "output", "o", ".", "path where directory with handlers will be created")
+	ssfSpecCmd.Flags().StringVarP(&moduleName, "module", "m", "MISSING_MODULE_NAME", "module name of the source project")
+	ssfSpecCmd.Flags().BoolVarP(&dbInit, "dbInit", "i", false, "boolean, indicates whether database should be initialized by creation of tables based on type names")
+	ssfSpecCmd.Flags().BoolVarP(&generateDeploymentFiles, "deplFiles", "g", true, "boolean, indicates whether deployment files for AWS lambdas are to be created")
 
 	cmd.Execute()
 }
@@ -73,11 +73,11 @@ type ServerlessTemplateInput struct {
 }
 
 func GenerateDeploymentFiles(path string, templateInput ServerlessTemplateInput) {
-	serverlessTempl := tp.ParseOrExitOnError("templates/handlers/deployment/serverless.yml.tmpl")
+	serverlessTempl := tp.ParseOrExitOnError("templates/ssf_spec/deployment/serverless.yml.tmpl")
 	fileName := filepath.Join(tp.MakePathAbosoluteOrExitOnError(path), "serverless.yml")
 	tp.CreateFileFromTemplate(serverlessTempl, templateInput, fileName)
 
-	buildScriptTempl := tp.ParseOrExitOnError("templates/handlers/deployment/build_handlers.sh.tmpl")
+	buildScriptTempl := tp.ParseOrExitOnError("templates/ssf_spec/deployment/build_handlers.sh.tmpl")
 	fileName = filepath.Join(tp.MakePathAbosoluteOrExitOnError(path), "build_handlers.sh")
 	tp.CreateFileFromTemplate(buildScriptTempl, nil, fileName)
 }
@@ -85,7 +85,7 @@ func GenerateDeploymentFiles(path string, templateInput ServerlessTemplateInput)
 func GenerateStateChangingHandlers(path string, functions []parser.StateChangingHandler) {
 	var handlerDir string
 	var ownerHandlerNameCombined string
-	templ := tp.ParseOrExitOnError("templates/handlers/state_changing_template.go.tmpl")
+	templ := tp.ParseOrExitOnError("templates/ssf_spec/state_changing_template.go.tmpl")
 	generationDestPath := tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "state-changes"))
 
 	for _, f := range functions {
@@ -99,13 +99,13 @@ func GenerateStateChangingHandlers(path string, functions []parser.StateChanging
 }
 
 func GenerateGetAndSetFieldHandlers(path string) {
-	templ := tp.ParseOrExitOnError("templates/handlers/get_field_template.go.tmpl")
+	templ := tp.ParseOrExitOnError("templates/ssf_spec/get_field_template.go.tmpl")
 	generationDestPath := tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "generics", "GetField"))
 	os.MkdirAll(generationDestPath, 0777)
 	getPath := filepath.Join(generationDestPath, "GetField.go")
 	tp.CreateFileFromTemplate(templ, nil, getPath)
 
-	templ = tp.ParseOrExitOnError("templates/handlers/set_field_template.go.tmpl")
+	templ = tp.ParseOrExitOnError("templates/ssf_spec/set_field_template.go.tmpl")
 	generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "generics", "SetField"))
 	os.MkdirAll(generationDestPath, 0777)
 	setPath := filepath.Join(generationDestPath, "SetField.go")

@@ -98,10 +98,8 @@ func Delete[T Nobject](id string) error {
 	}
 
 	_, err := DBClient.DeleteItem(input)
-	if err != nil {
-		if _, ok := err.(*dynamodb.ConditionalCheckFailedException); ok {
-			return fmt.Errorf("delete failed. Instance of %s with id: %s not found", typeName, id)
-		}
+	if _, ok := err.(*dynamodb.ConditionalCheckFailedException); ok {
+		return fmt.Errorf("delete failed. Instance of %s with id: %s not found", typeName, id)
 	}
 	return err
 }
