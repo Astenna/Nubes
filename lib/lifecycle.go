@@ -11,11 +11,12 @@ import (
 )
 
 func Load[T Nobject](id string) (*T, error) {
-	instance := *new(T)
+	instance := new(T)
+	instanceTypeName := (*instance).GetTypeName()
 	dbIdAttributeName := "Id"
 
 	item, err := DBClient.GetItem(&dynamodb.GetItemInput{
-		TableName: aws.String(instance.GetTypeName()),
+		TableName: aws.String(instanceTypeName),
 		Key: map[string]*dynamodb.AttributeValue{
 			"Id": {
 				S: aws.String(id),
@@ -25,16 +26,15 @@ func Load[T Nobject](id string) (*T, error) {
 	})
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf(instanceTypeName+" with id "+id+" not found. Error %w", err)
 	}
 
-	var parsedItem = new(T)
 	if item.Item != nil {
-		err = dynamodbattribute.UnmarshalMap(item.Item, parsedItem)
-		return parsedItem, err
+		err = dynamodbattribute.UnmarshalMap(item.Item, instance)
+		return instance, err
 	}
 
-	return nil, nil
+	return nil, fmt.Errorf(instanceTypeName + " with id " + id + " not found.")
 }
 
 func Export[T Nobject](objToInsert Nobject) (*T, error) {
@@ -44,10 +44,13 @@ func Export[T Nobject](objToInsert Nobject) (*T, error) {
 	}
 
 	var newId string
+	var conditionExpression *string
 	if custom, ok := objToInsert.(CustomId); ok {
 		if newId = custom.GetId(); newId == "" {
 			return new(T), errors.New("id field empty. It must be set when using non-default id field")
 		}
+		newId = custom.GetId()
+		conditionExpression = aws.String("attribute_not_exists(Id)")
 	} else {
 		newId = uuid.New().String()
 		attr := attributeVals["Id"].SetS(newId)
@@ -57,13 +60,17 @@ func Export[T Nobject](objToInsert Nobject) (*T, error) {
 	}
 
 	input := &dynamodb.PutItemInput{
-		Item:      attributeVals,
-		TableName: aws.String(objToInsert.GetTypeName()),
+		Item:                attributeVals,
+		TableName:           aws.String(objToInsert.GetTypeName()),
+		ConditionExpression: conditionExpression,
 	}
 
 	_, err = DBClient.PutItem(input)
 	if err != nil {
-		return new(T), err
+		if _, ok := err.(*dynamodb.ConditionalCheckFailedException); ok {
+			return nil, fmt.Errorf("instance of %s with id: %s already exists. Use lib.Load(id) to work on existing instances", objToInsert.GetTypeName(), newId)
+		}
+		return nil, err
 	}
 
 	// Unmarshal back the input to get the object with ID set
@@ -78,16 +85,23 @@ func Delete[T Nobject](id string) error {
 	if id == "" {
 		return fmt.Errorf("missing id of object to delete")
 	}
+	typeName := (*new(T)).GetTypeName()
 
 	input := &dynamodb.DeleteItemInput{
-		TableName: aws.String((*new(T)).GetTypeName()),
+		TableName: aws.String(typeName),
 		Key: map[string]*dynamodb.AttributeValue{
 			"Id": {
 				S: aws.String(id),
 			},
 		},
+		ConditionExpression: aws.String("attribute_exists(Id)"),
 	}
 
 	_, err := DBClient.DeleteItem(input)
+	if err != nil {
+		if _, ok := err.(*dynamodb.ConditionalCheckFailedException); ok {
+			return fmt.Errorf("delete failed. Instance of %s with id: %s not found", typeName, id)
+		}
+	}
 	return err
 }
