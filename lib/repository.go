@@ -113,29 +113,51 @@ func GetObjectState[T Nobject](id string) (*T, error) {
 	return nil, err
 }
 
-func GetByIndex[T Nobject](attributeValue, attributeName, ownerTypeName string) ([]string, error) {
-	if attributeName == "" {
-		return nil, fmt.Errorf("missing attributeName")
+type QueryByIndexParam struct {
+	TableName           string
+	IndexName           string
+	KeyAttributeName    string
+	KeyAttributeValue   string
+	OutputAttributeName string
+}
+
+func (q QueryByIndexParam) Validate() error {
+	if q.TableName == "" {
+		return fmt.Errorf("missing TableName")
 	}
-	if attributeValue == "" {
-		return nil, fmt.Errorf("missing attributeValue")
+	if q.IndexName == "" {
+		return fmt.Errorf("missing IndexName")
 	}
-	if ownerTypeName == "" {
-		return nil, fmt.Errorf("missing ownerTypeName")
+	if q.KeyAttributeName == "" {
+		return fmt.Errorf("missing KeyAttributeName")
+	}
+	if q.KeyAttributeValue == "" {
+		return fmt.Errorf("missing KeyAttributeValue")
+	}
+	if q.OutputAttributeName == "" {
+		return fmt.Errorf("missing OutputAttributeName")
+	}
+	return nil
+}
+
+func GetByIndex[T Nobject](param QueryByIndexParam) ([]string, error) {
+	if err := param.Validate(); err != nil {
+		return nil, err
 	}
 
-	keyCondition := expression.Key(attributeName).Equal(expression.Value(attributeValue))
+	keyCondition := expression.Key(param.KeyAttributeName).Equal(expression.Value(param.KeyAttributeValue))
 	expr, errExpression := expression.NewBuilder().
 		WithKeyCondition(keyCondition).
-		WithProjection(getProjection([]string{"Id"})).
+		WithProjection(getProjection([]string{param.OutputAttributeName})).
 		Build()
 	if errExpression != nil {
-		fmt.Println("error: creating dynamo expression ", errExpression)
+		fmt.Println("error: creating dynamoDB expression ", errExpression)
 		return nil, errExpression
 	}
+
 	queryInput := &dynamodb.QueryInput{
-		TableName:                 aws.String((*new(T)).GetTypeName()),
-		IndexName:                 aws.String((*new(T)).GetTypeName() + attributeName),
+		TableName:                 aws.String(param.TableName),
+		IndexName:                 aws.String(param.IndexName),
 		ExpressionAttributeNames:  expr.Names(),
 		KeyConditionExpression:    expr.KeyCondition(),
 		ProjectionExpression:      expr.Projection(),
@@ -143,16 +165,73 @@ func GetByIndex[T Nobject](attributeValue, attributeName, ownerTypeName string) 
 	}
 
 	items, err := DBClient.Query(queryInput)
-
 	if err != nil {
 		return nil, err
 	}
 
 	outputIds := make([]string, len(items.Items))
 	for index, attr := range items.Items {
-		outputIds[index] = *attr["Id"].S
+		outputIds[index] = *attr[param.OutputAttributeName].S
 	}
 	return outputIds, nil
+}
+
+type QueryByPartitionKeyParam struct {
+	TableName               string
+	PartitionAttributeName  string
+	PatritionAttributeValue string
+	OutputAttributeName     string
+}
+
+func (q QueryByPartitionKeyParam) Validate() error {
+	if q.TableName == "" {
+		return fmt.Errorf("missing TableName")
+	}
+	if q.PartitionAttributeName == "" {
+		return fmt.Errorf("missing PartitionAttributeName")
+	}
+	if q.PatritionAttributeValue == "" {
+		return fmt.Errorf("missing PatritionAttributeValue")
+	}
+	if q.OutputAttributeName == "" {
+		return fmt.Errorf("missing OutputAttributeName")
+	}
+	return nil
+}
+
+func GetSortKeysByPartitionKey[T Nobject](q QueryByPartitionKeyParam) ([]string, error) {
+	if err := q.Validate(); err != nil {
+		return nil, err
+	}
+
+	keyCondition := expression.Key(q.PartitionAttributeName).Equal(expression.Value(q.PatritionAttributeValue))
+	expr, errExpression := expression.NewBuilder().
+		WithKeyCondition(keyCondition).
+		WithProjection(getProjection([]string{q.OutputAttributeName})).
+		Build()
+	if errExpression != nil {
+		fmt.Println("error: creating dynamoDB expression ", errExpression)
+		return nil, errExpression
+	}
+	input := &dynamodb.QueryInput{
+		TableName:                 aws.String(q.TableName),
+		ExpressionAttributeNames:  expr.Names(),
+		KeyConditionExpression:    expr.KeyCondition(),
+		ProjectionExpression:      expr.Projection(),
+		ExpressionAttributeValues: expr.Values(),
+	}
+
+	items, err := DBClient.Query(input)
+	if err != nil {
+		return nil, err
+	}
+
+	outputIds := make([]string, len(items.Items))
+	for index, attr := range items.Items {
+		outputIds[index] = *attr[q.OutputAttributeName].S
+	}
+
+	return outputIds, err
 }
 
 func GetBatch[T Nobject](ids []string) (*[]T, error) {

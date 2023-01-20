@@ -25,10 +25,6 @@ func (User) GetTypeName() string {
 	return "User"
 }
 
-func (User) New() error {
-	return nil
-}
-
 func (u User) GetId() string {
 	return u.Email
 }
