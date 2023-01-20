@@ -31,6 +31,7 @@ func Load[T Nobject](id string) (*T, error) {
 
 	if item.Item != nil {
 		err = dynamodbattribute.UnmarshalMap(item.Item, instance)
+		invokeInitOnNobjectType(instance)
 		return instance, err
 	}
 
@@ -78,7 +79,19 @@ func Export[T Nobject](objToInsert Nobject) (*T, error) {
 	// Unmarshal or to use the reflection to set the ID
 	var parsedItem = new(T)
 	err = dynamodbattribute.UnmarshalMap(attributeVals, parsedItem)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal object returned from DB")
+	}
+
+	invokeInitOnNobjectType(parsedItem)
 	return parsedItem, err
+}
+
+func invokeInitOnNobjectType[T Nobject](item *T) {
+	castedToInterface := any(item)
+	if initInterface, ok := castedToInterface.(nobjectInit); ok {
+		initInterface.Init()
+	}
 }
 
 func Delete[T Nobject](id string) error {
