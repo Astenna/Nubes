@@ -1,38 +1,32 @@
 package parser
 
 import (
-	"bytes"
 	"fmt"
 	"go/ast"
-	"go/parser"
-	"go/printer"
 	"go/token"
-	"os"
 	"strings"
 )
 
-func AddDBOperationsToMethods(path string, parsedPackage ParsedPackage) {
-	set := token.NewFileSet()
-	packs, err := parser.ParseDir(set, path, nil, 0)
-	assertDirParsed(err)
-
-	isTypeNewCtorImplemented := make(map[string]bool)
-	isTypeReNewCtorImplemented := make(map[string]bool)
-	isTypeDestructorImplemented := make(map[string]bool)
-
-	for _, pack := range packs {
-		for filePath, f := range pack.Files {
+func (t TypeSpecParser) detectAndAdjustMethods(isTypeNewCtorImplemented map[string]bool, isTypeReNewCtorImplemented map[string]bool, isTypeDestructorImplemented map[string]bool) {
+	for _, pack := range t.packs {
+		for path, f := range pack.Files {
 			fileModified := false
 			for _, d := range f.Decls {
 				if fn, isFn := d.(*ast.FuncDecl); isFn {
+
+					t.detectedFunctions[path] = append(t.detectedFunctions[path], detectedFunction{
+						Function: fn,
+						Imports:  f.Imports,
+					})
+
 					if fn.Recv == nil {
 
-						ctorDetected := addDBOperationsIfCtor(fn, parsedPackage, set, isTypeNewCtorImplemented, isTypeReNewCtorImplemented, &fileModified)
+						ctorDetected := addDBOperationsIfCtor(fn, t.Output, t.tokenSet, isTypeNewCtorImplemented, isTypeReNewCtorImplemented, &fileModified)
 						if ctorDetected {
 							continue
 						}
 
-						destructorDetected := addDbOperationsIfDestructor(fn, parsedPackage, set, isTypeDestructorImplemented, &fileModified)
+						destructorDetected := addDbOperationsIfDestructor(fn, t.Output, t.tokenSet, isTypeDestructorImplemented, &fileModified)
 						if destructorDetected {
 							continue
 						}
@@ -40,57 +34,27 @@ func AddDBOperationsToMethods(path string, parsedPackage ParsedPackage) {
 					} else if fn.Name.Name != NobjectImplementationMethod && f.Name.Name != CustomIdImplementationMethod {
 
 						typeName := getFunctionReceiverTypeAsString(fn.Recv)
-						if isNobject := parsedPackage.IsNobjectInOrginalPackage[typeName]; isNobject {
+						if isNobject := t.Output.IsNobjectInOrginalPackage[typeName]; isNobject {
 
-							isGetterOrSetter := addDBOperationsIfGetterOrSetter(fn, parsedPackage, set, &fileModified)
+							isGetterOrSetter := addDBOperationsIfGetterOrSetter(fn, t.Output, t.tokenSet, &fileModified)
 							if isGetterOrSetter {
 								continue
 							}
 
-							if !isFunctionStateless(fn.Recv) && retParamsVerifier.Check(fn) && !isDBGetOperationAlreadyAddedToMethod(fn.Body, set) {
+							if !isFunctionStateless(fn.Recv) && retParamsVerifier.Check(fn) && !isDBGetOperationAlreadyAddedToMethod(fn.Body, t.tokenSet) {
 								fileModified = true
-								addDBOperationsToStateChangingMethod(fn, parsedPackage)
+								addDBOperationsToStateChangingMethod(fn, t.Output)
 							}
 						}
 					}
 				}
 			}
 
-			if fileModified {
-				saveAstChangesInFile(f, set, filePath)
+			if !t.fileChanged[path] {
+				t.fileChanged[path] = fileModified
 			}
 		}
 	}
-}
-
-func saveAstChangesInFile(f *ast.File, set *token.FileSet, filePath string) {
-	libImported := false
-	for _, imp := range f.Imports {
-		if strings.Contains(imp.Path.Value, LibImportPath) {
-			libImported = true
-			break
-		}
-	}
-	if !libImported {
-		importNubes := &ast.GenDecl{
-			TokPos: f.Package,
-			Tok:    token.IMPORT,
-			Specs:  []ast.Spec{&ast.ImportSpec{Path: &ast.BasicLit{Kind: token.STRING, Value: LibImportPath}}},
-		}
-		f.Decls = prepend[ast.Decl](f.Decls, importNubes)
-	}
-
-	var buf bytes.Buffer
-	err := printer.Fprint(&buf, set, f)
-	if err != nil {
-		fmt.Println(err)
-	}
-	nobjectTypeFile, err := os.Create(filePath)
-	if err != nil {
-		fmt.Println(err)
-	}
-	buf.WriteTo(nobjectTypeFile)
-	nobjectTypeFile.Close()
 }
 
 func addDBOperationsToStateChangingMethod(fn *ast.FuncDecl, parsedPackage ParsedPackage) {

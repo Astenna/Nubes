@@ -26,21 +26,20 @@ var ssfSpecCmd = &cobra.Command{
 
 		typesPath = tp.MakePathAbosoluteOrExitOnError(typesPath)
 
-		parsedPackage := parser.GetPackageTypes(typesPath, moduleName)
-		stateChangingFuncs := parser.ParseStateChangingHandlers(typesPath, parsedPackage)
-		parser.AddDBOperationsToMethods(typesPath, parsedPackage)
+		typeSpecParser, _ := parser.NewTypeSpecParser(typesPath)
+		typeSpecParser.Run(moduleName)
 
-		GenerateStateChangingHandlers(generationDestination, stateChangingFuncs)
+		GenerateStateChangingHandlers(generationDestination, typeSpecParser.Handlers)
 		GenerateGetAndSetFieldHandlers(generationDestination)
 
 		if generateDeploymentFiles {
 			serviceName := lastString(strings.Split(moduleName, "/"))
-			serverlessInput := ServerlessTemplateInput{ServiceName: serviceName, StateFuncs: stateChangingFuncs}
+			serverlessInput := ServerlessTemplateInput{ServiceName: serviceName, StateFuncs: typeSpecParser.Handlers}
 			GenerateDeploymentFiles(generationDestination, serverlessInput)
 		}
 
 		if dbInit {
-			database.CreateTypeTables(parsedPackage)
+			database.CreateTypeTables(typeSpecParser.Output)
 		}
 	},
 }

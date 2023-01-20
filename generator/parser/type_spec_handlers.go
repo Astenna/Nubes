@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"go/ast"
-	"go/parser"
 	"go/printer"
 	"go/token"
 	"go/types"
@@ -27,13 +26,8 @@ type detectedFunction struct {
 	Imports  []*ast.ImportSpec
 }
 
-func ParseStateChangingHandlers(path string, parsedPackage ParsedPackage) []StateChangingHandler {
-	set := token.NewFileSet()
-	packs, err := parser.ParseDir(set, path, nil, 0)
-	assertDirParsed(err)
-
-	fileFunctionsMap := getPackageFuncs(packs)
-	isNobjectInOrgPkg := parsedPackage.IsNobjectInOrginalPackage
+func (t *TypeSpecParser) prepareHandleres() {
+	fileFunctionsMap := t.detectedFunctions
 
 	handlerFuncs := []StateChangingHandler{}
 	for _, functions := range fileFunctionsMap {
@@ -48,45 +42,44 @@ func ParseStateChangingHandlers(path string, parsedPackage ParsedPackage) []Stat
 
 			} else {
 				receiverTypeName := getFunctionReceiverTypeAsString(f.Recv)
-				if isNobject := isNobjectInOrgPkg[receiverTypeName]; !isNobject {
+				if isNobject := t.Output.IsNobjectInOrginalPackage[receiverTypeName]; !isNobject {
 					fmt.Println("Member type does not implement Nobject interface. Handler generation for " + f.Name.Name + "skipped")
 					continue
 				}
 
 				newHandler := StateChangingHandler{
-					OrginalPackage:      parsedPackage.ImportPath,
+					OrginalPackage:      t.Output.ImportPath,
 					OrginalPackageAlias: OrginalPackageAlias,
 					MethodName:          f.Name.Name,
 					ReceiverType:        receiverTypeName,
 					ReceiverIdFieldName: "Id",
-					Imports:             getImportsAsString(set, detectedFunction.Imports),
+					Imports:             getImportsAsString(t.tokenSet, detectedFunction.Imports),
 				}
 
-				if customIdFieldName, hasCustomId := parsedPackage.TypesWithCustomId[receiverTypeName]; hasCustomId {
+				if customIdFieldName, hasCustomId := t.Output.TypesWithCustomId[receiverTypeName]; hasCustomId {
 					newHandler.ReceiverIdFieldName = customIdFieldName
 				}
 
 				if retParamsVerifier.Check(f) {
 					if len(f.Type.Results.List) > 1 {
 						newHandler.OptionalReturnType = types.ExprString(f.Type.Results.List[0].Type)
-						if _, isPresent := isNobjectInOrgPkg[newHandler.OptionalReturnType]; isPresent {
+						if _, isPresent := t.Output.IsNobjectInOrginalPackage[newHandler.OptionalReturnType]; isPresent {
 							newHandler.OptionalReturnType = newHandler.OrginalPackageAlias + "." + newHandler.OptionalReturnType
 						}
 					}
 				}
 
-				parameters, err := getStateChangingFuncParams(f.Type.Params, isNobjectInOrgPkg)
+				parameters, err := getStateChangingFuncParams(f.Type.Params, t.Output.IsNobjectInOrginalPackage)
 				if err != nil {
 					fmt.Println("Maximum allowed number of parameters is 1. Handler generation for " + f.Name.Name + "skipped")
 					continue
 				}
 				newHandler.Invocation = f.Name.Name + "(" + parameters + ")"
-				handlerFuncs = append(handlerFuncs, newHandler)
+				t.Handlers = append(handlerFuncs, newHandler)
 			}
 		}
 	}
 
-	return handlerFuncs
 }
 
 func getImportsAsString(fset *token.FileSet, imports []*ast.ImportSpec) string {
