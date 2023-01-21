@@ -22,5 +22,7 @@
 
 # generated files
 */generated/
+client_lib/*
+client/*
 */.serverless/*
 .aws-sam/*

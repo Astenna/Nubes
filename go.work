@@ -5,4 +5,7 @@ use (
 	./faas
 	./lib
 	./generator
+	//./client_lib
+	./client
+	./faas_lib_test
 )

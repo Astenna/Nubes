@@ -7,16 +7,16 @@ import (
 )
 
 type Order struct {
-	Id		string
-	Buyer		lib.Reference[User]
-	Products	[]OrderedProduct
-	Shipping	lib.Reference[Shipping]
-	isInitialized	bool
+	Id            string
+	Buyer         lib.Reference[User]
+	Products      []OrderedProduct
+	Shipping      lib.Reference[Shipping]
+	isInitialized bool
 }
 
 type OrderedProduct struct {
-	Product		lib.Reference[Product]
-	Quantity	int
+	Product  lib.Reference[Product]
+	Quantity float64
 }
 
 func NewOrder(order Order) (Order, error) {
@@ -34,20 +34,14 @@ func NewOrder(order Order) (Order, error) {
 		return *new(Order), errors.New("unable to retrieve user's address for shipping")
 	}
 	shipping, err := lib.Export[Shipping](Shipping{
-		State:		InPreparation,
-		Address:	buyer.Address,
+		State:   InPreparation,
+		Address: buyer.Address,
 	})
 	if err != nil {
 		return *new(Order), errors.New("failed to create shipping for the order: " + err.Error())
 	}
 
 	order.Shipping = lib.Reference[Shipping](shipping.Id)
-	out, _libError := lib.Insert(order)
-	if _libError != nil {
-		return *new(Order), _libError
-	}
-	order.Id = out
-
 	return order, nil
 }
 
