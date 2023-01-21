@@ -1,0 +1,47 @@
+{
+    "configurations": [
+        {
+            "name": "Launch client project",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "client\\main.go"
+        },
+        {
+            "name": "Launch gen:handlers",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "generator\\main.go",
+            "args": ["handlers","-t=..//faas//types", "-o=..//faas", "-m=github.com/Astenna/Nubes/faas", "-g=true", "-i=false"]
+        },
+        {
+            "name": "Launch gen:client",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "generator\\main.go",
+            "args": ["client","-t=..//faas//types", "-o=..//"]
+        },
+        {
+            "type": "aws-sam",
+            "request": "direct-invoke",
+            "name": "faas:handlers (go1.x)",
+            "invokeTarget": {
+                "target": "code",
+                "projectRoot": "${workspaceFolder}",
+                "lambdaHandler": "faas/handlers/create_shop"
+            },
+            "lambda": {
+                "runtime": "go1.x",
+                "memoryMb": 128,
+                "timeoutSec": 15,
+                "payload": { "json":{
+                    "Id" : 1,
+                    "Name" : "Shop 1",
+                }},
+                "environmentVariables": {}
+            }
+        }
+    ]
+}

@@ -18,7 +18,6 @@
 
 # IDEs 
 .idea/*
-.vscode/
 
 # generated files
 */generated/
