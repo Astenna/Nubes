@@ -1,11 +1,12 @@
 package parser
 
 import (
-	"errors"
+	"bytes"
 	"fmt"
 	"go/ast"
+	"go/printer"
+	"go/token"
 	"go/types"
-	"os"
 	"strings"
 )
 
@@ -83,26 +84,12 @@ func parseStructFieldsForTypeSpec(strctType *ast.StructType, typeName string, pa
 	return structDefinitionModified
 }
 
-func getIdFieldNameFromCustomIdImpl(fn *ast.FuncDecl) (string, error) {
-	var returnResult string
-	ast.Inspect(fn, func(n ast.Node) bool {
-		if ret, ok := n.(*ast.ReturnStmt); ok {
-			returnResult = types.ExprString(ret.Results[0])
-			return false
-		}
-		return true
-	})
-
-	if returnResult == "" {
-		return "", errors.New("unable to detect Id field based on custom id interface implementation for" + fn.Recv.List[0].Names[0].Name)
-	}
-	splitted := strings.Split(returnResult, ".")
-	return splitted[len(splitted)-1], nil
-}
-
-func assertDirParsed(err error) {
+func getTypeSpecAsString(fset *token.FileSet, detectedStruct *ast.TypeSpec) (string, error) {
+	var buf bytes.Buffer
+	buf.WriteString("type ")
+	err := printer.Fprint(&buf, fset, detectedStruct)
 	if err != nil {
-		fmt.Println("Failed to parse files in the directory: %w", err)
-		os.Exit(1)
+		return "", fmt.Errorf("error occurred when parsing the struct")
 	}
+	return buf.String(), nil
 }

@@ -11,7 +11,7 @@ import (
 type {{if eq .NobjectImplementation ""}} {{.TypeNameOrginalCase}} {{else}} {{.TypeNameLower}} {{end}} struct {
 	{{if eq .NobjectImplementation ""}}
 		{{range .FieldDefinitions}}
-    		{{if .IsReference}} {{.FieldNameUpper}} lib.Reference[{{.FieldType}}] 
+    		{{if .IsReference}} {{.FieldNameUpper}} lib.Reference[{{.FieldTypeUpper}}Stub] 
     		{{else if .IsReferenceList}} {{.FieldNameUpper}} lib.ReferenceList[{{.FieldType}}] 
 			{{else}} {{.FieldNameUpper}} {{.FieldType}} {{end}} 
 		{{end}}

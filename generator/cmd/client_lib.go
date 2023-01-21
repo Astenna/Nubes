@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -8,6 +9,7 @@ import (
 	tp "github.com/Astenna/Nubes/generator/template_parser"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra-cli/cmd"
+	"golang.org/x/exp/maps"
 )
 
 var clientCmd = &cobra.Command{
@@ -20,7 +22,13 @@ var clientCmd = &cobra.Command{
 		output, _ := cmd.Flags().GetString("output")
 		projectName, _ := cmd.Flags().GetString("project-name")
 
-		definedTypes, otherDecls := parser.ParsePackage(tp.MakePathAbosoluteOrExitOnError(typesPath))
+		clientTypesParser, err := parser.NewClientTypesParser(tp.MakePathAbosoluteOrExitOnError(typesPath))
+		if err != nil {
+			fmt.Println("Fatal occurred initialising type spec parser: %w", err)
+			os.Exit(1)
+		}
+		clientTypesParser.Run()
+		definedTypes := maps.Values(clientTypesParser.DefinedTypes)
 
 		outputDirectoryPath := tp.MakePathAbosoluteOrExitOnError(filepath.Join(output, projectName))
 		os.MkdirAll(outputDirectoryPath, 0777)
@@ -51,9 +59,9 @@ var clientCmd = &cobra.Command{
 		}{PackageName: projectName}, filepath.Join(outputDirectoryPath, "repository.go"))
 
 		other_decls_templ := tp.ParseOrExitOnError("templates/client_lib/other_decls.go.tmpl")
-		otherDecls.PackageName = projectName
+		clientTypesParser.OtherDecls.PackageName = projectName
 		filePath = filepath.Join(outputDirectoryPath, "other_decls.go")
-		tp.CreateFileFromTemplate(other_decls_templ, otherDecls, filePath)
+		tp.CreateFileFromTemplate(other_decls_templ, clientTypesParser.OtherDecls, filePath)
 	},
 }
 
