@@ -13,7 +13,8 @@ func getNobjectStateConditionalRetrieval(fn *ast.FuncDecl, parsedPackage ParsedP
 	errorCheck := getErrorCheckExpr(fn, LibErrorVariableName)
 
 	tempRecvAssignment := getTempRecvAssignStmt(fn.Recv.List[0].Names[0].Name, isPointerReceiver)
-	isInitializedCheck.Body.List = []ast.Stmt{&readFromLibExpr, &errorCheck, &tempRecvAssignment}
+	initCall := getInitCall(fn.Recv.List[0].Names[0].Name)
+	isInitializedCheck.Body.List = []ast.Stmt{&readFromLibExpr, &errorCheck, &tempRecvAssignment, &initCall}
 
 	return isInitializedCheck
 }
@@ -130,4 +131,14 @@ func getIsInitializedCheck(receiverVariableName string) ast.IfStmt {
 	}
 
 	return ifStmt
+}
+
+func getInitCall(receiverVariableName string) ast.ExprStmt {
+	return ast.ExprStmt{X: &ast.CallExpr{
+		Fun: &ast.SelectorExpr{
+			X:   &ast.Ident{Name: receiverVariableName},
+			Sel: &ast.Ident{Name: InitFunctionName},
+		},
+		Args: []ast.Expr{},
+	}}
 }

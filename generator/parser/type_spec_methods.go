@@ -29,7 +29,7 @@ func (t TypeSpecParser) adjustMethods(isTypeNewCtorImplemented map[string]bool, 
 					if !isGetter {
 						isSetter := t.addDBOperationsIfSetter(fn, path)
 						if !isSetter {
-							if !isFunctionStateless(fn.Recv) && retParamsVerifier.Check(fn) && !isInitFieldCheckAlreadyAdded(fn.Body, t.tokenSet) {
+							if !isFunctionStateless(fn.Recv) && retParamsVerifier.Check(fn) && !isInitFieldCheckAlreadyAddedAsFirstStmt(fn.Body, t.tokenSet) {
 								t.fileChanged[path] = true
 								t.addDBOperationsToStateChangingMethod(fn)
 							}
@@ -53,7 +53,7 @@ func (t TypeSpecParser) addDBOperationsIfSetter(fn *ast.FuncDecl, path string) b
 	if strings.HasPrefix(fn.Name.Name, SetPrefix) {
 		fieldName := strings.TrimPrefix(fn.Name.Name, SetPrefix)
 		if fieldType, fieldExists := t.Output.TypeFields[typeName][fieldName]; fieldExists {
-			if !isInitFieldCheckAlreadyAdded(fn.Body, t.tokenSet) {
+			if !isInitFieldCheckAlreadyAddedAsSecondLastStmt(fn.Body, t.tokenSet) {
 				idFieldName := getIdFieldNameOfType(typeName, t.Output.TypesWithCustomId)
 				saveInDbIfInitialized := getSetterDBStmts(fn, getDBStmtsParam{
 					idFieldName:          idFieldName,
@@ -80,7 +80,7 @@ func (t TypeSpecParser) addDBOperationsIfGetter(fn *ast.FuncDecl, path string) b
 		fieldName := strings.TrimPrefix(fn.Name.Name, GetPrefix)
 		if fieldType, fieldExist := t.Output.TypeFields[typeName][fieldName]; fieldExist {
 
-			if !isInitFieldCheckAlreadyAdded(fn.Body, t.tokenSet) {
+			if !isInitFieldCheckAlreadyAddedAsFirstStmt(fn.Body, t.tokenSet) {
 				idFieldName := getIdFieldNameOfType(typeName, t.Output.TypesWithCustomId)
 				retrieveFromDbIfInitialized := getGetterDBStmts(fn, getDBStmtsParam{
 					idFieldName:          idFieldName,
@@ -99,9 +99,20 @@ func (t TypeSpecParser) addDBOperationsIfGetter(fn *ast.FuncDecl, path string) b
 	return false
 }
 
-func isInitFieldCheckAlreadyAdded(funcBlock *ast.BlockStmt, set *token.FileSet) bool {
+func isInitFieldCheckAlreadyAddedAsFirstStmt(funcBlock *ast.BlockStmt, set *token.FileSet) bool {
 	if funcBlock != nil && funcBlock.List != nil && len(funcBlock.List) > 0 {
 		ifStmt, _ := funcBlock.List[0].(*ast.IfStmt)
+		if ifStmt != nil {
+			ifConditionAsString := types.ExprString(ifStmt.Cond)
+			return strings.Contains(ifConditionAsString, IsInitializedFieldName)
+		}
+	}
+	return false
+}
+
+func isInitFieldCheckAlreadyAddedAsSecondLastStmt(funcBlock *ast.BlockStmt, set *token.FileSet) bool {
+	if funcBlock != nil && funcBlock.List != nil && len(funcBlock.List) > 1 {
+		ifStmt, _ := funcBlock.List[len(funcBlock.List)-2].(*ast.IfStmt)
 		if ifStmt != nil {
 			ifConditionAsString := types.ExprString(ifStmt.Cond)
 			return strings.Contains(ifConditionAsString, IsInitializedFieldName)

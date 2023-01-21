@@ -2,6 +2,11 @@ package lib
 
 type Reference[T Nobject] string
 
+func NewReference[T Nobject](id string) *Reference[T] {
+	result := Reference[T](id)
+	return &result
+}
+
 func (r Reference[T]) Id() string {
 	return string(r)
 }
