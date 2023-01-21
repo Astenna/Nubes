@@ -234,10 +234,7 @@ func Update[T Nobject](values aws.JSONValue) error {
 	return err
 }
 
-func GetField(id string, param GetFieldParam) (interface{}, error) {
-	if id == "" {
-		return *new(interface{}), fmt.Errorf("missing id of object's field  to get")
-	}
+func GetField(param GetFieldParam) (interface{}, error) {
 	if err := param.Validate(); err != nil {
 		return nil, err
 	}
@@ -246,7 +243,7 @@ func GetField(id string, param GetFieldParam) (interface{}, error) {
 		TableName: aws.String(param.TypeName),
 		Key: map[string]*dynamodb.AttributeValue{
 			"Id": {
-				S: aws.String(id),
+				S: aws.String(param.Id),
 			},
 		},
 		ProjectionExpression: &param.FieldName,
@@ -266,10 +263,7 @@ func GetField(id string, param GetFieldParam) (interface{}, error) {
 	return nil, err
 }
 
-func SetField(id string, param SetFieldParam) error {
-	if id == "" {
-		return fmt.Errorf("missing id of object's field  to get")
-	}
+func SetField(param SetFieldParam) error {
 	if err := param.Validate(); err != nil {
 		return err
 	}
@@ -285,7 +279,7 @@ func SetField(id string, param SetFieldParam) error {
 		TableName: aws.String(param.TypeName),
 		Key: map[string]*dynamodb.AttributeValue{
 			"Id": {
-				S: aws.String(id),
+				S: aws.String(param.Id),
 			},
 		},
 		UpdateExpression:          expr.Update(),
@@ -294,6 +288,28 @@ func SetField(id string, param SetFieldParam) error {
 	})
 
 	return err
+}
+
+func IsInstanceAlreadyCreated(param IsInstanceAlreadyCreatedParam) (bool, error) {
+	item, err := DBClient.GetItem(&dynamodb.GetItemInput{
+		TableName: aws.String(param.TypeName),
+		Key: map[string]*dynamodb.AttributeValue{
+			"Id": {
+				S: aws.String(param.Id),
+			},
+		},
+		ProjectionExpression: aws.String("Id"),
+	})
+
+	if err != nil {
+		return false, err
+	}
+
+	if item.Item != nil {
+		return true, nil
+	}
+
+	return false, nil
 }
 
 func getProjection(names []string) expression.ProjectionBuilder {

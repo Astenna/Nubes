@@ -19,7 +19,10 @@ var existingUserId string
 
 func init() {
 	existingUserId = "crazy_integration_test@emai.com"
-	lib.Export[types.User](types.User{Email: existingUserId, Password: "password", FirstName: "Kinga"})
+	_, err := lib.Load[types.User](existingUserId)
+	if err != nil {
+		panic("initialization error")
+	}
 }
 
 func TestExportFailsIfIdAlreadyExists(t *testing.T) {

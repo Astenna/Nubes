@@ -51,9 +51,9 @@ func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}() ({{.FieldType}}, error) {
 
 	params := lib.HandlerParameters{
 		Id: s.GetId(),
+		TypeName:  s.GetTypeName(),
 		Parameter: lib.GetFieldParam{
 			FieldName: "{{.FieldNameUpper}}",
-			TypeName:  s.GetTypeName(),
 		},
 	}
 	jsonParam, err := json.Marshal(params)
@@ -116,9 +116,9 @@ func (s {{$.TypeNameLower}}) Set{{.FieldNameUpper}}(newValue {{if .IsReference}}
 	
 	params := lib.HandlerParameters{
 		Id: s.GetId(),
+		TypeName:  s.GetTypeName(),
 		Parameter: lib.SetFieldParam{
 			FieldName: "{{.FieldNameUpper}}",
-			TypeName:  s.GetTypeName(),
 			Value: newValue,
 		},
 	}

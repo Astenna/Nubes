@@ -3,11 +3,15 @@ package lib
 import "fmt"
 
 type GetFieldParam struct {
+	Id        string
 	FieldName string
 	TypeName  string
 }
 
 func (s GetFieldParam) Validate() error {
+	if s.Id == "" {
+		return fmt.Errorf("missing id of object's field to get")
+	}
 	if s.FieldName == "" {
 		return fmt.Errorf("missing field name of object's field to get")
 	}
@@ -19,12 +23,16 @@ func (s GetFieldParam) Validate() error {
 }
 
 type SetFieldParam struct {
+	Id        string
 	FieldName string
 	TypeName  string
 	Value     interface{}
 }
 
 func (s SetFieldParam) Validate() error {
+	if s.Id == "" {
+		return fmt.Errorf("missing id of object's field to get")
+	}
 	if s.FieldName == "" {
 		return fmt.Errorf("missing field name of object's field to get")
 	}
@@ -83,4 +91,9 @@ func (q QueryByIndexParam) Validate() error {
 		return fmt.Errorf("missing OutputAttributeName")
 	}
 	return nil
+}
+
+type IsInstanceAlreadyCreatedParam struct {
+	Id       string
+	TypeName string
 }

@@ -33,7 +33,7 @@ func (u User) GetId() string {
 func (u *User) SetLastName(lastName string) error {
 	u.LastName = lastName
 	if u.isInitialized {
-		_libError := lib.SetField(u.Email, lib.SetFieldParam{TypeName: "User", FieldName: "LastName", Value: u.LastName})
+		_libError := lib.SetField(lib.SetFieldParam{Id: u.Email, TypeName: "User", FieldName: "LastName", Value: u.LastName})
 		if _libError != nil {
 			return _libError
 		}
@@ -43,7 +43,7 @@ func (u *User) SetLastName(lastName string) error {
 
 func (u *User) GetLastName() (string, error) {
 	if u.isInitialized {
-		fieldValue, _libError := lib.GetField(u.Email, lib.GetFieldParam{TypeName: "User", FieldName: "LastName"})
+		fieldValue, _libError := lib.GetField(lib.GetFieldParam{Id: u.Email, TypeName: "User", FieldName: "LastName"})
 		if _libError != nil {
 			return *new(string), _libError
 		}

@@ -77,16 +77,19 @@ func getGetterDBStmts(fn *ast.FuncDecl, input getDBStmtsParam) ast.IfStmt {
 					Sel: &ast.Ident{Name: "GetField"},
 				},
 				Args: []ast.Expr{
-					&ast.SelectorExpr{
-						X:   &ast.Ident{Name: input.receiverVariableName},
-						Sel: &ast.Ident{Name: input.idFieldName},
-					},
 					&ast.CompositeLit{
 						Type: &ast.SelectorExpr{
 							X:   &ast.Ident{Name: "lib"},
 							Sel: &ast.Ident{Name: "GetFieldParam"},
 						},
 						Elts: []ast.Expr{
+							&ast.KeyValueExpr{
+								Key: &ast.Ident{Name: "Id"},
+								Value: &ast.SelectorExpr{
+									X:   &ast.Ident{Name: input.receiverVariableName},
+									Sel: &ast.Ident{Name: input.idFieldName},
+								},
+							},
 							&ast.KeyValueExpr{
 								Key: &ast.Ident{Name: "TypeName"},
 								Value: &ast.BasicLit{
@@ -140,16 +143,19 @@ func getSetterDBStmts(fn *ast.FuncDecl, input getDBStmtsParam) ast.IfStmt {
 					Sel: &ast.Ident{Name: "SetField"},
 				},
 				Args: []ast.Expr{
-					&ast.SelectorExpr{
-						X:   &ast.Ident{Name: input.receiverVariableName},
-						Sel: &ast.Ident{Name: input.idFieldName},
-					},
 					&ast.CompositeLit{
 						Type: &ast.SelectorExpr{
 							X:   &ast.Ident{Name: "lib"},
 							Sel: &ast.Ident{Name: "SetFieldParam"},
 						},
 						Elts: []ast.Expr{
+							&ast.KeyValueExpr{
+								Key: &ast.Ident{Name: "Id"},
+								Value: &ast.SelectorExpr{
+									X:   &ast.Ident{Name: input.receiverVariableName},
+									Sel: &ast.Ident{Name: input.idFieldName},
+								},
+							},
 							&ast.KeyValueExpr{
 								Key: &ast.Ident{Name: "TypeName"},
 								Value: &ast.BasicLit{

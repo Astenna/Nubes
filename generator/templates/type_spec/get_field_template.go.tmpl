@@ -5,15 +5,8 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 )
 
-func GetFieldHandler(input lib.HandlerParameters) (interface{}, error) {
-	// it is really annoying that golang does not support it out-of-the-box
-	// (direct casting input.Parameter to lib.GetFieldParam throws error)
-	getFieldMap := input.Parameter.(map[string]interface{})
-	getFieldParam := lib.GetFieldParam{
-		FieldName: getFieldMap["FieldName"].(string),
-		TypeName:  getFieldMap["TypeName"].(string),
-	}
-	output, err := lib.GetField(input.Id, getFieldParam)
+func GetFieldHandler(input lib.GetFieldParam) (interface{}, error) {
+	output, err := lib.GetField(input)
 
 	if err != nil {
 		return *new(interface{}), err
