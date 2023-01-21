@@ -39,3 +39,9 @@ func CreateFileFromTemplate(templ template.Template, data any, newFilePath strin
 	}
 	file.Close()
 }
+
+type ExportTemplateInput struct {
+	OrginalPackage            string
+	OrginalPackageAlias       string
+	IsNobjectInOrginalPackage map[string]bool
+}

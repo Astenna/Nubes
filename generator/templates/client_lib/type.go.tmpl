@@ -25,12 +25,60 @@ type {{if eq .NobjectImplementation ""}} {{.TypeNameOrginalCase}} {{else}} {{.Ty
 func ({{$.TypeNameLower}})GetTypeName() string {{.NobjectImplementation}} 
 
 
-// CONSTRUCTOR
+// LOAD AND EXPORT
 
-func New{{.TypeNameOrginalCase}}(id string) {{.TypeNameLower}} {
+func Load{{.TypeNameOrginalCase}}(id string) (*{{.TypeNameLower}}, error) {	
+	newInstance := new({{.TypeNameLower}})
+
+	params := lib.HandlerParameters{
+		Id:  id,
+		TypeName:  newInstance.GetTypeName(),
+	}
+	jsonParam, err := json.Marshal(params)
+	if err != nil {
+		return nil, err
+	}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("Load"), Payload: jsonParam})
+	if _err != nil {
+		return nil, _err
+	}
+	if out.FunctionError != nil {
+		return nil, fmt.Errorf("lambda function designed to verify if instance exists failed. Error: %s", string(out.Payload))
+	}
+
+	newInstance.id = id
+	return newInstance, nil
+} 
+
+func load{{.TypeNameOrginalCase}}WithoutCheckIfExists(id string) *{{.TypeNameLower}} {	
 	newInstance := new({{.TypeNameLower}})
 	newInstance.id = id
-	return *newInstance
+	return newInstance
+} 
+
+func Export{{.TypeNameOrginalCase}}(input {{.TypeNameOrginalCase}}Stub) (*{{.TypeNameLower}}, error) {	
+	newInstance := new({{.TypeNameLower}})
+
+	params := lib.HandlerParameters{
+		TypeName:  newInstance.GetTypeName(),
+		Parameter: input,
+	}
+	jsonParam, err := json.Marshal(params)
+	if err != nil {
+		return nil, err
+	}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("Export"), Payload: jsonParam})
+	if _err != nil {
+		return nil, _err
+	}
+	if out.FunctionError != nil {
+		return nil, fmt.Errorf("lambda function designed to verify if instance exists failed. Error: %s", string(out.Payload[:]))
+	}
+
+	newInstance.id = string(out.Payload[:])
+	return newInstance, nil
 } 
  
 // GETID
@@ -72,8 +120,8 @@ func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}() ({{.FieldType}}, error) {
 	if err != nil {
 		return *new({{.FieldType}}), err
 	}
-	var referenceResult = New{{.FieldTypeUpper}}(result.Id)
-	return referenceResult, err
+	var referenceResult = load{{.FieldTypeUpper}}WithoutCheckIfExists(result.Id())
+	return *referenceResult, err
 	{{else}}
 	result := new({{.FieldType}})
 	err = json.Unmarshal(out.Payload, result)
@@ -105,7 +153,7 @@ func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}Id() (string, error) {
 		return "", err
 	}
 
-	return result.Id, err
+	return result.Id(), err
 }
 {{end}}
 {{if eq .IsReadonly false}}

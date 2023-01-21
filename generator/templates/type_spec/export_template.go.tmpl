@@ -1,0 +1,34 @@
+package main
+
+import (
+	"fmt"
+
+	{{.OrginalPackageAlias}} "{{.OrginalPackage}}"
+
+	lib "github.com/Astenna/Nubes/lib"
+	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/mitchellh/mapstructure"
+)
+
+func ExportHandler(input lib.HandlerParameters) (string, error) {
+	if input.TypeName == "" {
+		return "", fmt.Errorf("missing TypeName in HandlerParameters")
+	}
+
+	switch input.TypeName {
+	{{range $key,$value := .IsNobjectInOrginalPackage}}
+	{{if $value}} case "{{$key}}":
+			new{{$key}} := new({{$.OrginalPackageAlias}}.{{$key}})
+			mapstructure.Decode(input.Parameter, new{{$key}})
+			return lib.Insert(new{{$key}})
+	{{end}} {{end}}
+
+	default:
+		return "", fmt.Errorf("%s not supported", input.TypeName)
+
+	}
+}
+
+func main() {
+	lambda.Start(ExportHandler)
+}

@@ -26,6 +26,22 @@ package:
     - "**/**"
 
 functions:
+  Load:
+    name: Load
+    handler: bin/Load
+    package:
+      include:
+        - bin/Load
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+  Export:
+    name: Export
+    handler: bin/Export
+    package:
+      include:
+        - bin/Export
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
   GetField:
     name: GetField
     handler: bin/GetField

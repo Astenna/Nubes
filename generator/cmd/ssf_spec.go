@@ -35,7 +35,7 @@ var ssfSpecCmd = &cobra.Command{
 		typeSpecParser.Run(moduleName)
 
 		GenerateStateChangingHandlers(generationDestination, typeSpecParser.Handlers)
-		GenerateGetAndSetFieldHandlers(generationDestination)
+		GenerateGenericHandlers(generationDestination, typeSpecParser.Output)
 		GenerateCustomConstructorsHandlers(generationDestination, typeSpecParser.CustomCtors)
 
 		if generateDeploymentFiles {
@@ -103,7 +103,7 @@ func GenerateStateChangingHandlers(path string, functions []parser.StateChanging
 	}
 }
 
-func GenerateGetAndSetFieldHandlers(path string) {
+func GenerateGenericHandlers(path string, paredPkg parser.ParsedPackage) {
 	templ := tp.ParseOrExitOnError("templates/type_spec/get_field_template.go.tmpl")
 	generationDestPath := tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "generics", "GetField"))
 	os.MkdirAll(generationDestPath, 0777)
@@ -115,6 +115,19 @@ func GenerateGetAndSetFieldHandlers(path string) {
 	os.MkdirAll(generationDestPath, 0777)
 	setPath := filepath.Join(generationDestPath, "SetField.go")
 	tp.CreateFileFromTemplate(templ, nil, setPath)
+
+	templ = tp.ParseOrExitOnError("templates/type_spec/load_template.go.tmpl")
+	generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "generics", "Load"))
+	os.MkdirAll(generationDestPath, 0777)
+	loadPath := filepath.Join(generationDestPath, "Load.go")
+	tp.CreateFileFromTemplate(templ, nil, loadPath)
+
+	templ = tp.ParseOrExitOnError("templates/type_spec/export_template.go.tmpl")
+	generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "generics", "Export"))
+	os.MkdirAll(generationDestPath, 0777)
+	exportPath := filepath.Join(generationDestPath, "Export.go")
+	intput := tp.ExportTemplateInput{IsNobjectInOrginalPackage: paredPkg.IsNobjectInOrginalPackage, OrginalPackageAlias: parser.OrginalPackageAlias, OrginalPackage: paredPkg.ImportPath}
+	tp.CreateFileFromTemplate(templ, intput, exportPath)
 }
 
 func GenerateCustomConstructorsHandlers(path string, customCtor []parser.CustomCtorDefinition) {

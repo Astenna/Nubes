@@ -104,7 +104,7 @@ func ParsePackage(path string) ([]*StructTypeDefinition, OtherDecls) {
 				}
 
 				if fn, isFn := decl.(*ast.FuncDecl); isFn {
-					if fn.Recv == nil {
+					if fn.Recv == nil || fn.Name.Name == InitFunctionName {
 						continue
 					}
 
