@@ -12,8 +12,9 @@ import (
 )
 
 type TypeSpecParser struct {
-	Output   ParsedPackage
-	Handlers []StateChangingHandler
+	Output      ParsedPackage
+	Handlers    []StateChangingHandler
+	CustomCtors []CustomCtorDefinition
 
 	tokenSet           *token.FileSet
 	packs              map[string]*ast.Package
@@ -30,6 +31,13 @@ type ParsedPackage struct {
 	TypeNavListsReferringFieldName map[string][]NavigationToField
 	ManyToManyRelationships        map[string][]ManyToManyRelationshipField
 	TypesWithCustomId              map[string]string
+}
+
+type CustomCtorDefinition struct {
+	OrginalPackageAlias string
+	OrginalPackage      string
+	TypeName            string
+	OptionalParamType   string
 }
 
 func NewTypeSpecParser(path string) (*TypeSpecParser, error) {
@@ -51,6 +59,7 @@ func NewTypeSpecParser(path string) (*TypeSpecParser, error) {
 		TypeFields:                     map[string]map[string]string{},
 	}
 	typeSpecParser.Handlers = []StateChangingHandler{}
+	typeSpecParser.CustomCtors = []CustomCtorDefinition{}
 	typeSpecParser.fileChanged = map[string]bool{}
 	typeSpecParser.detectedFunctions = make(map[string][]detectedFunction)
 	typeSpecParser.isInitAlreadyAdded = map[string]bool{}
@@ -58,7 +67,7 @@ func NewTypeSpecParser(path string) (*TypeSpecParser, error) {
 	return typeSpecParser, nil
 }
 
-func (t TypeSpecParser) Run(moduleName string) ParsedPackage {
+func (t *TypeSpecParser) Run(moduleName string) {
 
 	t.detectNobjectTypes(moduleName)
 	t.detectAndAdjustDecls()
@@ -70,8 +79,6 @@ func (t TypeSpecParser) Run(moduleName string) ParsedPackage {
 	t.adjustMethods(isTypeNewCtorImplemented, isTypeReNewCtorImplemented, isTypeDestructorImplemented)
 	t.prepareHandleres()
 	t.saveChangesInAst()
-
-	return t.Output
 }
 
 func (t *TypeSpecParser) detectNobjectTypes(moduleName string) {
@@ -80,18 +87,15 @@ func (t *TypeSpecParser) detectNobjectTypes(moduleName string) {
 			for _, d := range f.Decls {
 				if fn, isFn := d.(*ast.FuncDecl); isFn {
 
-					t.detectedFunctions[path] = append(t.detectedFunctions[path], detectedFunction{
-						Function: fn,
-						Imports:  f.Imports,
-					})
-
 					if fn.Recv != nil {
 						ownerType := getFunctionReceiverTypeAsString(fn.Recv)
 						switch fn.Name.Name {
 						case NobjectImplementationMethod:
 							t.Output.IsNobjectInOrginalPackage[ownerType] = true
+							continue
 						case InitFunctionName:
 							t.isInitAlreadyAdded[ownerType] = true
+							continue
 						case CustomIdImplementationMethod:
 							idFieldName, err := getIdFieldNameFromCustomIdImpl(fn)
 							if err != nil {
@@ -99,8 +103,14 @@ func (t *TypeSpecParser) detectNobjectTypes(moduleName string) {
 								continue
 							}
 							t.Output.TypesWithCustomId[ownerType] = idFieldName
+							continue
 						}
 					}
+
+					t.detectedFunctions[path] = append(t.detectedFunctions[path], detectedFunction{
+						Function: fn,
+						Imports:  f.Imports,
+					})
 				}
 			}
 		}

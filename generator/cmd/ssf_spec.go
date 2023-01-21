@@ -36,6 +36,7 @@ var ssfSpecCmd = &cobra.Command{
 
 		GenerateStateChangingHandlers(generationDestination, typeSpecParser.Handlers)
 		GenerateGetAndSetFieldHandlers(generationDestination)
+		GenerateCustomConstructorsHandlers(generationDestination, typeSpecParser.CustomCtors)
 
 		if generateDeploymentFiles {
 			serviceName := lastString(strings.Split(moduleName, "/"))
@@ -77,11 +78,11 @@ type ServerlessTemplateInput struct {
 }
 
 func GenerateDeploymentFiles(path string, templateInput ServerlessTemplateInput) {
-	serverlessTempl := tp.ParseOrExitOnError("templates/ssf_spec/deployment/serverless.yml.tmpl")
+	serverlessTempl := tp.ParseOrExitOnError("templates/type_spec/deployment/serverless.yml.tmpl")
 	fileName := filepath.Join(tp.MakePathAbosoluteOrExitOnError(path), "serverless.yml")
 	tp.CreateFileFromTemplate(serverlessTempl, templateInput, fileName)
 
-	buildScriptTempl := tp.ParseOrExitOnError("templates/ssf_spec/deployment/build_handlers.sh.tmpl")
+	buildScriptTempl := tp.ParseOrExitOnError("templates/type_spec/deployment/build_handlers.sh.tmpl")
 	fileName = filepath.Join(tp.MakePathAbosoluteOrExitOnError(path), "build_handlers.sh")
 	tp.CreateFileFromTemplate(buildScriptTempl, nil, fileName)
 }
@@ -89,7 +90,7 @@ func GenerateDeploymentFiles(path string, templateInput ServerlessTemplateInput)
 func GenerateStateChangingHandlers(path string, functions []parser.StateChangingHandler) {
 	var handlerDir string
 	var ownerHandlerNameCombined string
-	templ := tp.ParseOrExitOnError("templates/ssf_spec/state_changing_template.go.tmpl")
+	templ := tp.ParseOrExitOnError("templates/type_spec/state_changing_template.go.tmpl")
 	generationDestPath := tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "state-changes"))
 
 	for _, f := range functions {
@@ -103,15 +104,31 @@ func GenerateStateChangingHandlers(path string, functions []parser.StateChanging
 }
 
 func GenerateGetAndSetFieldHandlers(path string) {
-	templ := tp.ParseOrExitOnError("templates/ssf_spec/get_field_template.go.tmpl")
+	templ := tp.ParseOrExitOnError("templates/type_spec/get_field_template.go.tmpl")
 	generationDestPath := tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "generics", "GetField"))
 	os.MkdirAll(generationDestPath, 0777)
 	getPath := filepath.Join(generationDestPath, "GetField.go")
 	tp.CreateFileFromTemplate(templ, nil, getPath)
 
-	templ = tp.ParseOrExitOnError("templates/ssf_spec/set_field_template.go.tmpl")
+	templ = tp.ParseOrExitOnError("templates/type_spec/set_field_template.go.tmpl")
 	generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "generics", "SetField"))
 	os.MkdirAll(generationDestPath, 0777)
 	setPath := filepath.Join(generationDestPath, "SetField.go")
 	tp.CreateFileFromTemplate(templ, nil, setPath)
+}
+
+func GenerateCustomConstructorsHandlers(path string, customCtor []parser.CustomCtorDefinition) {
+	var handlerDir string
+	var customCtorFileName string
+	templ := tp.ParseOrExitOnError("templates/type_spec/custom_constructor_template.go.tmpl")
+	generationDestPath := tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "custom-constructors"))
+
+	for _, c := range customCtor {
+		customCtorFileName = "New" + c.TypeName
+		handlerDir = filepath.Join(generationDestPath, customCtorFileName)
+		os.MkdirAll(handlerDir, 0777)
+		path = filepath.Join(handlerDir, customCtorFileName+".go")
+		tp.CreateFileFromTemplate(templ, c, path)
+		tp.RunGoimportsOnFile(path)
+	}
 }

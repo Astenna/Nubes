@@ -29,16 +29,30 @@ type detectedFunction struct {
 func (t *TypeSpecParser) prepareHandleres() {
 	fileFunctionsMap := t.detectedFunctions
 
-	handlerFuncs := []StateChangingHandler{}
 	for _, functions := range fileFunctionsMap {
 		for _, detectedFunction := range functions {
 			f := detectedFunction.Function
 
-			if f.Name.Name == NobjectImplementationMethod || f.Name.Name == CustomIdImplementationMethod || strings.HasPrefix(f.Name.Name, SetPrefix) || strings.HasPrefix(f.Name.Name, GetPrefix) {
+			if strings.HasPrefix(f.Name.Name, SetPrefix) || strings.HasPrefix(f.Name.Name, GetPrefix) {
+				// TODO FIX SET/GET prefix is not enough - the following string sequence
+				// must refer to existing type's field name
 				continue
 			} else if f.Recv == nil {
 
-				// TODO: detect & generate handler(s) with CTORs
+				param, err := getHandlerFunctionParam(f.Type.Params, t.Output.IsNobjectInOrginalPackage)
+				if err != nil {
+					fmt.Println("Maximum allowed number of parameters is 1. Handler generation for " + f.Name.Name + "skipped")
+					continue
+				}
+				if strings.HasPrefix(f.Name.Name, ConstructorPrefix) {
+					typeName := strings.TrimPrefix(f.Name.Name, ConstructorPrefix)
+					t.CustomCtors = append(t.CustomCtors, CustomCtorDefinition{
+						OrginalPackage:      t.Output.ImportPath,
+						OrginalPackageAlias: OrginalPackageAlias,
+						TypeName:            typeName,
+						OptionalParamType:   param,
+					})
+				}
 
 			} else {
 				receiverTypeName := getFunctionReceiverTypeAsString(f.Recv)
@@ -69,17 +83,16 @@ func (t *TypeSpecParser) prepareHandleres() {
 					}
 				}
 
-				parameters, err := getStateChangingFuncParams(f.Type.Params, t.Output.IsNobjectInOrginalPackage)
+				parameters, err := getHandlerFunctionParam(f.Type.Params, t.Output.IsNobjectInOrginalPackage)
 				if err != nil {
 					fmt.Println("Maximum allowed number of parameters is 1. Handler generation for " + f.Name.Name + "skipped")
 					continue
 				}
-				newHandler.Invocation = f.Name.Name + "(" + parameters + ")"
-				t.Handlers = append(handlerFuncs, newHandler)
+				newHandler.Invocation = f.Name.Name + "(" + HandlerInputParameterName + "." + HandlerInputParameterFieldName + ".(" + parameters + "))"
+				t.Handlers = append(t.Handlers, newHandler)
 			}
 		}
 	}
-
 }
 
 func getImportsAsString(fset *token.FileSet, imports []*ast.ImportSpec) string {
@@ -95,7 +108,7 @@ func getImportsAsString(fset *token.FileSet, imports []*ast.ImportSpec) string {
 	return buf.String()
 }
 
-func getStateChangingFuncParams(params *ast.FieldList, isNobjectInOrgPkg map[string]bool) (string, error) {
+func getHandlerFunctionParam(params *ast.FieldList, isNobjectInOrgPkg map[string]bool) (string, error) {
 	if params.List == nil || len(params.List) == 0 {
 		return "", nil
 	} else if len(params.List) > 1 {
@@ -106,5 +119,5 @@ func getStateChangingFuncParams(params *ast.FieldList, isNobjectInOrgPkg map[str
 	if _, isPresent := isNobjectInOrgPkg[inputParamType]; isPresent {
 		inputParamType = OrginalPackageAlias + "." + inputParamType
 	}
-	return HandlerInputParameterName + "." + HandlerInputParameterFieldName + ".(" + inputParamType + ")", nil
+	return inputParamType, nil
 }

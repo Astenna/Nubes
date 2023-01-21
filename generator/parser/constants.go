@@ -6,7 +6,6 @@ package parser
 const NobjectImplementationMethod = "GetTypeName"
 const CustomIdImplementationMethod = "GetId"
 const ConstructorPrefix = "New"
-const ReConstructorPrefix = "ReNew"
 const DestructorPrefix = "Delete"
 const LibraryGetObjectStateMethod = "GetObjectState"
 const InitFunctionName = "Init"

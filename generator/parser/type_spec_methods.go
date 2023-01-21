@@ -13,26 +13,20 @@ func (t TypeSpecParser) adjustMethods(isTypeNewCtorImplemented map[string]bool, 
 		for _, detectedFunction := range detectedFunctionsList {
 
 			fn := detectedFunction.Function
-			if fn.Name.Name == "Init" {
+
+			if fn.Recv == nil {
 				continue
 			}
 
-			if fn.Recv == nil {
-
-				// check if constructor, destructor
-
-			} else if fn.Name.Name != NobjectImplementationMethod && fn.Name.Name != CustomIdImplementationMethod {
-
-				typeName := getFunctionReceiverTypeAsString(fn.Recv)
-				if isNobject := t.Output.IsNobjectInOrginalPackage[typeName]; isNobject {
-					isGetter := t.addDBOperationsIfGetter(fn, path)
-					if !isGetter {
-						isSetter := t.addDBOperationsIfSetter(fn, path)
-						if !isSetter {
-							if !isFunctionStateless(fn.Recv) && retParamsVerifier.Check(fn) && !isInitFieldCheckAlreadyAddedAsFirstStmt(fn.Body, t.tokenSet) {
-								t.fileChanged[path] = true
-								t.addDBOperationsToStateChangingMethod(fn)
-							}
+			typeName := getFunctionReceiverTypeAsString(fn.Recv)
+			if isNobject := t.Output.IsNobjectInOrginalPackage[typeName]; isNobject {
+				isGetter := t.addDBOperationsIfGetter(fn, path)
+				if !isGetter {
+					isSetter := t.addDBOperationsIfSetter(fn, path)
+					if !isSetter {
+						if !isFunctionStateless(fn.Recv) && retParamsVerifier.Check(fn) && !isInitFieldCheckAlreadyAddedAsFirstStmt(fn.Body, t.tokenSet) {
+							t.fileChanged[path] = true
+							t.addDBOperationsToStateChangingMethod(fn)
 						}
 					}
 				}

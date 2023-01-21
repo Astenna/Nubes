@@ -1,0 +1,18 @@
+package main
+
+import (
+	"github.com/Astenna/Nubes/faas/types"
+	{{.OrginalPackageAlias}} "{{.OrginalPackage}}"
+)
+
+func New{{.TypeName}}Handler({{if .OptionalParamType}}input {{.OptionalParamType}}{{end}}) ({{.OrginalPackageAlias}}.{{.TypeName}}, error) {
+	result, _err := {{.OrginalPackageAlias}}.New{{.TypeName}}({{if .OptionalParamType}}input{{end}})
+	if _err != nil {
+		return result, _err
+	}
+	return result, _err
+}
+
+func main() {
+	lambda.Start(New{{.TypeName}}Handler)
+}
