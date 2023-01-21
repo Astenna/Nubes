@@ -5,7 +5,7 @@ import (
 	"go/token"
 )
 
-func getInitFunctionForType(typeName, idFieldName string, oneToMany []NavigationToField, manyToMany []ManyToManyRelationshipField) *ast.FuncDecl {
+func getInitFunctionForType(typeName, idFieldName string, oneToMany []OneToManyRelationshipField, manyToMany []ManyToManyRelationshipField) *ast.FuncDecl {
 	receiverName := "receiver"
 	function := &ast.FuncDecl{
 		Name: &ast.Ident{Name: InitFunctionName},

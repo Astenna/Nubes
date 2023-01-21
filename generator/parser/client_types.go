@@ -13,19 +13,22 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-type TypeDefinition struct {
-	PackageName            string
-	Imports                string
-	NobjectImplementation  string
-	CustomIdImplementation string
-	CustomIdReceiverName   string
-	TypeNameLower          string
-	TypeNameUpper          string
-	MemberFunctions        []MemberFunction
-	FieldDefinitions       []FieldDefinition
+type StructTypeDefinition struct {
+	PackageName             string
+	Imports                 string
+	NobjectImplementation   string
+	CustomIdImplementation  string
+	CustomIdReceiverName    string
+	TypeNameLower           string
+	TypeNameOrginalCase     string
+	MemberFunctions         []MethodDefinition
+	FieldDefinitions        []FieldDefinition
+	OneToManyRelationships  []OneToManyRelationshipField
+	ManyToManyRelationships []ManyToManyRelationshipField
+	CustomCtorDefinition    CustomCtorDefinition
 }
 
-type MemberFunction struct {
+type MethodDefinition struct {
 	ReceiverName            string
 	FuncName                string
 	InputParamType          string
@@ -51,45 +54,47 @@ type OtherDecls struct {
 	PackageName string
 }
 
-func PrepareTypes(path string) ([]*TypeDefinition, OtherDecls) {
+func ParsePackage(path string) ([]*StructTypeDefinition, OtherDecls) {
 	set := token.NewFileSet()
 	packs, err := parser.ParseDir(set, path, nil, 0)
 	assertDirParsed(err)
 
-	definedTypes := make(map[string]*TypeDefinition)
+	definedTypes := make(map[string]*StructTypeDefinition)
 	otherTypesDecls := OtherDecls{}
 
 	for _, pack := range packs {
 		for _, f := range pack.Files {
+			for _, decl := range f.Decls {
 
-			ast.Inspect(f, func(n ast.Node) bool {
-				if typeSpec, ok := n.(*ast.TypeSpec); ok {
-					if strctType, ok := typeSpec.Type.(*ast.StructType); ok {
-						typeName := strings.TrimPrefix(typeSpec.Name.Name, "*")
-						MakeFieldsUnexported(strctType.Fields)
-						if _, ok := definedTypes[typeName]; !ok {
-							definedTypes[typeName] = &TypeDefinition{}
-						}
-						definedTypes[typeName].TypeNameUpper = typeName
-						definedTypes[typeName].TypeNameLower = MakeFirstCharacterLowerCase(typeName)
-						definedTypes[typeName].FieldDefinitions = GetFieldDefinitions(typeName, strctType)
-					} else {
-						def, err := GetTypeSpecAsString(set, typeSpec)
-						if err != nil {
-							fmt.Println(err)
-						} else {
-							otherTypesDecls.GenDecls = append(otherTypesDecls.GenDecls, def)
+				if genDecl, ok := decl.(*ast.GenDecl); ok {
+					for _, elem := range genDecl.Specs {
+						if typeSpec, ok := elem.(*ast.TypeSpec); ok {
+							if strctType, ok := typeSpec.Type.(*ast.StructType); ok {
+								typeName := strings.TrimPrefix(typeSpec.Name.Name, "*")
+
+								MakeFieldsUnexported(strctType.Fields)
+								if _, ok := definedTypes[typeName]; !ok {
+									definedTypes[typeName] = &StructTypeDefinition{}
+								}
+
+								definedTypes[typeName].TypeNameOrginalCase = typeName
+								definedTypes[typeName].TypeNameLower = lowerCasedFirstChar(typeName)
+
+								parseStructFieldsForClients(definedTypes[typeName], strctType, typeName)
+							} else {
+								// DETECT AND SAVE CUSTOM TYPES (e.g. type MyInt int)
+								def, err := getTypeSpecAsString(set, typeSpec)
+								if err != nil {
+									fmt.Println(err)
+								} else {
+									otherTypesDecls.GenDecls = append(otherTypesDecls.GenDecls, def)
+								}
+							}
 						}
 					}
-				}
-				return true
-			})
-
-			for _, d := range f.Decls {
-
-				if genDecl, ok := d.(*ast.GenDecl); ok {
+					// DETECT AND SAVE CONST DECLARATIONS
 					if genDecl.Tok == token.CONST {
-						constStr, err := GetConstAsString(set, genDecl)
+						constStr, err := getConstAsString(set, genDecl)
 						if err != nil {
 							fmt.Println(err)
 						}
@@ -98,7 +103,7 @@ func PrepareTypes(path string) ([]*TypeDefinition, OtherDecls) {
 					}
 				}
 
-				if fn, isFn := d.(*ast.FuncDecl); isFn {
+				if fn, isFn := decl.(*ast.FuncDecl); isFn {
 					if fn.Recv == nil {
 						continue
 					}
@@ -112,7 +117,7 @@ func PrepareTypes(path string) ([]*TypeDefinition, OtherDecls) {
 						}
 
 						if _, ok := definedTypes[typeName]; !ok {
-							definedTypes[typeName] = &TypeDefinition{}
+							definedTypes[typeName] = &StructTypeDefinition{}
 						}
 						definedTypes[typeName].NobjectImplementation = funcString
 						continue
@@ -126,7 +131,7 @@ func PrepareTypes(path string) ([]*TypeDefinition, OtherDecls) {
 						}
 
 						if _, ok := definedTypes[typeName]; !ok {
-							definedTypes[typeName] = &TypeDefinition{}
+							definedTypes[typeName] = &StructTypeDefinition{}
 						}
 						definedTypes[typeName].CustomIdImplementation = funcString
 						if len(fn.Recv.List[0].Names) > 0 {
@@ -146,7 +151,7 @@ func PrepareTypes(path string) ([]*TypeDefinition, OtherDecls) {
 					}
 
 					if _, ok := definedTypes[typeName]; !ok {
-						definedTypes[typeName] = &TypeDefinition{}
+						definedTypes[typeName] = &StructTypeDefinition{}
 					}
 					definedTypes[typeName].MemberFunctions = append(definedTypes[typeName].MemberFunctions, *memberFunction)
 				}
@@ -158,7 +163,7 @@ func PrepareTypes(path string) ([]*TypeDefinition, OtherDecls) {
 	return maps.Values(definedTypes), otherTypesDecls
 }
 
-func isGetterOrSetterMethod(fn *ast.FuncDecl, typeName string, definedTypes map[string]*TypeDefinition) bool {
+func isGetterOrSetterMethod(fn *ast.FuncDecl, typeName string, definedTypes map[string]*StructTypeDefinition) bool {
 	if strings.HasPrefix(fn.Name.Name, GetPrefix) {
 		fieldName := strings.TrimPrefix(fn.Name.Name, GetPrefix)
 
@@ -180,66 +185,115 @@ func isGetterOrSetterMethod(fn *ast.FuncDecl, typeName string, definedTypes map[
 	return false
 }
 
-func detectAndSetNobjectsReturnTypes(definedTypes map[string]*TypeDefinition) {
+func detectAndSetNobjectsReturnTypes(definedTypes map[string]*StructTypeDefinition) {
 	for _, typeDefinition := range definedTypes {
 		for i, function := range typeDefinition.MemberFunctions {
 			if isReturnTypeDefined(function) && isReturnTypeNobject(function, definedTypes) {
 				typeDefinition.MemberFunctions[i].IsReturnTypeNobject = true
 				typeDefinition.MemberFunctions[i].OptionalReturnTypeUpper = function.OptionalReturnType
-				typeDefinition.MemberFunctions[i].OptionalReturnType = MakeFirstCharacterLowerCase(function.OptionalReturnType)
+				typeDefinition.MemberFunctions[i].OptionalReturnType = lowerCasedFirstChar(function.OptionalReturnType)
 			}
 		}
 	}
 }
 
-func isReturnTypeDefined(f MemberFunction) bool {
+func isReturnTypeDefined(f MethodDefinition) bool {
 	return f.OptionalReturnType != ""
 }
 
-func isReturnTypeNobject(f MemberFunction, defTypes map[string]*TypeDefinition) bool {
+func isReturnTypeNobject(f MethodDefinition, defTypes map[string]*StructTypeDefinition) bool {
 	return defTypes[f.OptionalReturnType] != nil && defTypes[f.OptionalReturnType].NobjectImplementation != ""
 }
 
-func GetFieldDefinitions(typeName string, strctType *ast.StructType) []FieldDefinition {
-	fieldDefinitions := make([]FieldDefinition, 0, len(strctType.Fields.List)-1)
-
-	for _, field := range strctType.Fields.List {
-		newFieldDefinition := FieldDefinition{
-			FieldNameUpper: MakeFirstCharacterUpperCase(field.Names[0].Name),
-			FieldName:      field.Names[0].Name,
-		}
-
-		if field.Names[0].Name == "id" {
-			newFieldDefinition.IsReadonly = true
-		}
-
-		newFieldDefinition.FieldType = strings.TrimPrefix(types.ExprString(field.Type), "*")
-		if strings.Contains(newFieldDefinition.FieldType, ReferenceListType) {
-			newFieldDefinition.FieldType = strings.TrimPrefix(newFieldDefinition.FieldType, ReferenceListType)
-			newFieldDefinition.FieldTypeUpper = strings.Trim(newFieldDefinition.FieldType, "[]")
-			newFieldDefinition.FieldType = MakeFirstCharacterLowerCase(newFieldDefinition.FieldTypeUpper)
-			newFieldDefinition.IsReferenceList = true
-		} else if strings.Contains(newFieldDefinition.FieldType, ReferenceType) {
-			newFieldDefinition.FieldType = strings.TrimPrefix(newFieldDefinition.FieldType, ReferenceType)
-			newFieldDefinition.FieldTypeUpper = strings.Trim(newFieldDefinition.FieldType, "[]")
-			newFieldDefinition.FieldType = MakeFirstCharacterLowerCase(newFieldDefinition.FieldTypeUpper)
-			newFieldDefinition.IsReference = true
-		}
-
-		if field.Tag != nil {
-			if isReadonly(field) {
-				newFieldDefinition.IsReadonly = true
-			}
-			newFieldDefinition.Tags = field.Tag.Value
-		}
-
-		fieldDefinitions = append(fieldDefinitions, newFieldDefinition)
+func parseStructFieldsForClients(structDef *StructTypeDefinition, astStrct *ast.StructType, typeName string) {
+	if astStrct == nil || astStrct.Fields == nil || astStrct.Fields.List == nil {
+		return
 	}
 
-	return fieldDefinitions
+	for _, field := range astStrct.Fields.List {
+		fieldType := strings.TrimPrefix(types.ExprString(field.Type), "*")
+
+		if strings.Contains(fieldType, LibraryReferenceNavigationList) {
+			err := parseRelationshipsTagsClient(structDef, field, typeName, fieldType)
+			if err != nil {
+				fmt.Println("error occurred when parsing relationship tags", err)
+			}
+
+		} else {
+			parseFields(field, fieldType, structDef)
+		}
+	}
 }
 
-func PrepareMemberFunction(fn *ast.FuncDecl) (*MemberFunction, error) {
+func parseRelationshipsTagsClient(structDef *StructTypeDefinition, field *ast.Field, typeName string, fieldType string) error {
+	tags, err := getParsedTags(field)
+	if err != nil {
+		return err
+	}
+	if tags == nil {
+		return fmt.Errorf("invalid usage of %s. Missing tag definition", LibraryReferenceNavigationList)
+	}
+
+	if tag, _ := tags.Get(NubesTagKey); tag != nil {
+		if strings.Contains(tag.Name, HasOneTag) {
+			splitted := strings.Split(tag.Name, "-")
+			navigationToFieldName := ""
+			if len(splitted) > 0 {
+				navigationToFieldName = splitted[1]
+			} else {
+				return fmt.Errorf("%s detected, but missing reffering field name. Referring field name should be specified after - charcter, e.g.: %s <referring_field_name>", HasOneTag, HasOneTag)
+			}
+
+			navigationToTypeName := strings.TrimPrefix(fieldType, LibraryReferenceNavigationList)
+			navigationToTypeName = strings.Trim(navigationToTypeName, "[]")
+
+			oneToMany := OneToManyRelationshipField{TypeName: navigationToTypeName, FieldName: navigationToFieldName, FromFieldName: field.Names[0].Name}
+			structDef.OneToManyRelationships = append(structDef.OneToManyRelationships, oneToMany)
+		} else if strings.Contains(tag.Name, HasManyTag) {
+			navigationToTypeName := strings.TrimPrefix(fieldType, LibraryReferenceNavigationList)
+			navigationToTypeName = strings.Trim(navigationToTypeName, "[]")
+
+			newManyToManyRelationship := NewManyToManyRelationshipField(typeName, navigationToTypeName, field.Names[0].Name)
+			newManyToManyRelationship.FromFieldName = field.Names[0].Name
+			structDef.ManyToManyRelationships = append(structDef.ManyToManyRelationships, *newManyToManyRelationship)
+		}
+	} else {
+		return fmt.Errorf("invalid usage of %s. Missing tag definition", LibraryReferenceNavigationList)
+	}
+
+	return nil
+}
+
+func parseFields(field *ast.Field, fieldType string, structDef *StructTypeDefinition) {
+	newFieldDefinition := FieldDefinition{
+		FieldNameUpper: upperCaseFirstChar(field.Names[0].Name),
+		FieldName:      field.Names[0].Name,
+		FieldType:      fieldType,
+	}
+
+	if strings.Contains(newFieldDefinition.FieldType, ReferenceListType) {
+		newFieldDefinition.FieldType = strings.TrimPrefix(newFieldDefinition.FieldType, ReferenceListType)
+		newFieldDefinition.FieldTypeUpper = strings.Trim(newFieldDefinition.FieldType, "[]")
+		newFieldDefinition.FieldType = lowerCasedFirstChar(newFieldDefinition.FieldTypeUpper)
+		newFieldDefinition.IsReferenceList = true
+	} else if strings.Contains(newFieldDefinition.FieldType, ReferenceType) {
+		newFieldDefinition.FieldType = strings.TrimPrefix(newFieldDefinition.FieldType, ReferenceType)
+		newFieldDefinition.FieldTypeUpper = strings.Trim(newFieldDefinition.FieldType, "[]")
+		newFieldDefinition.FieldType = lowerCasedFirstChar(newFieldDefinition.FieldTypeUpper)
+		newFieldDefinition.IsReference = true
+	}
+
+	if field.Names[0].Name == "id" || (field.Tag != nil && isReadonly(field)) {
+		newFieldDefinition.IsReadonly = true
+	}
+	if field.Tag != nil {
+		newFieldDefinition.Tags = field.Tag.Value
+	}
+
+	structDef.FieldDefinitions = append(structDef.FieldDefinitions, newFieldDefinition)
+}
+
+func PrepareMemberFunction(fn *ast.FuncDecl) (*MethodDefinition, error) {
 
 	if fn.Type.Results == nil ||
 		types.ExprString(fn.Type.Results.List[len(fn.Type.Results.List)-1].Type) != "error" {
@@ -249,7 +303,7 @@ func PrepareMemberFunction(fn *ast.FuncDecl) (*MemberFunction, error) {
 		return nil, fmt.Errorf("methods belonging to nobjects can return at most 2 variables")
 	}
 
-	memberFunction := MemberFunction{
+	memberFunction := MethodDefinition{
 		FuncName: fn.Name.Name,
 	}
 
@@ -272,11 +326,11 @@ func PrepareMemberFunction(fn *ast.FuncDecl) (*MemberFunction, error) {
 
 func MakeFieldsUnexported(fieldList *ast.FieldList) {
 	for _, field := range fieldList.List {
-		field.Names[0].Name = MakeFirstCharacterLowerCase(field.Names[0].Name)
+		field.Names[0].Name = lowerCasedFirstChar(field.Names[0].Name)
 	}
 }
 
-func MakeFirstCharacterLowerCase(str string) string {
+func lowerCasedFirstChar(str string) string {
 	if len(str) < 2 {
 		return strings.ToLower(str)
 	}
@@ -290,7 +344,7 @@ func MakeFirstCharacterLowerCase(str string) string {
 	return str
 }
 
-func MakeFirstCharacterUpperCase(str string) string {
+func upperCaseFirstChar(str string) string {
 	if len(str) < 2 {
 		return strings.ToUpper(str)
 	}
@@ -304,7 +358,7 @@ func MakeFirstCharacterUpperCase(str string) string {
 	return str
 }
 
-func GetTypeSpecAsString(fset *token.FileSet, detectedStruct *ast.TypeSpec) (string, error) {
+func getTypeSpecAsString(fset *token.FileSet, detectedStruct *ast.TypeSpec) (string, error) {
 	var buf bytes.Buffer
 	buf.WriteString("type ")
 	err := printer.Fprint(&buf, fset, detectedStruct)
@@ -314,7 +368,7 @@ func GetTypeSpecAsString(fset *token.FileSet, detectedStruct *ast.TypeSpec) (str
 	return buf.String(), nil
 }
 
-func GetConstAsString(fset *token.FileSet, detectedGenDecl *ast.GenDecl) (string, error) {
+func getConstAsString(fset *token.FileSet, detectedGenDecl *ast.GenDecl) (string, error) {
 	var buf bytes.Buffer
 	err := printer.Fprint(&buf, fset, detectedGenDecl)
 	if err != nil {

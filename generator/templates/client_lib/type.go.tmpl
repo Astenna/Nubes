@@ -8,7 +8,7 @@ import (
 	"github.com/Astenna/Nubes/lib"
 ){{end}}
 
-type {{if eq .NobjectImplementation ""}} {{.TypeNameUpper}} {{else}} {{.TypeNameLower}} {{end}} struct {
+type {{if eq .NobjectImplementation ""}} {{.TypeNameOrginalCase}} {{else}} {{.TypeNameLower}} {{end}} struct {
 	{{if eq .NobjectImplementation ""}}
 		{{range .FieldDefinitions}}
     		{{if .IsReference}} {{.FieldNameUpper}} lib.Reference[{{.FieldType}}] 
@@ -27,7 +27,7 @@ func ({{$.TypeNameLower}})GetTypeName() string {{.NobjectImplementation}}
 
 // CONSTRUCTOR
 
-func New{{.TypeNameUpper}}(id string) {{.TypeNameLower}} {
+func New{{.TypeNameOrginalCase}}(id string) {{.TypeNameLower}} {
 	newInstance := new({{.TypeNameLower}})
 	newInstance.id = id
 	return *newInstance
@@ -45,7 +45,7 @@ func (s {{$.TypeNameLower}})GetId() string {
 {{if ne .FieldNameUpper "Id"}}
 func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}() ({{.FieldType}}, error) {
 	if s.id == "" {
-		return *new({{.FieldType}}), errors.New("id of the type not set, use New{{$.TypeNameUpper}} constructor to create new instance of the type")
+		return *new({{.FieldType}}), errors.New("id of the type not set, use New{{$.TypeNameOrginalCase}} constructor to create new instance of the type")
 	}
 
 
@@ -86,7 +86,7 @@ func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}() ({{.FieldType}}, error) {
 {{if .IsReference}}
 func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}Id() (string, error) {
 	if s.id == "" {
-		return "", errors.New("id of the type not set, use New{{$.TypeNameUpper}} constructor to create new instance of the type")
+		return "", errors.New("id of the type not set, use New{{$.TypeNameOrginalCase}} constructor to create new instance of the type")
 	}
 
 	jsonParam, err := json.Marshal(s.id)
@@ -94,7 +94,7 @@ func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}Id() (string, error) {
 		return "", err
 	}
 
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("{{$.TypeNameUpper}}"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("{{$.TypeNameOrginalCase}}"), Payload: jsonParam})
 	if _err != nil {
 		return "", _err
 	}
@@ -111,7 +111,7 @@ func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}Id() (string, error) {
 {{if eq .IsReadonly false}}
 func (s {{$.TypeNameLower}}) Set{{.FieldNameUpper}}(newValue {{if .IsReference}}string{{else}}{{.FieldType}}{{end}}) error {
 	if s.id == "" {
-		return errors.New("id of the type not set, use New{{$.TypeNameUpper}} constructor to create new instance of the type")
+		return errors.New("id of the type not set, use New{{$.TypeNameOrginalCase}} constructor to create new instance of the type")
 	}
 	
 	params := lib.HandlerParameters{
@@ -138,7 +138,7 @@ func (s {{$.TypeNameLower}}) Set{{.FieldNameUpper}}(newValue {{if .IsReference}}
 {{range .MemberFunctions}}
 func ({{.ReceiverName}} {{$.TypeNameLower}}) {{.FuncName}}({{if .InputParamType}}input {{.InputParamType}}{{end}}) {{if .OptionalReturnType}} ({{.OptionalReturnType}}, error) {{else}} error {{end}} {
 	{{if.ReceiverName}} if {{.ReceiverName}}.id == "" {
-		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} errors.New("id of the type not set, use New{{$.TypeNameUpper}} constructor to create new instance of the type")
+		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} errors.New("id of the type not set, use New{{$.TypeNameOrginalCase}} constructor to create new instance of the type")
 	}{{end}}
 	
 	{{if or .ReceiverName .InputParamType}}params := new(lib.HandlerParameters) {{end}}
@@ -150,7 +150,7 @@ func ({{.ReceiverName}} {{$.TypeNameLower}}) {{.FuncName}}({{if .InputParamType}
 		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} err
 	} {{end}}
 
-	{{if .OptionalReturnType}}out{{else}}_{{end}}, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("{{$.TypeNameUpper}}{{.FuncName}}") {{if or .ReceiverName .InputParamType}}, Payload: jsonParam {{end}}})
+	{{if .OptionalReturnType}}out{{else}}_{{end}}, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("{{$.TypeNameOrginalCase}}{{.FuncName}}") {{if or .ReceiverName .InputParamType}}, Payload: jsonParam {{end}}})
 	if _err != nil {
 		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} _err
 	}

@@ -25,7 +25,7 @@ func (t *TypeSpecParser) detectAndAdjustDecls() {
 							}
 
 							if strctType, ok := typeSpec.Type.(*ast.StructType); ok {
-								modified := parseStructFields(strctType, typeName, &t.Output)
+								modified := parseStructFieldsForTypeSpec(strctType, typeName, &t.Output)
 
 								if !t.fileChanged[path] {
 									t.fileChanged[path] = modified
@@ -50,9 +50,9 @@ func (t *TypeSpecParser) addInitFunctionDefinition(f *ast.File, typeName string)
 	f.Decls = append(f.Decls, function)
 }
 
-// The parseStructFields returns true if the ast representing
+// The parseStructFieldsForTypeSpec returns true if the ast representing
 // the struct was modified, otherwise false
-func parseStructFields(strctType *ast.StructType, typeName string, parsedPackage *ParsedPackage) bool {
+func parseStructFieldsForTypeSpec(strctType *ast.StructType, typeName string, parsedPackage *ParsedPackage) bool {
 	structDefinitionModified := false
 	if strctType == nil || strctType.Fields == nil || len(strctType.Fields.List) == 0 {
 		return structDefinitionModified

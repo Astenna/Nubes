@@ -20,7 +20,7 @@ var clientCmd = &cobra.Command{
 		output, _ := cmd.Flags().GetString("output")
 		projectName, _ := cmd.Flags().GetString("project-name")
 
-		definedTypes, otherDecls := parser.PrepareTypes(tp.MakePathAbosoluteOrExitOnError(typesPath))
+		definedTypes, otherDecls := parser.ParsePackage(tp.MakePathAbosoluteOrExitOnError(typesPath))
 
 		outputDirectoryPath := tp.MakePathAbosoluteOrExitOnError(filepath.Join(output, projectName))
 		os.MkdirAll(outputDirectoryPath, 0777)
@@ -41,7 +41,7 @@ var clientCmd = &cobra.Command{
 		filePath := filepath.Join(outputDirectoryPath, "stubs.go")
 		tp.CreateFileFromTemplate(stub_templ, struct {
 			PackageName string
-			Types       []*parser.TypeDefinition
+			Types       []*parser.StructTypeDefinition
 		}{PackageName: projectName, Types: definedTypes}, filePath)
 		tp.RunGoimportsOnFile(filePath)
 

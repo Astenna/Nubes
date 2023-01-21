@@ -16,7 +16,7 @@ type ManyToManyRelationshipField struct {
 	TableName      string
 }
 
-type NavigationToField struct {
+type OneToManyRelationshipField struct {
 	TypeName      string
 	FieldName     string
 	FromFieldName string
@@ -88,7 +88,7 @@ func parseRelationshipsTags(field *ast.Field, typeName string, fieldType string,
 					navigationToTypeName = strings.Trim(navigationToTypeName, "[]")
 
 					parsedPackage.TypeAttributesIndexes[navigationToTypeName] = append(parsedPackage.TypeAttributesIndexes[navigationToTypeName], navigationToFieldName)
-					navToField := NavigationToField{TypeName: navigationToTypeName, FieldName: navigationToFieldName, FromFieldName: field.Names[0].Name}
+					navToField := OneToManyRelationshipField{TypeName: navigationToTypeName, FieldName: navigationToFieldName, FromFieldName: field.Names[0].Name}
 					parsedPackage.TypeNavListsReferringFieldName[typeName] = append(parsedPackage.TypeNavListsReferringFieldName[typeName], navToField)
 
 					return addDynamoDBIgnoreTag(tags, field, typeName)
@@ -96,8 +96,7 @@ func parseRelationshipsTags(field *ast.Field, typeName string, fieldType string,
 					fmt.Println(HasManyTag, " or ", HasOneTag, " can be used only with ", LibraryReferenceNavigationList, " fields!")
 					return false
 				}
-			}
-			if strings.Contains(tag.Name, HasManyTag) {
+			} else if strings.Contains(tag.Name, HasManyTag) {
 
 				if strings.Contains(fieldType, LibraryReferenceNavigationList) {
 					navigationToTypeName := strings.TrimPrefix(fieldType, LibraryReferenceNavigationList)

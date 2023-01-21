@@ -28,7 +28,7 @@ type ParsedPackage struct {
 	IsNobjectInOrginalPackage      map[string]bool
 	TypeFields                     map[string]map[string]string
 	TypeAttributesIndexes          map[string][]string
-	TypeNavListsReferringFieldName map[string][]NavigationToField
+	TypeNavListsReferringFieldName map[string][]OneToManyRelationshipField
 	ManyToManyRelationships        map[string][]ManyToManyRelationshipField
 	TypesWithCustomId              map[string]string
 }
@@ -54,7 +54,7 @@ func NewTypeSpecParser(path string) (*TypeSpecParser, error) {
 		IsNobjectInOrginalPackage:      make(map[string]bool),
 		TypesWithCustomId:              map[string]string{},
 		TypeAttributesIndexes:          map[string][]string{},
-		TypeNavListsReferringFieldName: map[string][]NavigationToField{},
+		TypeNavListsReferringFieldName: map[string][]OneToManyRelationshipField{},
 		ManyToManyRelationships:        map[string][]ManyToManyRelationshipField{},
 		TypeFields:                     map[string]map[string]string{},
 	}
