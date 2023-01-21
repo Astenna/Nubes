@@ -30,6 +30,23 @@ func (u User) GetId() string {
 	return u.Email
 }
 
+func (u User) VerifyPassword(password string) (bool, error) {
+	tempReceiverName, _libError := lib.GetObjectState[User](u.Email)
+	if _libError != nil {
+		return *new(bool), _libError
+	}
+	u = *tempReceiverName
+
+	if u.Password == password {
+		return true, nil
+	}
+	_libError = lib.Upsert(u, u.Email)
+	if _libError != nil {
+		return *new(bool), _libError
+	}
+	return false, nil
+}
+
 func (receiver *User) Init() {
 	receiver.isInitialized = true
 	receiver.Shops = *lib.NewReferenceNavigationList[Shop](receiver.Email, receiver.GetTypeName(), "", true)

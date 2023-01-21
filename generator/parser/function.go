@@ -47,18 +47,6 @@ func getFunctionReturnTypesAsString(results *ast.FieldList, isNobjectInOrgPkg ma
 	return "( " + returnParam + " , error)", nil
 }
 
-func getFunctionBodyStmtAsString(fset *token.FileSet, stmt *ast.AssignStmt) (string, error) {
-	if stmt == nil {
-		return "", fmt.Errorf("statement is nil")
-	}
-	var buf bytes.Buffer
-	err := printer.Fprint(&buf, fset, stmt)
-	if err != nil {
-		return "", fmt.Errorf("error occurred when parsing the function body")
-	}
-	return buf.String(), nil
-}
-
 func getFunctionBodyAsString(fset *token.FileSet, body *ast.BlockStmt) (string, error) {
 	var buf bytes.Buffer
 	err := printer.Fprint(&buf, fset, body)
