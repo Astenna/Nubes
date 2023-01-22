@@ -40,7 +40,7 @@ var ssfSpecCmd = &cobra.Command{
 
 		if generateDeploymentFiles {
 			serviceName := lastString(strings.Split(moduleName, "/"))
-			serverlessInput := ServerlessTemplateInput{ServiceName: serviceName, StateFuncs: typeSpecParser.Handlers}
+			serverlessInput := ServerlessTemplateInput{ServiceName: serviceName, StateFuncs: typeSpecParser.Handlers, CustomCtors: typeSpecParser.CustomCtors}
 			GenerateDeploymentFiles(generationDestination, serverlessInput)
 		}
 
@@ -75,6 +75,7 @@ func init() {
 type ServerlessTemplateInput struct {
 	ServiceName string
 	StateFuncs  []parser.StateChangingHandler
+	CustomCtors []parser.CustomCtorDefinition
 }
 
 func GenerateDeploymentFiles(path string, templateInput ServerlessTemplateInput) {

@@ -69,7 +69,7 @@ func (t *ClientTypesParser) parseStructFieldsForClients(astStrct *ast.StructType
 				fmt.Println("error occurred when parsing relationship tags", err)
 			}
 
-		} else {
+		} else if field.Names[0].Name != IsInitializedFieldName {
 			parseFields(field, fieldType, t.DefinedTypes[typeName])
 		}
 	}

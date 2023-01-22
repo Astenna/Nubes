@@ -1,9 +1,9 @@
 package {{.PackageName}}
 
-{{range $i, $item := .Consts}}
+{{range $i, $item := .OtherDecls.Consts}}
 {{$item}}
 {{end}}
 
-{{range $i, $item :=  .GenDecls}}
+{{range $i, $item :=  .OtherDecls.GenDecls}}
 {{$item}}
 {{end}}

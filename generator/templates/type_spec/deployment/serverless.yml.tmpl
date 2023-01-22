@@ -68,3 +68,13 @@ functions:
     maximumRetryAttempts: 0
     maximumEventAge: 60
 {{end}}
+{{range .CustomCtors}}
+  New{{.TypeName}}:
+    name:  New{{.TypeName}}
+    handler: bin/New{{.TypeName}}
+    package:
+      include:
+        - bin/New{{.TypeName}}
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+{{end}}

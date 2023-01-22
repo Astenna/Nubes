@@ -26,20 +26,20 @@ package:
     - "**/**"
 
 functions:
-  Export:
-    name: Export
-    handler: bin/Export
-    package:
-      include:
-        - bin/Export
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
   Load:
     name: Load
     handler: bin/Load
     package:
       include:
         - bin/Load
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+  Export:
+    name: Export
+    handler: bin/Export
+    package:
+      include:
+        - bin/Export
     maximumRetryAttempts: 0
     maximumEventAge: 60
   GetField:
@@ -74,5 +74,15 @@ functions:
     package:
       include:
         - bin/UserVerifyPassword
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
+
+  NewOrder:
+    name:  NewOrder
+    handler: bin/NewOrder
+    package:
+      include:
+        - bin/NewOrder
     maximumRetryAttempts: 0
     maximumEventAge: 60

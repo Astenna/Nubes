@@ -34,10 +34,11 @@ type ParsedPackage struct {
 }
 
 type CustomCtorDefinition struct {
-	OrginalPackageAlias string
-	OrginalPackage      string
-	TypeName            string
-	OptionalParamType   string
+	OrginalPackageAlias    string
+	OrginalPackage         string
+	TypeName               string
+	OptionalParamType      string
+	IsOptionalParamNobject bool
 }
 
 func NewTypeSpecParser(path string) (*TypeSpecParser, error) {

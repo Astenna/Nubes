@@ -7,10 +7,11 @@ import (
 )
 
 type ClientTypesParser struct {
-	DefinedTypes map[string]*StructTypeDefinition
-	OtherDecls   OtherDecls
-	tokenSet     *token.FileSet
-	packs        map[string]*ast.Package
+	DefinedTypes          map[string]*StructTypeDefinition
+	CustomCtorDefinitions []CustomCtorDefinition
+	OtherDecls            OtherDecls
+	tokenSet              *token.FileSet
+	packs                 map[string]*ast.Package
 }
 
 type StructTypeDefinition struct {
@@ -25,7 +26,6 @@ type StructTypeDefinition struct {
 	FieldDefinitions        []FieldDefinition
 	OneToManyRelationships  []OneToManyRelationshipField
 	ManyToManyRelationships []ManyToManyRelationshipField
-	CustomCtorDefinition    CustomCtorDefinition
 }
 
 type MethodDefinition struct {
@@ -49,9 +49,8 @@ type FieldDefinition struct {
 }
 
 type OtherDecls struct {
-	Consts      []string
-	GenDecls    []string
-	PackageName string
+	Consts   []string
+	GenDecls []string
 }
 
 func NewClientTypesParser(path string) (*ClientTypesParser, error) {

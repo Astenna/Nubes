@@ -22,20 +22,20 @@ var clientCmd = &cobra.Command{
 		output, _ := cmd.Flags().GetString("output")
 		projectName, _ := cmd.Flags().GetString("project-name")
 
-		clientTypesParser, err := parser.NewClientTypesParser(tp.MakePathAbosoluteOrExitOnError(typesPath))
+		typesParser, err := parser.NewClientTypesParser(tp.MakePathAbosoluteOrExitOnError(typesPath))
 		if err != nil {
 			fmt.Println("Fatal occurred initialising type spec parser: %w", err)
 			os.Exit(1)
 		}
-		clientTypesParser.Run()
-		definedTypes := maps.Values(clientTypesParser.DefinedTypes)
+		typesParser.Run()
+		definedTypes := maps.Values(typesParser.DefinedTypes)
 
 		outputDirectoryPath := tp.MakePathAbosoluteOrExitOnError(filepath.Join(output, projectName))
 		os.MkdirAll(outputDirectoryPath, 0777)
 
 		lambdaClient := tp.ParseOrExitOnError("templates/client_lib/lambda_client.go.tmpl")
-		lambdaClientInput := struct{ PackageName string }{PackageName: projectName}
-		tp.CreateFileFromTemplate(lambdaClient, lambdaClientInput, filepath.Join(outputDirectoryPath, "lambda_client.go"))
+		lambdaClientTemplInput := struct{ PackageName string }{PackageName: projectName}
+		tp.CreateFileFromTemplate(lambdaClient, lambdaClientTemplInput, filepath.Join(outputDirectoryPath, "lambda_client.go"))
 
 		templ := tp.ParseOrExitOnError("templates/client_lib/type.go.tmpl")
 		for _, typeDefinition := range definedTypes {
@@ -53,15 +53,22 @@ var clientCmd = &cobra.Command{
 		}{PackageName: projectName, Types: definedTypes}, filePath)
 		tp.RunGoimportsOnFile(filePath)
 
-		repository_templ := tp.ParseOrExitOnError("templates/client_lib/repository.go.tmpl")
-		tp.CreateFileFromTemplate(repository_templ, struct {
+		custom_ctors_templ := tp.ParseOrExitOnError("templates/client_lib/custom_ctors.go.tmpl")
+		customCtorTemplInput := struct {
 			PackageName string
-		}{PackageName: projectName}, filepath.Join(outputDirectoryPath, "repository.go"))
+			CustomCtors []parser.CustomCtorDefinition
+		}{PackageName: projectName, CustomCtors: typesParser.CustomCtorDefinitions}
+		filePath = filepath.Join(outputDirectoryPath, "custom_ctors.go")
+		tp.CreateFileFromTemplate(custom_ctors_templ, customCtorTemplInput, filePath)
+		tp.RunGoimportsOnFile(filePath)
 
 		other_decls_templ := tp.ParseOrExitOnError("templates/client_lib/other_decls.go.tmpl")
-		clientTypesParser.OtherDecls.PackageName = projectName
+		othetDeclsTemplInput := struct {
+			PackageName string
+			OtherDecls  parser.OtherDecls
+		}{PackageName: projectName, OtherDecls: typesParser.OtherDecls}
 		filePath = filepath.Join(outputDirectoryPath, "other_decls.go")
-		tp.CreateFileFromTemplate(other_decls_templ, clientTypesParser.OtherDecls, filePath)
+		tp.CreateFileFromTemplate(other_decls_templ, othetDeclsTemplInput, filePath)
 	},
 }
 
