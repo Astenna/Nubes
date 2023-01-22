@@ -3,6 +3,7 @@ package {{.PackageName}}
 import (
     "errors"
 	"encoding/json"
+	"strconv"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/lambda"
 	"github.com/Astenna/Nubes/lib"
@@ -77,8 +78,8 @@ func Export{{.TypeNameOrginalCase}}(input {{.TypeNameOrginalCase}}Stub) (*{{.Typ
 		return nil, fmt.Errorf("lambda function designed to verify if instance exists failed. Error: %s", string(out.Payload[:]))
 	}
 
-	newInstance.id = string(out.Payload[:])
-	return newInstance, nil
+	newInstance.id, err = strconv.Unquote(string(out.Payload[:]))
+	return newInstance, err
 } 
  
 // GETID
@@ -97,12 +98,10 @@ func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}() ({{.FieldType}}, error) {
 	}
 
 
-	params := lib.HandlerParameters{
+	params := lib.GetFieldParam{
 		Id: s.GetId(),
-		TypeName:  s.GetTypeName(),
-		Parameter: lib.GetFieldParam{
-			FieldName: "{{.FieldNameUpper}}",
-		},
+		TypeName:  s.GetTypeName(),	
+		FieldName: "{{.FieldNameUpper}}",
 	}
 	jsonParam, err := json.Marshal(params)
 	if err != nil {
@@ -112,6 +111,9 @@ func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}() ({{.FieldType}}, error) {
 	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
 	if _err != nil {
 		return *new({{.FieldType}}), _err
+	}
+	if out.FunctionError != nil {
+		return *new({{.FieldType}}), fmt.Errorf(string(out.Payload[:]))
 	}
 
 	{{if .IsReference}}
@@ -137,14 +139,22 @@ func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}Id() (string, error) {
 		return "", errors.New("id of the type not set, use New{{$.TypeNameOrginalCase}} constructor to create new instance of the type")
 	}
 
-	jsonParam, err := json.Marshal(s.id)
+	params := lib.GetFieldParam{
+		Id: s.GetId(),
+		TypeName:  s.GetTypeName(),	
+		FieldName: "{{.FieldNameUpper}}",
+	}
+	jsonParam, err := json.Marshal(params)
 	if err != nil {
 		return "", err
 	}
 
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("{{$.TypeNameOrginalCase}}"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
 	if _err != nil {
 		return "", _err
+	}
+	if out.FunctionError != nil {
+		return "", fmt.Errorf(string(out.Payload[:]))
 	}
 
 	result := new(lib.Reference[{{.FieldType}}])
@@ -162,21 +172,25 @@ func (s {{$.TypeNameLower}}) Set{{.FieldNameUpper}}(newValue {{if .IsReference}}
 		return errors.New("id of the type not set, use New{{$.TypeNameOrginalCase}} constructor to create new instance of the type")
 	}
 	
-	params := lib.HandlerParameters{
+	params := lib.SetFieldParam{
 		Id: s.GetId(),
 		TypeName:  s.GetTypeName(),
-		Parameter: lib.SetFieldParam{
-			FieldName: "{{.FieldNameUpper}}",
-			Value: newValue,
-		},
+		FieldName: "{{.FieldNameUpper}}",
+		Value: newValue,
 	}
 	jsonParam, err := json.Marshal(params)
 	if err != nil {
 		return err
 	}
 
-	_, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("SetField"), Payload: jsonParam})
-	return _err
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("SetField"), Payload: jsonParam})
+	if _err != nil {
+		return _err
+	}
+	if out.FunctionError != nil {
+		return fmt.Errorf(string(out.Payload[:]))
+	}
+	return nil
 } 
 {{end}}{{end}}
 
@@ -198,9 +212,12 @@ func ({{.ReceiverName}} {{$.TypeNameLower}}) {{.FuncName}}({{if .InputParamType}
 		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} err
 	} {{end}}
 
-	{{if .OptionalReturnType}}out{{else}}_{{end}}, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("{{$.TypeNameOrginalCase}}{{.FuncName}}") {{if or .ReceiverName .InputParamType}}, Payload: jsonParam {{end}}})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("{{$.TypeNameOrginalCase}}{{.FuncName}}") {{if or .ReceiverName .InputParamType}}, Payload: jsonParam {{end}}})
 	if _err != nil {
 		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} _err
+	}
+	if out.FunctionError != nil {
+		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} fmt.Errorf(string(out.Payload[:]))
 	}
 
     {{if .OptionalReturnType}}

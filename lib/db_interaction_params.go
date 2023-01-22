@@ -10,13 +10,13 @@ type GetFieldParam struct {
 
 func (s GetFieldParam) Validate() error {
 	if s.Id == "" {
-		return fmt.Errorf("missing id of object's field to get")
+		return fmt.Errorf("missing Id of object's field to get")
 	}
 	if s.FieldName == "" {
-		return fmt.Errorf("missing field name of object's field to get")
+		return fmt.Errorf("missing FieldName of object's field to get")
 	}
 	if s.TypeName == "" {
-		return fmt.Errorf("missing type name of object's field to get")
+		return fmt.Errorf("missing TypeName of object's field to get")
 	}
 
 	return nil
@@ -31,13 +31,13 @@ type SetFieldParam struct {
 
 func (s SetFieldParam) Validate() error {
 	if s.Id == "" {
-		return fmt.Errorf("missing id of object's field to get")
+		return fmt.Errorf("missing Id of object's field to get")
 	}
 	if s.FieldName == "" {
-		return fmt.Errorf("missing field name of object's field to get")
+		return fmt.Errorf("missing FieldName of object's field to get")
 	}
 	if s.TypeName == "" {
-		return fmt.Errorf("missing type name of object's field to get")
+		return fmt.Errorf("missing TypeName of object's field to get")
 	}
 
 	return nil
