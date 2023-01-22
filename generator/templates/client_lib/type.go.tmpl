@@ -82,6 +82,31 @@ func Export{{.TypeNameOrginalCase}}(input {{.TypeNameOrginalCase}}Stub) (*{{.Typ
 	return newInstance, err
 } 
  
+// DELETE
+
+func Delete{{.TypeNameOrginalCase}}(id string) error {	
+	newInstance := new({{.TypeNameLower}})
+
+	params := lib.HandlerParameters{
+		Id:  id,
+		TypeName:  newInstance.GetTypeName(),
+	}
+	jsonParam, err := json.Marshal(params)
+	if err != nil {
+		return err
+	}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("Delete"), Payload: jsonParam})
+	if _err != nil {
+		return  _err
+	}
+	if out.FunctionError != nil {
+		return fmt.Errorf("lambda function failed. Error: %s", string(out.Payload))
+	}
+
+	return nil
+} 
+
 // GETID
 
 func (s {{$.TypeNameLower}})GetId() string {

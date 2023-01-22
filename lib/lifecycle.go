@@ -100,6 +100,17 @@ func Delete[T Nobject](id string) error {
 	}
 	typeName := (*new(T)).GetTypeName()
 
+	return DeleteWithTypeNameAsArg(id, typeName)
+}
+
+func DeleteWithTypeNameAsArg(id, typeName string) error {
+	if id == "" {
+		return fmt.Errorf("missing id of object to delete")
+	}
+	if typeName == "" {
+		return fmt.Errorf("missing typeName of object to delete")
+	}
+
 	input := &dynamodb.DeleteItemInput{
 		TableName: aws.String(typeName),
 		Key: map[string]*dynamodb.AttributeValue{

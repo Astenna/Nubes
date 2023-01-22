@@ -42,6 +42,14 @@ functions:
         - bin/Export
     maximumRetryAttempts: 0
     maximumEventAge: 60
+  Delete:
+    name: Delete
+    handler: bin/Delete
+    package:
+      include:
+        - bin/Delete
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
   GetField:
     name: GetField
     handler: bin/GetField
@@ -59,15 +67,6 @@ functions:
     maximumRetryAttempts: 0
     maximumEventAge: 60
 
-  ProductDecreaseAvailabilityBy:
-    name:  ProductDecreaseAvailabilityBy
-    handler: bin/ProductDecreaseAvailabilityBy
-    package:
-      include:
-        - bin/ProductDecreaseAvailabilityBy
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
   UserVerifyPassword:
     name:  UserVerifyPassword
     handler: bin/UserVerifyPassword
@@ -77,6 +76,24 @@ functions:
     maximumRetryAttempts: 0
     maximumEventAge: 60
 
+  ProductDecreaseAvailabilityBy:
+    name:  ProductDecreaseAvailabilityBy
+    handler: bin/ProductDecreaseAvailabilityBy
+    package:
+      include:
+        - bin/ProductDecreaseAvailabilityBy
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
+
+  NewUser:
+    name:  NewUser
+    handler: bin/NewUser
+    package:
+      include:
+        - bin/NewUser
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
 
   NewOrder:
     name:  NewOrder

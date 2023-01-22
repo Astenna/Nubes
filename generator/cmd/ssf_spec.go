@@ -129,6 +129,12 @@ func GenerateGenericHandlers(path string, paredPkg parser.ParsedPackage) {
 	exportPath := filepath.Join(generationDestPath, "Export.go")
 	intput := tp.ExportTemplateInput{IsNobjectInOrginalPackage: paredPkg.IsNobjectInOrginalPackage, OrginalPackageAlias: parser.OrginalPackageAlias, OrginalPackage: paredPkg.ImportPath}
 	tp.CreateFileFromTemplate(templ, intput, exportPath)
+
+	templ = tp.ParseOrExitOnError("templates/type_spec/delete_template.go.tmpl")
+	generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "generics", "Delete"))
+	os.MkdirAll(generationDestPath, 0777)
+	deletePath := filepath.Join(generationDestPath, "Delete.go")
+	tp.CreateFileFromTemplate(templ, nil, deletePath)
 }
 
 func GenerateCustomConstructorsHandlers(path string, customCtor []parser.CustomCtorDefinition) {
