@@ -12,5 +12,5 @@ func (r Reference[T]) Id() string {
 }
 
 func (r Reference[T]) Get() (*T, error) {
-	return GetObjectState[T](string(r))
+	return Load[T](string(r))
 }

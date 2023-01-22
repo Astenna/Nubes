@@ -72,8 +72,9 @@ func GetObjectState[T Nobject](id string) (*T, error) {
 		return nil, fmt.Errorf("missing id of object to get")
 	}
 
+	typeName := (*new(T)).GetTypeName()
 	input := &dynamodb.GetItemInput{
-		TableName: aws.String((*new(T)).GetTypeName()),
+		TableName: aws.String(typeName),
 		Key: map[string]*dynamodb.AttributeValue{
 			"Id": {
 				S: aws.String(id),
@@ -92,7 +93,7 @@ func GetObjectState[T Nobject](id string) (*T, error) {
 		return parsedItem, err
 	}
 
-	return nil, err
+	return nil, fmt.Errorf("%s with id: %s not found", typeName, id)
 }
 
 func GetByIndex[T Nobject](param QueryByIndexParam) ([]string, error) {
