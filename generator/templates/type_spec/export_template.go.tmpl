@@ -7,24 +7,25 @@ import (
 
 	lib "github.com/Astenna/Nubes/lib"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/mitchellh/mapstructure"
 )
 
-func ExportHandler(input lib.HandlerParameters) (string, error) {
-	if input.TypeName == "" {
+func ExportHandler(input aws.JSONValue) (string, error) {
+	if input["TypeName"] == "" {
 		return "", fmt.Errorf("missing TypeName in HandlerParameters")
 	}
 
-	switch input.TypeName {
+	switch input["TypeName"] {
 	{{range $key,$value := .IsNobjectInOrginalPackage}}
 	{{if $value}} case "{{$key}}":
 			new{{$key}} := new({{$.OrginalPackageAlias}}.{{$key}})
-			mapstructure.Decode(input.Parameter, new{{$key}})
+			mapstructure.Decode(input["Parameter"], new{{$key}})
 			return lib.Insert(new{{$key}})
 	{{end}} {{end}}
 
 	default:
-		return "", fmt.Errorf("%s not supported", input.TypeName)
+		return "", fmt.Errorf("%s not supported",  input["TypeName"])
 
 	}
 }

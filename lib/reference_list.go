@@ -16,16 +16,10 @@ func (r ReferenceList[T]) GetIds() []string {
 func (r ReferenceList[T]) Get() ([]T, error) {
 	result := make([]T, len(r))
 
-	instance := *new(T)
-	casted := any(instance)
-	if customId, ok := casted.(CustomId); ok {
-		_ = customId.GetId()
-	}
-
 	for index, id := range r {
 		instance, err := Load[T](id)
 		if err != nil {
-			return nil, fmt.Errorf("could not retrieve object with id: %d. Error: %w", index, err)
+			return nil, fmt.Errorf("could not retrieve object with id: %s. Error: %w", id, err)
 		}
 		result[index] = *instance
 	}
