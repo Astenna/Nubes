@@ -96,7 +96,7 @@ func GetObjectState[T Nobject](id string) (*T, error) {
 	return nil, fmt.Errorf("%s with id: %s not found", typeName, id)
 }
 
-func GetByIndex[T Nobject](param QueryByIndexParam) ([]string, error) {
+func GetByIndex(param QueryByIndexParam) ([]string, error) {
 	if err := param.Validate(); err != nil {
 		return nil, err
 	}
@@ -132,7 +132,7 @@ func GetByIndex[T Nobject](param QueryByIndexParam) ([]string, error) {
 	return outputIds, nil
 }
 
-func GetSortKeysByPartitionKey[T Nobject](q QueryByPartitionKeyParam) ([]string, error) {
+func GetSortKeysByPartitionKey(q QueryByPartitionKeyParam) ([]string, error) {
 	if err := q.Validate(); err != nil {
 		return nil, err
 	}
@@ -311,6 +311,15 @@ func IsInstanceAlreadyCreated(param IsInstanceAlreadyCreatedParam) (bool, error)
 	}
 
 	return false, nil
+}
+
+func isInstanceWithDefaultIdAlreadyCreated(instance Nobject) (bool, error) {
+	var attributeVals, err = dynamodbattribute.MarshalMap(instance)
+	if err != nil {
+		return false, err
+	}
+
+	return *(attributeVals["Id"].S) == "", nil
 }
 
 func getProjection(names []string) expression.ProjectionBuilder {

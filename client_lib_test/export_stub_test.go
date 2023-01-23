@@ -40,3 +40,56 @@ func TestClib(t *testing.T) {
 	require.Equal(t, newOrdersSet[0], retrievedOrders[0], "expected the same orders id, found diffrent")
 	require.Equal(t, newOrdersSet[1], retrievedOrders[1], "expected the same orders id, found diffrent")
 }
+
+func TestReferenceNavigationListOneToMany(t *testing.T) {
+	// Arrange
+	newShop := clib.ShopStub{
+		Name: "TestReferenceNavigationListShop",
+	}
+	newProduct := clib.ProductStub{
+		Name:              "TestReferenceNavigationListProduct",
+		QuantityAvailable: 400.0,
+		Price:             3.5,
+	}
+
+	// Act
+	exportedShop, err := clib.ExportShop(newShop)
+	require.Equal(t, err, nil, "error occurred in ExportShop invocation", err)
+	// newProduct is sold by newShop
+	newProduct.SoldBy = *clib.NewReference[clib.ShopStub](exportedShop.GetId())
+	exportedProduct, err := clib.ExportProduct(newProduct)
+	require.Equal(t, err, nil, "error occurred in ExportProduct invocation", err)
+	// retrieve newProduct ID from newShop
+	productsIds, err := exportedShop.GetProductsIds()
+	require.Equal(t, err, nil, "error occurred in GetProductsIds invocation", err)
+	products, err := exportedShop.GetProducts()
+	require.Equal(t, err, nil, "error occurred in GetProducts invocation", err)
+
+	// Assert
+	require.Equal(t, 1, len(products), "expected number of products is 1, found %d", len(products))
+	require.Equal(t, exportedProduct.GetId(), productsIds[0], "expected product id to be equal to the exported one, found %s", productsIds[0])
+	require.Equal(t, exportedProduct.GetId(), products[0].GetId(), "expected product id to be equal to the exported one, found %s", products[0].GetId())
+}
+
+func TestReferenceNavigationListManyToMany(t *testing.T) {
+	// Arrange
+	newUserId := uuid.New().String()
+	newUser := clib.UserStub{
+		Email:     newUserId,
+		FirstName: "TestReferenceNavigationList",
+		LastName:  "TestManyToMany",
+	}
+	newShop := clib.ShopStub{
+		Name: "ShopTestManyToManyRelationship",
+	}
+
+	// Act
+	exportedShop, err := clib.ExportShop(newShop)
+	require.Equal(t, err, nil, "error occurred in ExportShop invocation", err)
+
+	exportedUser, err := clib.ExportUser(newUser)
+	require.Equal(t, err, nil, "error occurred in ExportUser invocation", err)
+
+	// TODO
+	// Assert
+}

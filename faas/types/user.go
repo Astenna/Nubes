@@ -74,6 +74,7 @@ func (u User) VerifyPassword(password string) (bool, error) {
 	}
 	return false, nil
 }
+
 func (receiver *User) Init() {
 	receiver.isInitialized = true
 	receiver.Shops = *lib.NewReferenceNavigationList[Shop](receiver.Email, receiver.GetTypeName(), "", true)

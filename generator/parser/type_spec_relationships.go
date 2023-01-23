@@ -9,17 +9,21 @@ import (
 )
 
 type ManyToManyRelationshipField struct {
-	FieldName      string
-	FromFieldName  string
-	PartionKeyName string
-	SortKeyName    string
-	TableName      string
+	FieldName          string
+	FromFieldName      string
+	FromFieldNameUpper string
+	PartionKeyName     string
+	SortKeyName        string
+	TableName          string
+	TypeNameLower      string
 }
 
 type OneToManyRelationshipField struct {
-	TypeName      string
-	FieldName     string
-	FromFieldName string
+	TypeName           string
+	TypeNameLower      string
+	FieldName          string
+	FromFieldName      string
+	FromFieldNameUpper string
 }
 
 func NewManyToManyRelationshipField(typeName1, typeName2, fieldName string) *ManyToManyRelationshipField {
@@ -105,7 +109,6 @@ func parseRelationshipsTags(field *ast.Field, typeName string, fieldType string,
 					newManyToManyRelationship := NewManyToManyRelationshipField(typeName, navigationToTypeName, field.Names[0].Name)
 					newManyToManyRelationship.FromFieldName = field.Names[0].Name
 					parsedPackage.ManyToManyRelationships[typeName] = append(parsedPackage.ManyToManyRelationships[typeName], *newManyToManyRelationship)
-
 					return addDynamoDBIgnoreTag(tags, field, typeName)
 				} else {
 					fmt.Println(HasManyTag, " or ", HasOneTag, " can be used only with ", LibraryReferenceNavigationList, " fields!")

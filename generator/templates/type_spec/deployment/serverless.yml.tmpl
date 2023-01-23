@@ -66,6 +66,22 @@ functions:
         - bin/SetField
     maximumRetryAttempts: 0
     maximumEventAge: 60
+  ReferenceGetSortKeysByPartitionKey:
+    name: ReferenceGetSortKeysByPartitionKey
+    handler: bin/ReferenceGetSortKeysByPartitionKey
+    package:
+      include:
+        - bin/ReferenceGetSortKeysByPartitionKey
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+  ReferenceGetByIndex:
+    name: ReferenceGetByIndex
+    handler: bin/ReferenceGetByIndex
+    package:
+      include:
+        - bin/ReferenceGetByIndex
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
 {{range .StateFuncs}}
   {{.ReceiverType}}{{.MethodName}}:
     name:  {{.ReceiverType}}{{.MethodName}}

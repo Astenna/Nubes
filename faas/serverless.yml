@@ -66,13 +66,20 @@ functions:
         - bin/SetField
     maximumRetryAttempts: 0
     maximumEventAge: 60
-
-  UserVerifyPassword:
-    name:  UserVerifyPassword
-    handler: bin/UserVerifyPassword
+  ReferenceGetSortKeysByPartitionKey:
+    name: ReferenceGetSortKeysByPartitionKey
+    handler: bin/ReferenceGetSortKeysByPartitionKey
     package:
       include:
-        - bin/UserVerifyPassword
+        - bin/ReferenceGetSortKeysByPartitionKey
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+  ReferenceGetByIndex:
+    name: ReferenceGetByIndex
+    handler: bin/ReferenceGetByIndex
+    package:
+      include:
+        - bin/ReferenceGetByIndex
     maximumRetryAttempts: 0
     maximumEventAge: 60
 
@@ -85,15 +92,15 @@ functions:
     maximumRetryAttempts: 0
     maximumEventAge: 60
 
-
-  NewUser:
-    name:  NewUser
-    handler: bin/NewUser
+  UserVerifyPassword:
+    name:  UserVerifyPassword
+    handler: bin/UserVerifyPassword
     package:
       include:
-        - bin/NewUser
+        - bin/UserVerifyPassword
     maximumRetryAttempts: 0
     maximumEventAge: 60
+
 
   NewOrder:
     name:  NewOrder

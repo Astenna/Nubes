@@ -135,6 +135,18 @@ func GenerateGenericHandlers(path string, paredPkg parser.ParsedPackage) {
 	os.MkdirAll(generationDestPath, 0777)
 	deletePath := filepath.Join(generationDestPath, "Delete.go")
 	tp.CreateFileFromTemplate(templ, nil, deletePath)
+
+	templ = tp.ParseOrExitOnError("templates/type_spec/reference_get_by_index.go.tmpl")
+	generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "reference", "GetByIndex"))
+	os.MkdirAll(generationDestPath, 0777)
+	referenceIndexPath := filepath.Join(generationDestPath, "ReferenceGetByIndex.go")
+	tp.CreateFileFromTemplate(templ, nil, referenceIndexPath)
+
+	templ = tp.ParseOrExitOnError("templates/type_spec/reference_get_sort_key.go.tmpl")
+	generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "reference", "GetSortKeysByPartionKey"))
+	os.MkdirAll(generationDestPath, 0777)
+	referenceSortKeyPath := filepath.Join(generationDestPath, "ReferenceGetSortKeysByPartitionKey.go")
+	tp.CreateFileFromTemplate(templ, nil, referenceSortKeyPath)
 }
 
 func GenerateCustomConstructorsHandlers(path string, customCtor []parser.CustomCtorDefinition) {

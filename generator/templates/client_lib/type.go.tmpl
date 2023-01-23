@@ -19,6 +19,12 @@ type {{if eq .NobjectImplementation ""}} {{.TypeNameOrginalCase}} {{else}} {{.Ty
 	{{else}}
 	id string
 	{{end}} 
+	{{range .OneToManyRelationships}}
+	{{.FromFieldName}} ReferenceNavigationList[{{.TypeNameLower}}]
+	{{end}}
+	{{range .ManyToManyRelationships}}
+	{{.FromFieldName}} ReferenceNavigationList[{{.TypeNameLower}}]
+	{{end}}
 }
 
 
@@ -49,6 +55,7 @@ func Load{{.TypeNameOrginalCase}}(id string) (*{{.TypeNameLower}}, error) {
 	}
 
 	newInstance.id = id
+	newInstance.init()
 	return newInstance, nil
 } 
 
@@ -57,6 +64,21 @@ func load{{.TypeNameOrginalCase}}WithoutCheckIfExists(id string) *{{.TypeNameLow
 	newInstance.id = id
 	return newInstance
 } 
+
+// setId interface for initilization in ReferenceNavigationList
+func (u *{{.TypeNameLower}})setId(id string) {
+	u.id = id
+}
+
+func (r *{{.TypeNameLower}}) init() {
+	{{range .OneToManyRelationships}}
+	r.{{.FromFieldName}} = *NewReferenceNavigationList[{{.TypeNameLower}}](r.id, r.GetTypeName(), "{{.FieldName}}", false)
+	{{end}}
+	{{range .ManyToManyRelationships}}
+	r.{{.FromFieldName}} = *NewReferenceNavigationList[{{.TypeNameLower}}](r.id, r.GetTypeName(), "", true)
+	{{end}}
+}
+
 
 func Export{{.TypeNameOrginalCase}}(input {{.TypeNameOrginalCase}}Stub) (*{{.TypeNameLower}}, error) {	
 	newInstance := new({{.TypeNameLower}})
@@ -79,6 +101,7 @@ func Export{{.TypeNameOrginalCase}}(input {{.TypeNameOrginalCase}}Stub) (*{{.Typ
 	}
 
 	newInstance.id, err = strconv.Unquote(string(out.Payload[:]))
+	newInstance.init()
 	return newInstance, err
 } 
  
@@ -314,6 +337,28 @@ func (s {{$.TypeNameLower}}) Set{{.FieldNameUpper}}(newValue {{if .IsReference}}
 } 
 {{end}}{{end}}
 
+// REFERENCE NAVIGATION LIST GETTERS
+
+{{range .OneToManyRelationships}}
+func (s {{$.TypeNameLower}}) Get{{.FromFieldNameUpper}}() ([]{{.TypeNameLower}}, error) {
+	return s.{{.FromFieldName}}.Get()
+}
+
+func (s {{$.TypeNameLower}}) Get{{.FromFieldNameUpper}}Ids() ([]string, error) {
+	return s.{{.FromFieldName}}.GetIds()
+}
+{{end}}
+
+{{range .ManyToManyRelationships}}
+func (s {{$.TypeNameLower}}) Get{{.FromFieldNameUpper}}() ([]{{.TypeNameLower}}, error) {
+	return s.{{.FromFieldName}}.Get()
+}
+
+func (s {{$.TypeNameLower}}) Get{{.FromFieldNameUpper}}Ids() ([]string, error) {
+	return s.{{.FromFieldName}}.GetIds()
+}
+{{end}}
+
 // (STATE-CHANGING) METHODS
 
 {{range .MemberFunctions}}
@@ -349,6 +394,6 @@ func ({{.ReceiverName}} {{$.TypeNameLower}}) {{.FuncName}}({{if .InputParamType}
 	}{{end}}
 	
 	return {{if .OptionalReturnType}}{{if .IsReturnTypeNobject}}New{{.OptionalReturnTypeUpper}}(result.GetId()),{{else}}*result,{{end}}{{end}} _err
-} {{end}}
-
+} 
+{{end}}
 {{end}} 

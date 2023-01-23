@@ -98,13 +98,17 @@ func (t *ClientTypesParser) parseRelationshipsTagsClient(field *ast.Field, typeN
 			navigationToTypeName = strings.Trim(navigationToTypeName, "[]")
 
 			oneToMany := OneToManyRelationshipField{TypeName: navigationToTypeName, FieldName: navigationToFieldName, FromFieldName: field.Names[0].Name}
+			oneToMany.TypeNameLower = lowerCasedFirstChar(navigationToTypeName)
+			oneToMany.FromFieldNameUpper = upperCaseFirstChar(oneToMany.FromFieldName)
 			t.DefinedTypes[typeName].OneToManyRelationships = append(t.DefinedTypes[typeName].OneToManyRelationships, oneToMany)
 		} else if strings.Contains(tag.Name, HasManyTag) {
 			navigationToTypeName := strings.TrimPrefix(fieldType, LibraryReferenceNavigationList)
 			navigationToTypeName = strings.Trim(navigationToTypeName, "[]")
 
 			newManyToManyRelationship := NewManyToManyRelationshipField(typeName, navigationToTypeName, field.Names[0].Name)
+			newManyToManyRelationship.TypeNameLower = lowerCasedFirstChar(navigationToTypeName)
 			newManyToManyRelationship.FromFieldName = field.Names[0].Name
+			newManyToManyRelationship.FromFieldNameUpper = upperCaseFirstChar(newManyToManyRelationship.FromFieldName)
 			t.DefinedTypes[typeName].ManyToManyRelationships = append(t.DefinedTypes[typeName].ManyToManyRelationships, *newManyToManyRelationship)
 		}
 	} else {

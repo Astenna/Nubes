@@ -76,6 +76,10 @@ var clientCmd = &cobra.Command{
 		}{PackageName: projectName}
 		filePath = filepath.Join(outputDirectoryPath, "reference.go")
 		tp.CreateFileFromTemplate(reference_templ, referenceTmplInput, filePath)
+
+		reference_nav_templ := tp.ParseOrExitOnError("templates/client_lib/reference_navigation_list.go.tmpl")
+		filePath = filepath.Join(outputDirectoryPath, "reference_navigation_list.go")
+		tp.CreateFileFromTemplate(reference_nav_templ, referenceTmplInput, filePath)
 	},
 }
 

@@ -1,23 +1,30 @@
-package lib
+package {{.PackageName}}
 
 import (
+	"encoding/json"
 	"fmt"
 
+	"github.com/Astenna/Nubes/lib"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/lambda"
 )
 
-type ReferenceNavigationList[T Nobject] struct {
+type setId interface {
+	setId(id string)
+	init()
+}
+
+type ReferenceNavigationList[T lib.Nobject] struct {
 	ownerId       string
 	ownerTypeName string
 
 	isManyToMany             bool
 	usesIndex                bool
-	queryByIndexParam        QueryByIndexParam
-	queryByPartitionKeyParam QueryByPartitionKeyParam
+	queryByIndexParam        lib.QueryByIndexParam
+	queryByPartitionKeyParam lib.QueryByPartitionKeyParam
 }
 
-func NewReferenceNavigationList[T Nobject](ownerId, ownerTypeName, referringFieldName string, isManyToMany bool) *ReferenceNavigationList[T] {
+func NewReferenceNavigationList[T lib.Nobject](ownerId, ownerTypeName, referringFieldName string, isManyToMany bool) *ReferenceNavigationList[T] {
 	r := new(ReferenceNavigationList[T])
 	r.ownerId = ownerId
 	r.ownerTypeName = ownerTypeName
@@ -39,12 +46,12 @@ func NewReferenceNavigationList[T Nobject](ownerId, ownerTypeName, referringFiel
 func (r ReferenceNavigationList[T]) GetIds() ([]string, error) {
 
 	if r.usesIndex {
-		out, err := GetByIndex(r.queryByIndexParam)
+		out, err := r.getByIndex()
 		return out, err
 	}
 
 	if r.isManyToMany && !r.usesIndex {
-		out, err := GetSortKeysByPartitionKey(r.queryByPartitionKeyParam)
+		out, err := r.getSortKeysByPartitionKey()
 		return out, err
 	}
 
@@ -55,52 +62,96 @@ func (r ReferenceNavigationList[T]) Get() ([]T, error) {
 	var ids []string
 	var err error
 	if r.usesIndex {
-		ids, err = GetByIndex(r.queryByIndexParam)
+		ids, err = r.getByIndex()
 		if err != nil {
 			return nil, err
 		}
 	} else if r.isManyToMany && !r.usesIndex {
-		ids, err = GetSortKeysByPartitionKey(r.queryByPartitionKeyParam)
+		ids, err = r.getSortKeysByPartitionKey()
 		if err != nil {
 			return nil, err
 		}
 	} else {
+		fmt.Println("")
 		return nil, fmt.Errorf("invalid initialization of ReferenceNavigationList")
 	}
 
 	result := make([]T, len(ids))
+	typeName := (*new(T)).GetTypeName()
 	for i, id := range ids {
-		initialisedObj, err := Load[T](id)
+		params := lib.HandlerParameters{
+			Id:       id,
+			TypeName: typeName,
+		}
+		jsonParam, err := json.Marshal(params)
 		if err != nil {
 			return nil, err
 		}
-		result[i] = *initialisedObj
+		out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("Load"), Payload: jsonParam})
+		if _err != nil {
+			return nil, _err
+		}
+		if out.FunctionError != nil {
+			return nil, fmt.Errorf("lambda function designed to verify if instance exists failed. Error: %s", string(out.Payload))
+		}
+
+		newInstance := new(T)
+		casted := any(newInstance)
+		setIdInterf, _ := casted.(setId)
+		setIdInterf.setId(id)
+		setIdInterf.init()
+		result[i] = *newInstance
 	}
 
 	return result, err
 }
 
-func (r ReferenceNavigationList[T]) Add(id string) error {
+func (r ReferenceNavigationList[T]) getByIndex() ([]string, error) {
 
-	if r.isManyToMany {
-
-		typeName := (*new(T)).GetTypeName()
-
-		exists, err := IsInstanceAlreadyCreated(IsInstanceAlreadyCreatedParam{Id: id, TypeName: typeName})
-		if err != nil {
-			return fmt.Errorf("error occured while checking if typename %s with id %s exists. Error %w", typeName, id, err)
-		}
-		if !exists {
-			return fmt.Errorf("only existing instances can be added to many to many relationships. Typename %s with id %s not found", typeName, id)
-		}
-
-		if r.usesIndex {
-			return insertToManyToManyTable(r.ownerTypeName, typeName, r.ownerId, id)
-		}
-		return insertToManyToManyTable(typeName, r.ownerTypeName, id, r.ownerId)
+	jsonParam, err := json.Marshal(r.queryByIndexParam)
+	if err != nil {
+		return nil, err
 	}
 
-	return fmt.Errorf("can not add elements to ReferenceNavigationList of OneToMany relationship")
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("ReferenceGetByIndex"), Payload: jsonParam})
+	if _err != nil {
+		return nil, _err
+	}
+	if out.FunctionError != nil {
+		return nil, fmt.Errorf(string(out.Payload[:]))
+	}
+
+	var result []string
+	err = json.Unmarshal(out.Payload, &result)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (r ReferenceNavigationList[T]) getSortKeysByPartitionKey() ([]string, error) {
+
+	jsonParam, err := json.Marshal(r.queryByPartitionKeyParam)
+	if err != nil {
+		return nil, err
+	}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("ReferenceGetSortKeysByPartitionKey"), Payload: jsonParam})
+	if _err != nil {
+		return nil, _err
+	}
+	if out.FunctionError != nil {
+		return nil, fmt.Errorf(string(out.Payload[:]))
+	}
+
+	var result []string
+	err = json.Unmarshal(out.Payload, &result)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 func (r *ReferenceNavigationList[T]) setupOneToManyRelationship(referringFieldName string) {
@@ -149,21 +200,4 @@ func (r *ReferenceNavigationList[T]) setupManyToManyRelationship() {
 		r.queryByPartitionKeyParam.PatritionAttributeValue = r.ownerId
 		r.queryByPartitionKeyParam.OutputAttributeName = otherTypeName
 	}
-}
-
-func insertToManyToManyTable(partitiokKeyName, sortKeyName, partitonKey, sortKey string) error {
-	input := &dynamodb.PutItemInput{
-		TableName: aws.String(partitiokKeyName + sortKeyName),
-		Item: map[string]*dynamodb.AttributeValue{
-			partitiokKeyName: {
-				S: aws.String(partitonKey),
-			},
-			sortKeyName: {
-				S: aws.String(sortKey),
-			},
-		},
-	}
-
-	_, err := DBClient.PutItem(input)
-	return err
 }
