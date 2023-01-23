@@ -8,4 +8,5 @@ use (
 	//./client_lib
 	./client
 	./faas_lib_test
+	./client_lib_test
 )

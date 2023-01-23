@@ -6,20 +6,12 @@ import lib "github.com/Astenna/Nubes/lib"
 {{if .NobjectImplementation}}
 type {{.TypeNameOrginalCase}}Stub struct {
     {{range .FieldDefinitions}}
-    {{if .IsReference}} {{.FieldNameUpper}} lib.Reference[{{.FieldTypeUpper}}Stub] {{.Tags}}
-    {{else if .IsReferenceList}} {{.FieldNameUpper}} lib.ReferenceList[{{.FieldTypeUpper}}Stub] {{.Tags}}
+    {{if .IsReference}} {{.FieldNameUpper}} Reference[{{.FieldTypeUpper}}Stub] {{.Tags}}
+    {{else if .IsReferenceList}} {{.FieldNameUpper}} ReferenceList[{{.FieldTypeUpper}}Stub] {{.Tags}}
     {{else}} {{.FieldNameUpper}} {{.FieldType}} {{.Tags}} {{end}} 
     {{end}}
 }
 
 func ({{.TypeNameOrginalCase}}Stub)GetTypeName() string {{.NobjectImplementation}} 
-
-{{if .CustomIdImplementation}}
-func ({{.CustomIdReceiverName}} {{.TypeNameOrginalCase}}Stub)GetId() string {{.CustomIdImplementation}}
- {{else}}
-func (s {{.TypeNameOrginalCase}}Stub)GetId() string {
-return s.Id
-} {{end}}
-
 {{end}} 
 {{end}}

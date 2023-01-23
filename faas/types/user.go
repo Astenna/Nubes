@@ -5,13 +5,14 @@ import (
 )
 
 type User struct {
-	FirstName	string
-	LastName	string
-	Email		string	`dynamodbav:"Id" nubes:"id,readonly"`
-	Password	string	`nubes:"readonly"`
-	Address		string
-	Shops		lib.ReferenceNavigationList[Shop]	`nubes:"hasMany-Owners" dynamodbav:"-"`
-	isInitialized	bool
+	FirstName     string
+	LastName      string
+	Email         string `dynamodbav:"Id" nubes:"id,readonly"`
+	Password      string `nubes:"readonly"`
+	Address       string
+	Shops         lib.ReferenceNavigationList[Shop] `nubes:"hasMany-Owners" dynamodbav:"-"`
+	Orders        lib.ReferenceList[Order]
+	isInitialized bool
 }
 
 func DeleteUser(id string) error {

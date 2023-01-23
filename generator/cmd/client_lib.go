@@ -69,6 +69,13 @@ var clientCmd = &cobra.Command{
 		}{PackageName: projectName, OtherDecls: typesParser.OtherDecls}
 		filePath = filepath.Join(outputDirectoryPath, "other_decls.go")
 		tp.CreateFileFromTemplate(other_decls_templ, othetDeclsTemplInput, filePath)
+
+		reference_templ := tp.ParseOrExitOnError("templates/client_lib/reference.go.tmpl")
+		referenceTmplInput := struct {
+			PackageName string
+		}{PackageName: projectName}
+		filePath = filepath.Join(outputDirectoryPath, "reference.go")
+		tp.CreateFileFromTemplate(reference_templ, referenceTmplInput, filePath)
 	},
 }
 
