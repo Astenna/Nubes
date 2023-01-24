@@ -5,14 +5,14 @@ import (
 )
 
 type User struct {
-	FirstName     string
-	LastName      string
-	Email         string `dynamodbav:"Id" nubes:"id,readonly"`
-	Password      string `nubes:"readonly"`
-	Address       string
-	Shops         lib.ReferenceNavigationList[Shop] `nubes:"hasMany-Owners" dynamodbav:"-"`
-	Orders        lib.ReferenceList[Order]
-	isInitialized bool
+	FirstName	string
+	LastName	string
+	Email		string	`dynamodbav:"Id" nubes:"id,readonly"`
+	Password	string	`nubes:"readonly"`
+	Address		string
+	Shops		lib.ReferenceNavigationList[Shop]	`nubes:"hasMany-Owners" dynamodbav:"-"`
+	Orders		lib.ReferenceList[Order]
+	isInitialized	bool
 }
 
 func DeleteUser(id string) error {
@@ -54,6 +54,13 @@ func (u *User) GetLastName() (string, error) {
 }
 
 func (u User) GetShops() ([]string, error) {
+	if u.isInitialized {
+		fieldValue, _libError := lib.GetField(lib.GetFieldParam{Id: u.Email, TypeName: "User", FieldName: "Shops"})
+		if _libError != nil {
+			return *new([]string), _libError
+		}
+		u.Shops = fieldValue.(lib.ReferenceNavigationList[Shop])
+	}
 	return u.Shops.GetIds()
 }
 

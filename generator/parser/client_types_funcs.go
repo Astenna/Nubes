@@ -146,11 +146,31 @@ func isGetterOrSetterMethod(fn *ast.FuncDecl, typeName string, definedTypes map[
 				return true
 			}
 		}
+		for _, field := range definedTypes[typeName].OneToManyRelationships {
+			if field.FromFieldNameUpper == fieldName || field.FromFieldName == fieldName {
+				return true
+			}
+		}
+		for _, field := range definedTypes[typeName].ManyToManyRelationships {
+			if field.FromFieldNameUpper == fieldName || field.FromFieldName == fieldName {
+				return true
+			}
+		}
 	} else if strings.HasPrefix(fn.Name.Name, SetPrefix) {
 		fieldName := strings.TrimPrefix(fn.Name.Name, SetPrefix)
 
 		for _, field := range definedTypes[typeName].FieldDefinitions {
 			if field.FieldNameUpper == fieldName {
+				return true
+			}
+		}
+		for _, field := range definedTypes[typeName].OneToManyRelationships {
+			if field.FromFieldNameUpper == fieldName || field.FromFieldName == fieldName {
+				return true
+			}
+		}
+		for _, field := range definedTypes[typeName].ManyToManyRelationships {
+			if field.FromFieldNameUpper == fieldName || field.FromFieldName == fieldName {
 				return true
 			}
 		}

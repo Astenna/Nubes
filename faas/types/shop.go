@@ -5,11 +5,11 @@ import (
 )
 
 type Shop struct {
-	Id            string
-	Name          string
-	Owners        lib.ReferenceNavigationList[User]    `nubes:"hasMany-Shops" dynamodbav:"-"`
-	Products      lib.ReferenceNavigationList[Product] `nubes:"hasOne-SoldBy,readonly" dynamodbav:"-"`
-	isInitialized bool
+	Id		string
+	Name		string
+	Owners		lib.ReferenceNavigationList[User]	`nubes:"hasMany-Shops" dynamodbav:"-"`
+	Products	lib.ReferenceNavigationList[Product]	`nubes:"hasOne-SoldBy,readonly" dynamodbav:"-"`
+	isInitialized	bool
 }
 
 func (Shop) GetTypeName() string {
@@ -17,6 +17,13 @@ func (Shop) GetTypeName() string {
 }
 
 func (s Shop) GetOwners() ([]string, error) {
+	if s.isInitialized {
+		fieldValue, _libError := lib.GetField(lib.GetFieldParam{Id: s.Id, TypeName: "Shop", FieldName: "Owners"})
+		if _libError != nil {
+			return *new([]string), _libError
+		}
+		s.Owners = fieldValue.(lib.ReferenceNavigationList[User])
+	}
 	return s.Owners.GetIds()
 }
 

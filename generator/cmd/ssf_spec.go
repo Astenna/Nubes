@@ -147,6 +147,12 @@ func GenerateGenericHandlers(path string, paredPkg parser.ParsedPackage) {
 	os.MkdirAll(generationDestPath, 0777)
 	referenceSortKeyPath := filepath.Join(generationDestPath, "ReferenceGetSortKeysByPartitionKey.go")
 	tp.CreateFileFromTemplate(templ, nil, referenceSortKeyPath)
+
+	templ = tp.ParseOrExitOnError("templates/type_spec/add_many_to_may.template.go.tmpl")
+	generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "reference", "AddToManyToMany"))
+	os.MkdirAll(generationDestPath, 0777)
+	addManyToManyPath := filepath.Join(generationDestPath, "ReferenceAddToManyToMany.go")
+	tp.CreateFileFromTemplate(templ, nil, addManyToManyPath)
 }
 
 func GenerateCustomConstructorsHandlers(path string, customCtor []parser.CustomCtorDefinition) {

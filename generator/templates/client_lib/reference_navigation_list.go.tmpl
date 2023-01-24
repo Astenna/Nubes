@@ -106,6 +106,42 @@ func (r ReferenceNavigationList[T]) Get() ([]T, error) {
 	return result, err
 }
 
+
+
+func (r ReferenceNavigationList[T]) AddToManyToMany(newId string) error {
+	if newId == "" {
+		return fmt.Errorf("missing id")
+	}
+
+	if r.isManyToMany {
+		typeName := (*new(T)).GetTypeName()
+		params := lib.AddToManyToManyParam{
+			TypeName:      typeName,
+			NewId:         newId,
+			OwnerTypeName: r.ownerTypeName,
+			OwnerId:       r.ownerId,
+			UsesIndex:     r.usesIndex,
+		}
+
+		jsonParam, err := json.Marshal(params)
+		if err != nil {
+			return err
+		}
+
+		out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("ReferenceAddToManyToMany"), Payload: jsonParam})
+		if _err != nil {
+			return _err
+		}
+		if out.FunctionError != nil {
+			return fmt.Errorf(string(out.Payload[:]))
+		}
+
+		return nil
+	}
+
+	return fmt.Errorf("can not add elements to ReferenceNavigationList of OneToMany relationship")
+}
+
 func (r ReferenceNavigationList[T]) getByIndex() ([]string, error) {
 
 	jsonParam, err := json.Marshal(r.queryByIndexParam)

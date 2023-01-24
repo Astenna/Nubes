@@ -357,6 +357,10 @@ func (s {{$.TypeNameLower}}) Get{{.FromFieldNameUpper}}() ([]{{.TypeNameLower}},
 func (s {{$.TypeNameLower}}) Get{{.FromFieldNameUpper}}Ids() ([]string, error) {
 	return s.{{.FromFieldName}}.GetIds()
 }
+
+func (s {{$.TypeNameLower}}) Add{{.FromFieldNameUpper}}(id string) error {
+	return s.{{.FromFieldName}}.AddToManyToMany(id)
+}
 {{end}}
 
 // (STATE-CHANGING) METHODS

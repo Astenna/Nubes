@@ -82,6 +82,14 @@ functions:
         - bin/ReferenceGetByIndex
     maximumRetryAttempts: 0
     maximumEventAge: 60
+  ReferenceAddToManyToMany:
+    name: ReferenceAddToManyToMany
+    handler: bin/ReferenceAddToManyToMany
+    package:
+      include:
+        - bin/ReferenceAddToManyToMany
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
 
   ProductDecreaseAvailabilityBy:
     name:  ProductDecreaseAvailabilityBy

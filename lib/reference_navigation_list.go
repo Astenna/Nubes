@@ -80,24 +80,27 @@ func (r ReferenceNavigationList[T]) Get() ([]T, error) {
 	return result, err
 }
 
-func (r ReferenceNavigationList[T]) AddToManyToMany(id string) error {
+func (r ReferenceNavigationList[T]) AddToManyToMany(newId string) error {
+
+	if newId == "" {
+		return fmt.Errorf("missing id")
+	}
 
 	if r.isManyToMany {
 
 		typeName := (*new(T)).GetTypeName()
-
-		exists, err := IsInstanceAlreadyCreated(IsInstanceAlreadyCreatedParam{Id: id, TypeName: typeName})
+		exists, err := IsInstanceAlreadyCreated(IsInstanceAlreadyCreatedParam{Id: newId, TypeName: typeName})
 		if err != nil {
-			return fmt.Errorf("error occured while checking if typename %s with id %s exists. Error %w", typeName, id, err)
+			return fmt.Errorf("error occured while checking if typename %s with id %s exists. Error %w", typeName, newId, err)
 		}
 		if !exists {
-			return fmt.Errorf("only existing instances can be added to many to many relationships. Typename %s with id %s not found", typeName, id)
+			return fmt.Errorf("only existing instances can be added to many to many relationships. Typename %s with id %s not found", typeName, newId)
 		}
 
 		if r.usesIndex {
-			return insertToManyToManyTable(typeName, r.ownerTypeName, id, r.ownerId)
+			return InsertToManyToManyTable(typeName, r.ownerTypeName, newId, r.ownerId)
 		}
-		return insertToManyToManyTable(r.ownerTypeName, typeName, r.ownerId, id)
+		return InsertToManyToManyTable(r.ownerTypeName, typeName, r.ownerId, newId)
 	}
 
 	return fmt.Errorf("can not add elements to ReferenceNavigationList of OneToMany relationship")
@@ -151,7 +154,7 @@ func (r *ReferenceNavigationList[T]) setupManyToManyRelationship() {
 	}
 }
 
-func insertToManyToManyTable(partitionKeyName, sortKeyName, partitonKey, sortKey string) error {
+func InsertToManyToManyTable(partitionKeyName, sortKeyName, partitonKey, sortKey string) error {
 	input := &dynamodb.PutItemInput{
 		TableName: aws.String(partitionKeyName + sortKeyName),
 		Item: map[string]*dynamodb.AttributeValue{

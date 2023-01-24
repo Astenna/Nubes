@@ -71,7 +71,37 @@ func TestReferenceNavigationListOneToMany(t *testing.T) {
 	require.Equal(t, exportedProduct.GetId(), products[0].GetId(), "expected product id to be equal to the exported one, found %s", products[0].GetId())
 }
 
-func TestReferenceNavigationListManyToMany(t *testing.T) {
+func TestReferenceNavigationListManyToManyByPartiotionKey(t *testing.T) {
+	// Arrange
+	newUserId := uuid.New().String()
+	newUser := clib.UserStub{
+		Email:     newUserId,
+		FirstName: "TestReferenceNavigationList",
+		LastName:  "TestManyToMany",
+	}
+	newShop := clib.ShopStub{
+		Name: "ShopTestManyToManyRelationship",
+	}
+
+	// Act
+	exportedUser, err := clib.ExportUser(newUser)
+	require.Equal(t, nil, err, "error occurred in ExportUser invocation", err)
+
+	exportedShop, err := clib.ExportShop(newShop)
+	require.Equal(t, nil, err, "error occurred in ExportShop invocation", err)
+
+	err = exportedShop.AddOwners(newUserId)
+	require.Equal(t, nil, err, "error occurred in AddOwners invocation", err)
+
+	ownedShops, err := exportedUser.GetShopsIds()
+	require.Equal(t, nil, err, "error occurred in AddOwners invocation", err)
+
+	// Assert
+	require.Equal(t, 1, len(ownedShops), "expected number of ownedShops is 1, found %d", len(ownedShops))
+	require.Equal(t, exportedShop.GetId(), ownedShops[0], "expected id of ownedShop to be equal to previously aded one, but found %s", ownedShops[0])
+}
+
+func TestReferenceNavigationListManyToManyByWithIndex(t *testing.T) {
 	// Arrange
 	newUserId := uuid.New().String()
 	newUser := clib.UserStub{
@@ -90,6 +120,13 @@ func TestReferenceNavigationListManyToMany(t *testing.T) {
 	exportedUser, err := clib.ExportUser(newUser)
 	require.Equal(t, nil, err, "error occurred in ExportUser invocation", err)
 
-	// TODO
+	err = exportedUser.AddShops(exportedShop.GetId())
+	require.Equal(t, nil, err, "error occurred in AddOwners invocation", err)
+
+	shopOwners, err := exportedShop.GetOwnersIds()
+	require.Equal(t, nil, err, "error occurred in AddOwners invocation", err)
+
 	// Assert
+	require.Equal(t, 1, len(shopOwners), "expected number of ownedShops is 1, found %d", len(shopOwners))
+	require.Equal(t, newUserId, shopOwners[0], "expected id of ownedShop to be equal to previously aded one, but found %s", shopOwners[0])
 }
