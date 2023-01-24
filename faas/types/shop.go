@@ -1,15 +1,17 @@
 package types
 
 import (
+	"fmt"
+
 	"github.com/Astenna/Nubes/lib"
 )
 
 type Shop struct {
-	Id		string
-	Name		string
-	Owners		lib.ReferenceNavigationList[User]	`nubes:"hasMany-Shops" dynamodbav:"-"`
-	Products	lib.ReferenceNavigationList[Product]	`nubes:"hasOne-SoldBy,readonly" dynamodbav:"-"`
-	isInitialized	bool
+	Id            string
+	Name          string
+	Owners        lib.ReferenceNavigationList[User]    `nubes:"hasMany-Shops" dynamodbav:"-"`
+	Products      lib.ReferenceNavigationList[Product] `nubes:"hasOne-SoldBy,readonly" dynamodbav:"-"`
+	isInitialized bool
 }
 
 func (Shop) GetTypeName() string {
@@ -17,12 +19,9 @@ func (Shop) GetTypeName() string {
 }
 
 func (s Shop) GetOwners() ([]string, error) {
-	if s.isInitialized {
-		fieldValue, _libError := lib.GetField(lib.GetFieldParam{Id: s.Id, TypeName: "Shop", FieldName: "Owners"})
-		if _libError != nil {
-			return *new([]string), _libError
-		}
-		s.Owners = fieldValue.(lib.ReferenceNavigationList[User])
+	if !s.isInitialized {
+		return nil, fmt.Errorf(`fields of type ReferenceNavigationList can be used only after instance initialization. 
+			Use lib.Load or lib.Export from the Nubes library to create initialized instances`)
 	}
 	return s.Owners.GetIds()
 }

@@ -7,12 +7,12 @@ import (
 )
 
 type Product struct {
-	Id                string
-	Name              string
-	QuantityAvailable float64
-	SoldBy            lib.Reference[Shop]
-	Price             float64
-	isInitialized     bool
+	Id			string
+	Name			string
+	QuantityAvailable	float64
+	SoldBy			lib.Reference[Shop]
+	Price			float64
+	isInitialized		bool
 }
 
 func (Product) GetTypeName() string {

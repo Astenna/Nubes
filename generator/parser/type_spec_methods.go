@@ -48,14 +48,26 @@ func (t TypeSpecParser) addDBOperationsIfSetter(fn *ast.FuncDecl, path string) b
 		if fieldType, fieldExists := t.Output.TypeFields[typeName][fieldName]; fieldExists {
 			if !isInitFieldCheckAlreadyAddedAsSecondLastStmt(fn.Body) {
 				idFieldName := getIdFieldNameOfType(typeName, t.Output.TypesWithCustomId)
-				saveInDbIfInitialized := getSetterDBStmts(fn, getDBStmtsParam{
-					idFieldName:          idFieldName,
-					typeName:             typeName,
-					fieldName:            fieldName,
-					fieldType:            fieldType,
-					receiverVariableName: fn.Recv.List[0].Names[0].Name,
-				})
-				fn.Body.List = appendBeforeLastElem[ast.Stmt](fn.Body.List, &saveInDbIfInitialized)
+				if strings.Contains(fieldType, LibraryReferenceNavigationList) {
+					returnErrorIfNotInitialized := getReferenceNavigationListDBStmts(fn, getDBStmtsParam{
+						idFieldName:          idFieldName,
+						typeName:             typeName,
+						fieldName:            fieldName,
+						fieldType:            fieldType,
+						receiverVariableName: fn.Recv.List[0].Names[0].Name,
+					})
+					fn.Body.List = prepend[ast.Stmt](fn.Body.List, &returnErrorIfNotInitialized)
+					t.fileChanged[path] = true
+				} else {
+					saveInDbIfInitialized := getSetterDBStmts(fn, getDBStmtsParam{
+						idFieldName:          idFieldName,
+						typeName:             typeName,
+						fieldName:            fieldName,
+						fieldType:            fieldType,
+						receiverVariableName: fn.Recv.List[0].Names[0].Name,
+					})
+					fn.Body.List = appendBeforeLastElem[ast.Stmt](fn.Body.List, &saveInDbIfInitialized)
+				}
 
 				t.fileChanged[path] = true
 			}
@@ -71,18 +83,33 @@ func (t TypeSpecParser) addDBOperationsIfGetter(fn *ast.FuncDecl, path string) b
 
 	if strings.HasPrefix(fn.Name.Name, GetPrefix) {
 		fieldName := strings.TrimPrefix(fn.Name.Name, GetPrefix)
+		fieldName = strings.TrimSuffix(fieldName, "Ids")
+
 		if fieldType, fieldExist := t.Output.TypeFields[typeName][fieldName]; fieldExist {
 
+			idFieldName := getIdFieldNameOfType(typeName, t.Output.TypesWithCustomId)
 			if !isInitFieldCheckAlreadyAddedAsFirstStmt(fn.Body) {
-				idFieldName := getIdFieldNameOfType(typeName, t.Output.TypesWithCustomId)
-				retrieveFromDbIfInitialized := getGetterDBStmts(fn, getDBStmtsParam{
-					idFieldName:          idFieldName,
-					typeName:             typeName,
-					fieldName:            fieldName,
-					fieldType:            fieldType,
-					receiverVariableName: fn.Recv.List[0].Names[0].Name,
-				})
-				fn.Body.List = prepend[ast.Stmt](fn.Body.List, &retrieveFromDbIfInitialized)
+				if strings.Contains(fieldType, LibraryReferenceNavigationList) {
+					returnErrorIfNotInitialized := getReferenceNavigationListDBStmts(fn, getDBStmtsParam{
+						idFieldName:          idFieldName,
+						typeName:             typeName,
+						fieldName:            fieldName,
+						fieldType:            fieldType,
+						receiverVariableName: fn.Recv.List[0].Names[0].Name,
+					})
+					fn.Body.List = prepend[ast.Stmt](fn.Body.List, &returnErrorIfNotInitialized)
+					t.fileChanged[path] = true
+				} else {
+					retrieveFromDbIfInitialized := getGetterDBStmts(fn, getDBStmtsParam{
+						idFieldName:          idFieldName,
+						typeName:             typeName,
+						fieldName:            fieldName,
+						fieldType:            fieldType,
+						receiverVariableName: fn.Recv.List[0].Names[0].Name,
+					})
+					fn.Body.List = prepend[ast.Stmt](fn.Body.List, &retrieveFromDbIfInitialized)
+				}
+
 				t.fileChanged[path] = true
 			}
 			return true

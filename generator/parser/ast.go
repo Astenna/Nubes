@@ -129,6 +129,37 @@ func getGetterDBStmts(fn *ast.FuncDecl, input getDBStmtsParam) ast.IfStmt {
 	return isInitializedCheck
 }
 
+func getReferenceNavigationListDBStmts(fn *ast.FuncDecl, input getDBStmtsParam) ast.IfStmt {
+
+	isUnInitializedCheck := ast.IfStmt{
+		Cond: &ast.UnaryExpr{
+			Op: token.NOT,
+			X: &ast.SelectorExpr{
+				X:   &ast.Ident{Name: fn.Recv.List[0].Names[0].Name},
+				Sel: &ast.Ident{Name: IsInitializedFieldName},
+			},
+		},
+		Body: &ast.BlockStmt{
+			List: []ast.Stmt{&ast.ReturnStmt{
+				Results: []ast.Expr{
+					&ast.Ident{Name: "nil"},
+					&ast.CallExpr{
+						Fun: &ast.SelectorExpr{
+							X:   &ast.Ident{Name: "fmt"},
+							Sel: &ast.Ident{Name: "Errorf"},
+						},
+						Args: []ast.Expr{&ast.BasicLit{
+							Kind:  token.STRING,
+							Value: "`fields of type ReferenceNavigationList can be used only after instance initialization. \n\t\t\tUse lib.Load or lib.Export from the Nubes library to create initialized instances`",
+						}},
+					},
+				},
+			}},
+		},
+	}
+	return isUnInitializedCheck
+}
+
 func getSetterDBStmts(fn *ast.FuncDecl, input getDBStmtsParam) ast.IfStmt {
 	isInitializedCheck := getIsInitializedCheck(fn.Recv.List[0].Names[0].Name)
 	getFieldFromLib := ast.AssignStmt{
