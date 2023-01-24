@@ -80,7 +80,7 @@ func (r ReferenceNavigationList[T]) Get() ([]T, error) {
 	return result, err
 }
 
-func (r ReferenceNavigationList[T]) Add(id string) error {
+func (r ReferenceNavigationList[T]) AddToManyToMany(id string) error {
 
 	if r.isManyToMany {
 
@@ -95,9 +95,9 @@ func (r ReferenceNavigationList[T]) Add(id string) error {
 		}
 
 		if r.usesIndex {
-			return insertToManyToManyTable(r.ownerTypeName, typeName, r.ownerId, id)
+			return insertToManyToManyTable(typeName, r.ownerTypeName, id, r.ownerId)
 		}
-		return insertToManyToManyTable(typeName, r.ownerTypeName, id, r.ownerId)
+		return insertToManyToManyTable(r.ownerTypeName, typeName, r.ownerId, id)
 	}
 
 	return fmt.Errorf("can not add elements to ReferenceNavigationList of OneToMany relationship")
@@ -151,11 +151,11 @@ func (r *ReferenceNavigationList[T]) setupManyToManyRelationship() {
 	}
 }
 
-func insertToManyToManyTable(partitiokKeyName, sortKeyName, partitonKey, sortKey string) error {
+func insertToManyToManyTable(partitionKeyName, sortKeyName, partitonKey, sortKey string) error {
 	input := &dynamodb.PutItemInput{
-		TableName: aws.String(partitiokKeyName + sortKeyName),
+		TableName: aws.String(partitionKeyName + sortKeyName),
 		Item: map[string]*dynamodb.AttributeValue{
-			partitiokKeyName: {
+			partitionKeyName: {
 				S: aws.String(partitonKey),
 			},
 			sortKeyName: {

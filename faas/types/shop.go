@@ -16,6 +16,10 @@ func (Shop) GetTypeName() string {
 	return "Shop"
 }
 
+func (s Shop) GetOwners() ([]string, error) {
+	return s.Owners.GetIds()
+}
+
 func (receiver *Shop) Init() {
 	receiver.isInitialized = true
 	receiver.Products = *lib.NewReferenceNavigationList[Product](receiver.Id, receiver.GetTypeName(), "SoldBy", false)

@@ -53,6 +53,10 @@ func (u *User) GetLastName() (string, error) {
 	return u.LastName, nil
 }
 
+func (u User) GetShops() ([]string, error) {
+	return u.Shops.GetIds()
+}
+
 func (u User) VerifyPassword(password string) (bool, error) {
 	if u.isInitialized {
 		tempReceiverName, _libError := lib.GetObjectState[User](u.Email)

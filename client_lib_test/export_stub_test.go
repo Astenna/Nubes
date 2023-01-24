@@ -54,16 +54,16 @@ func TestReferenceNavigationListOneToMany(t *testing.T) {
 
 	// Act
 	exportedShop, err := clib.ExportShop(newShop)
-	require.Equal(t, err, nil, "error occurred in ExportShop invocation", err)
+	require.Equal(t, nil, err, "error occurred in ExportShop invocation", err)
 	// newProduct is sold by newShop
 	newProduct.SoldBy = *clib.NewReference[clib.ShopStub](exportedShop.GetId())
 	exportedProduct, err := clib.ExportProduct(newProduct)
-	require.Equal(t, err, nil, "error occurred in ExportProduct invocation", err)
+	require.Equal(t, nil, err, "error occurred in ExportProduct invocation", err)
 	// retrieve newProduct ID from newShop
 	productsIds, err := exportedShop.GetProductsIds()
-	require.Equal(t, err, nil, "error occurred in GetProductsIds invocation", err)
+	require.Equal(t, nil, err, "error occurred in GetProductsIds invocation", err)
 	products, err := exportedShop.GetProducts()
-	require.Equal(t, err, nil, "error occurred in GetProducts invocation", err)
+	require.Equal(t, nil, err, "error occurred in GetProducts invocation", err)
 
 	// Assert
 	require.Equal(t, 1, len(products), "expected number of products is 1, found %d", len(products))
@@ -85,10 +85,10 @@ func TestReferenceNavigationListManyToMany(t *testing.T) {
 
 	// Act
 	exportedShop, err := clib.ExportShop(newShop)
-	require.Equal(t, err, nil, "error occurred in ExportShop invocation", err)
+	require.Equal(t, nil, err, "error occurred in ExportShop invocation", err)
 
 	exportedUser, err := clib.ExportUser(newUser)
-	require.Equal(t, err, nil, "error occurred in ExportUser invocation", err)
+	require.Equal(t, nil, err, "error occurred in ExportUser invocation", err)
 
 	// TODO
 	// Assert

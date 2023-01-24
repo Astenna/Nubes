@@ -37,7 +37,7 @@ func TestLoadReturnsInitializedInstance(t *testing.T) {
 	// Act
 	result, err := lib.Load[types.User](existingUserId)
 	// Assert
-	require.Equal(t, err, nil, "error should be null")
+	require.Equal(t, nil, err, "error should be null")
 	require.Equal(t, existingUserId, result.Email, "IDs should match")
 }
 
@@ -46,13 +46,13 @@ func TestLoadGetSetShouldSaveChanges(t *testing.T) {
 	newLastName := uuid.New().String()
 	// Act
 	instance1, err1 := lib.Load[types.User](existingUserId)
-	require.Equal(t, err1, nil, "error should be null", err1)
+	require.Equal(t, nil, err1, "error should be null", err1)
 	instance2, err2 := lib.Load[types.User](existingUserId)
-	require.Equal(t, err2, nil, "error should be null", err2)
+	require.Equal(t, nil, err2, "error should be null", err2)
 	err3 := instance2.SetLastName(newLastName)
-	require.Equal(t, err3, nil, "error should be null", err3)
+	require.Equal(t, nil, err3, "error should be null", err3)
 	instance1LastName, err4 := instance1.GetLastName()
-	require.Equal(t, err4, nil, "error should be null", err4)
+	require.Equal(t, nil, err4, "error should be null", err4)
 	// Assert
 	require.Equal(t, instance1, instance2, "IDs should match")
 	require.Equal(t, instance1, instance2, "IDs should match")
@@ -70,15 +70,15 @@ func TestLoadStateChangingMethodsShouldSaveChanges(t *testing.T) {
 		SoldBy:            *lib.NewReference[types.Shop](existingShopId),
 	}
 	exportedProduct, exportError := lib.Export[types.Product](product)
-	require.Equal(t, exportError, nil, "error occurred while exporting the product in arrange step", exportError)
+	require.Equal(t, nil, exportError, "error occurred while exporting the product in arrange step", exportError)
 
 	// Act
 	loadedProduct, loadExistingProductError := lib.Load[types.Product](exportedProduct.Id)
-	require.Equal(t, loadExistingProductError, nil, "error occurred while loading existing product", loadExistingProductError)
+	require.Equal(t, nil, loadExistingProductError, "error occurred while loading existing product", loadExistingProductError)
 	methodInovcationError := loadedProduct.DecreaseAvailabilityBy(decreaseBy)
-	require.Equal(t, methodInovcationError, nil, "error occurred while invoking method on product instances", methodInovcationError)
+	require.Equal(t, nil, methodInovcationError, "error occurred while invoking method on product instances", methodInovcationError)
 	modifiedQuantity, quantityRetrievalError := exportedProduct.GetQuantityAvailable()
-	require.Equal(t, quantityRetrievalError, nil, "error occured while exucting GetQuantityAvailable", quantityRetrievalError)
+	require.Equal(t, nil, quantityRetrievalError, "error occured while exucting GetQuantityAvailable", quantityRetrievalError)
 
 	// Assert
 	require.Equal(t, modifiedQuantity, initialQuantityAvailable-decreaseBy, "QuantityAvailable was not modified")
