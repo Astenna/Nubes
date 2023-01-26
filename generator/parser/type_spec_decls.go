@@ -19,11 +19,7 @@ func (t *TypeSpecParser) detectAndAdjustDecls() {
 					for _, elem := range genDecl.Specs {
 						if typeSpec, ok := elem.(*ast.TypeSpec); ok {
 							typeName := strings.TrimPrefix(typeSpec.Name.Name, "*")
-							isNobjectType, isPresent := t.Output.IsNobjectInOrginalPackage[typeName]
-
-							if !isPresent {
-								t.Output.IsNobjectInOrginalPackage[typeName] = false
-							}
+							isNobjectType := t.Output.IsNobjectInOrginalPackage[typeName]
 
 							if strctType, ok := typeSpec.Type.(*ast.StructType); ok {
 								modified := parseStructFieldsForTypeSpec(strctType, typeName, &t.Output)
@@ -61,6 +57,8 @@ func parseStructFieldsForTypeSpec(strctType *ast.StructType, typeName string, pa
 
 	parsedPackage.TypeFields[typeName] = make(map[string]string, len(strctType.Fields.List))
 	fieldModified := false
+	// TODO: isNobject check here is probably redundant since
+	// it was already checked by the calling method
 	isNobject := parsedPackage.IsNobjectInOrginalPackage[typeName]
 	for _, field := range strctType.Fields.List {
 		fieldType := types.ExprString(field.Type)

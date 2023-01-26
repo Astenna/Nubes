@@ -16,7 +16,7 @@ import (
 var ssfSpecCmd = &cobra.Command{
 	Use:   "handlers",
 	Short: "Generates handlers' definitions for AWS lambda deployment",
-	Long:  `Generates handlers' definitions for AWS lambda deployment based on types and repositories indicated by the path`,
+	Long:  `Generates handlers' definitions for AWS lambda deployment based on types indicated by the path`,
 
 	Run: func(cmd *cobra.Command, args []string) {
 		typesPath, _ := cmd.Flags().GetString("types")
@@ -63,10 +63,10 @@ func init() {
 	var dbInit bool
 	var generateDeploymentFiles bool
 
-	ssfSpecCmd.Flags().StringVarP(&typesPath, "types", "t", ".", "path to directory with types")
+	ssfSpecCmd.Flags().StringVarP(&typesPath, "types", "t", ".", "path to package with types definitions")
 	ssfSpecCmd.Flags().StringVarP(&handlersPath, "output", "o", ".", "path where directory with handlers will be created")
 	ssfSpecCmd.Flags().StringVarP(&moduleName, "module", "m", "MISSING_MODULE_NAME", "module name of the source project")
-	ssfSpecCmd.Flags().BoolVarP(&dbInit, "dbInit", "i", false, "boolean, indicates whether database should be initialized by creation of tables based on type names")
+	ssfSpecCmd.Flags().BoolVarP(&dbInit, "dbInit", "i", false, "boolean, indicates whether database tables should be initialized")
 	ssfSpecCmd.Flags().BoolVarP(&generateDeploymentFiles, "deplFiles", "g", true, "boolean, indicates whether deployment files for AWS lambdas are to be created")
 
 	cmd.Execute()
@@ -74,7 +74,7 @@ func init() {
 
 type ServerlessTemplateInput struct {
 	ServiceName string
-	StateFuncs  []parser.StateChangingHandler
+	StateFuncs  []parser.MethodHandler
 	CustomCtors []parser.CustomCtorDefinition
 }
 
@@ -88,7 +88,7 @@ func GenerateDeploymentFiles(path string, templateInput ServerlessTemplateInput)
 	tp.CreateFileFromTemplate(buildScriptTempl, nil, fileName)
 }
 
-func GenerateStateChangingHandlers(path string, functions []parser.StateChangingHandler) {
+func GenerateStateChangingHandlers(path string, functions []parser.MethodHandler) {
 	var handlerDir string
 	var ownerHandlerNameCombined string
 	templ := tp.ParseOrExitOnError("templates/type_spec/state_changing_template.go.tmpl")

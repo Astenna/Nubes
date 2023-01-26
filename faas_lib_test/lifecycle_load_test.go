@@ -15,13 +15,6 @@ import (
 // - changes made through get/set are saved (retrieve from another instance)
 // - changes made through state changing method exist
 
-var existingShopId string
-
-func init() {
-	shop, _ := lib.Export[types.Shop](types.Shop{Name: "My first shop"})
-	existingShopId = shop.Id
-}
-
 func TestLoadFailsIfIdDoesNotExist(t *testing.T) {
 	// Arrange
 	// Act
@@ -61,8 +54,10 @@ func TestLoadGetSetShouldSaveChanges(t *testing.T) {
 
 func TestLoadStateChangingMethodsShouldSaveChanges(t *testing.T) {
 	// Arrange
-	initialQuantityAvailable := 100.0
-	decreaseBy := 5.0
+	shop, _ := lib.Export[types.Shop](types.Shop{Name: "My first shop"})
+	existingShopId := shop.Id
+	initialQuantityAvailable := 100
+	decreaseBy := 5
 	product := types.Product{
 		Name:              "Product1",
 		QuantityAvailable: initialQuantityAvailable,

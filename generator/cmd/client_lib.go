@@ -90,9 +90,9 @@ func init() {
 	var outputPath string
 	var projectName string
 
-	clientCmd.Flags().StringVarP(&typesPath, "types", "t", ".", "path to directory with types")
-	clientCmd.Flags().StringVarP(&outputPath, "output", "o", ".", "path where directory with client library will be created")
-	clientCmd.Flags().StringVarP(&projectName, "project-name", "p", "client_lib", "name of the client library project")
+	clientCmd.Flags().StringVarP(&typesPath, "types", "t", ".", "path to package with types definitions")
+	clientCmd.Flags().StringVarP(&outputPath, "output", "o", ".", "path where the directory with the client library will be created")
+	clientCmd.Flags().StringVarP(&projectName, "project-name", "p", "client_lib", "name of the generated package")
 
 	cmd.Execute()
 }
