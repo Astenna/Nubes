@@ -20,8 +20,10 @@
 .idea/*
 
 # generated files
-*/generated/
-client_lib/*
+**/generated/
+**/bin/*
+**/.serverless/*
+example/client_lib
+
+
 client/*
-*/.serverless/*
-.aws-sam/*

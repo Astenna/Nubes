@@ -13,7 +13,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "generator\\main.go",
-            "args": ["handlers","-t=..//faas//types", "-o=..//faas", "-m=github.com/Astenna/Nubes/faas", "-g=true", "-i=false"]
+            "args": ["handlers","-t=..//example//faas//types", "-o=..//example//faas", "-m=github.com/Astenna/Nubes/faas", "-g=true", "-i=false"]
         },
         {
             "name": "Launch gen:client",
@@ -21,7 +21,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "generator\\main.go",
-            "args": ["client","-t=..//faas//types", "-o=..//"]
+            "args": ["client","-t=..//example//faas//types", "-o=..//"]
         },
         {
             "type": "aws-sam",

@@ -2,7 +2,7 @@ module faas_lib_test
 
 go 1.19
 
-replace github.com/Astenna/Nubes/lib v0.0.0 => ../lib
+replace github.com/Astenna/Nubes/lib v0.0.0 => ../../lib
 
 replace github.com/Astenna/Nubes/faas v0.0.0 => ../faas
 

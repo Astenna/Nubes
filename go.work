@@ -2,11 +2,10 @@ go 1.19
 
 use (
 	.
-	./faas
 	./lib
 	./generator
-	//./client_lib
-	./client
-	./faas_lib_test
-	./client_lib_test
+	./example/client_lib
+	./example/faas
+	./example/faas_lib_test
+	./example/client_lib_test
 )
