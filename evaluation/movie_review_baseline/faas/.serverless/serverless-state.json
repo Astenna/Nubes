@@ -1,0 +1,828 @@
+{
+  "service": {
+    "service": "movie-review-baseline",
+    "serviceObject": {
+      "name": "movie-review-baseline"
+    },
+    "provider": {
+      "name": "aws",
+      "runtime": "go1.x",
+      "memorySize": 1024,
+      "versionFunctions": false,
+      "iamRoleStatements": [
+        {
+          "Effect": "Allow",
+          "Action": [
+            "dynamodb:*"
+          ],
+          "Resource": [
+            "*"
+          ]
+        }
+      ],
+      "stage": "dev",
+      "region": "us-east-1",
+      "compiledCloudFormationTemplate": {
+        "AWSTemplateFormatVersion": "2010-09-09",
+        "Description": "The AWS CloudFormation template for this Serverless application",
+        "Resources": {
+          "ServerlessDeploymentBucket": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "BucketEncryption": {
+                "ServerSideEncryptionConfiguration": [
+                  {
+                    "ServerSideEncryptionByDefault": {
+                      "SSEAlgorithm": "AES256"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "ServerlessDeploymentBucketPolicy": {
+            "Type": "AWS::S3::BucketPolicy",
+            "Properties": {
+              "Bucket": {
+                "Ref": "ServerlessDeploymentBucket"
+              },
+              "PolicyDocument": {
+                "Statement": [
+                  {
+                    "Action": "s3:*",
+                    "Effect": "Deny",
+                    "Principal": "*",
+                    "Resource": [
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "arn:",
+                            {
+                              "Ref": "AWS::Partition"
+                            },
+                            ":s3:::",
+                            {
+                              "Ref": "ServerlessDeploymentBucket"
+                            },
+                            "/*"
+                          ]
+                        ]
+                      },
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "arn:",
+                            {
+                              "Ref": "AWS::Partition"
+                            },
+                            ":s3:::",
+                            {
+                              "Ref": "ServerlessDeploymentBucket"
+                            }
+                          ]
+                        ]
+                      }
+                    ],
+                    "Condition": {
+                      "Bool": {
+                        "aws:SecureTransport": false
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "AddReviewLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/addReview"
+            }
+          },
+          "DeleteReviewLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/deleteReview"
+            }
+          },
+          "GetCategoryMovieListLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/getCategoryMovieList"
+            }
+          },
+          "GetMovieByIdLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/getMovieById"
+            }
+          },
+          "GetMovieReviewsLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/getMovieReviews"
+            }
+          },
+          "LoginLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/login"
+            }
+          },
+          "RegisterLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/register"
+            }
+          },
+          "VoteOnReviewLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/voteOnReview"
+            }
+          },
+          "IamRoleLambdaExecution": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+              "AssumeRolePolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Principal": {
+                      "Service": [
+                        "lambda.amazonaws.com"
+                      ]
+                    },
+                    "Action": [
+                      "sts:AssumeRole"
+                    ]
+                  }
+                ]
+              },
+              "Policies": [
+                {
+                  "PolicyName": {
+                    "Fn::Join": [
+                      "-",
+                      [
+                        "movie-review-baseline",
+                        "dev",
+                        "lambda"
+                      ]
+                    ]
+                  },
+                  "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "logs:CreateLogStream",
+                          "logs:CreateLogGroup"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/addReview:*"
+                          },
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/deleteReview:*"
+                          },
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/getCategoryMovieList:*"
+                          },
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/getMovieById:*"
+                          },
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/getMovieReviews:*"
+                          },
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/login:*"
+                          },
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/register:*"
+                          },
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/voteOnReview:*"
+                          }
+                        ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "logs:PutLogEvents"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/addReview:*:*"
+                          },
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/deleteReview:*:*"
+                          },
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/getCategoryMovieList:*:*"
+                          },
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/getMovieById:*:*"
+                          },
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/getMovieReviews:*:*"
+                          },
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/login:*:*"
+                          },
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/register:*:*"
+                          },
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/voteOnReview:*:*"
+                          }
+                        ]
+                      },
+                      {
+                        "$ref": "$[\"service\"][\"provider\"][\"iamRoleStatements\"][0]"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "Path": "/",
+              "RoleName": {
+                "Fn::Join": [
+                  "-",
+                  [
+                    "movie-review-baseline",
+                    "dev",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    "lambdaRole"
+                  ]
+                ]
+              }
+            }
+          },
+          "AddReviewLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/movie-review-baseline/dev/1675209900299-2023-02-01T00:05:00.299Z/addReview.zip"
+              },
+              "Handler": "bin/addReview",
+              "Runtime": "go1.x",
+              "FunctionName": "addReview",
+              "MemorySize": 1024,
+              "Timeout": 6,
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "AddReviewLogGroup"
+            ]
+          },
+          "AddReviewLambdaEvConf": {
+            "Type": "AWS::Lambda::EventInvokeConfig",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "AddReviewLambdaFunction"
+              },
+              "DestinationConfig": {},
+              "Qualifier": "$LATEST",
+              "MaximumEventAgeInSeconds": 60,
+              "MaximumRetryAttempts": 0
+            }
+          },
+          "DeleteReviewLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/movie-review-baseline/dev/1675209900299-2023-02-01T00:05:00.299Z/deleteReview.zip"
+              },
+              "Handler": "bin/deleteReview",
+              "Runtime": "go1.x",
+              "FunctionName": "deleteReview",
+              "MemorySize": 1024,
+              "Timeout": 6,
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "DeleteReviewLogGroup"
+            ]
+          },
+          "DeleteReviewLambdaEvConf": {
+            "Type": "AWS::Lambda::EventInvokeConfig",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "DeleteReviewLambdaFunction"
+              },
+              "DestinationConfig": {},
+              "Qualifier": "$LATEST",
+              "MaximumEventAgeInSeconds": 60,
+              "MaximumRetryAttempts": 0
+            }
+          },
+          "GetCategoryMovieListLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/movie-review-baseline/dev/1675209900299-2023-02-01T00:05:00.299Z/getCategoryMovieList.zip"
+              },
+              "Handler": "bin/getCategoryMovieList",
+              "Runtime": "go1.x",
+              "FunctionName": "getCategoryMovieList",
+              "MemorySize": 1024,
+              "Timeout": 6,
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "GetCategoryMovieListLogGroup"
+            ]
+          },
+          "GetCategoryMovieListLambdaEvConf": {
+            "Type": "AWS::Lambda::EventInvokeConfig",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "GetCategoryMovieListLambdaFunction"
+              },
+              "DestinationConfig": {},
+              "Qualifier": "$LATEST",
+              "MaximumEventAgeInSeconds": 60,
+              "MaximumRetryAttempts": 0
+            }
+          },
+          "GetMovieByIdLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/movie-review-baseline/dev/1675209900299-2023-02-01T00:05:00.299Z/getMovieById.zip"
+              },
+              "Handler": "bin/getMovieById",
+              "Runtime": "go1.x",
+              "FunctionName": "getMovieById",
+              "MemorySize": 1024,
+              "Timeout": 6,
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "GetMovieByIdLogGroup"
+            ]
+          },
+          "GetMovieByIdLambdaEvConf": {
+            "Type": "AWS::Lambda::EventInvokeConfig",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "GetMovieByIdLambdaFunction"
+              },
+              "DestinationConfig": {},
+              "Qualifier": "$LATEST",
+              "MaximumEventAgeInSeconds": 60,
+              "MaximumRetryAttempts": 0
+            }
+          },
+          "GetMovieReviewsLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/movie-review-baseline/dev/1675209900299-2023-02-01T00:05:00.299Z/getMovieReviews.zip"
+              },
+              "Handler": "bin/getMovieReviews",
+              "Runtime": "go1.x",
+              "FunctionName": "getMovieReviews",
+              "MemorySize": 1024,
+              "Timeout": 6,
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "GetMovieReviewsLogGroup"
+            ]
+          },
+          "GetMovieReviewsLambdaEvConf": {
+            "Type": "AWS::Lambda::EventInvokeConfig",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "GetMovieReviewsLambdaFunction"
+              },
+              "DestinationConfig": {},
+              "Qualifier": "$LATEST",
+              "MaximumEventAgeInSeconds": 60,
+              "MaximumRetryAttempts": 0
+            }
+          },
+          "LoginLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/movie-review-baseline/dev/1675209900299-2023-02-01T00:05:00.299Z/login.zip"
+              },
+              "Handler": "bin/login",
+              "Runtime": "go1.x",
+              "FunctionName": "login",
+              "MemorySize": 1024,
+              "Timeout": 6,
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "LoginLogGroup"
+            ]
+          },
+          "LoginLambdaEvConf": {
+            "Type": "AWS::Lambda::EventInvokeConfig",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "LoginLambdaFunction"
+              },
+              "DestinationConfig": {},
+              "Qualifier": "$LATEST",
+              "MaximumEventAgeInSeconds": 60,
+              "MaximumRetryAttempts": 0
+            }
+          },
+          "RegisterLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/movie-review-baseline/dev/1675209900299-2023-02-01T00:05:00.299Z/register.zip"
+              },
+              "Handler": "bin/register",
+              "Runtime": "go1.x",
+              "FunctionName": "register",
+              "MemorySize": 1024,
+              "Timeout": 6,
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "RegisterLogGroup"
+            ]
+          },
+          "RegisterLambdaEvConf": {
+            "Type": "AWS::Lambda::EventInvokeConfig",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "RegisterLambdaFunction"
+              },
+              "DestinationConfig": {},
+              "Qualifier": "$LATEST",
+              "MaximumEventAgeInSeconds": 60,
+              "MaximumRetryAttempts": 0
+            }
+          },
+          "VoteOnReviewLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/movie-review-baseline/dev/1675209900299-2023-02-01T00:05:00.299Z/voteOnReview.zip"
+              },
+              "Handler": "bin/voteOnReview",
+              "Runtime": "go1.x",
+              "FunctionName": "voteOnReview",
+              "MemorySize": 1024,
+              "Timeout": 6,
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "VoteOnReviewLogGroup"
+            ]
+          },
+          "VoteOnReviewLambdaEvConf": {
+            "Type": "AWS::Lambda::EventInvokeConfig",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "VoteOnReviewLambdaFunction"
+              },
+              "DestinationConfig": {},
+              "Qualifier": "$LATEST",
+              "MaximumEventAgeInSeconds": 60,
+              "MaximumRetryAttempts": 0
+            }
+          }
+        },
+        "Outputs": {
+          "ServerlessDeploymentBucketName": {
+            "Value": {
+              "Ref": "ServerlessDeploymentBucket"
+            },
+            "Export": {
+              "Name": "sls-movie-review-baseline-dev-ServerlessDeploymentBucketName"
+            }
+          }
+        }
+      },
+      "coreCloudFormationTemplate": {
+        "AWSTemplateFormatVersion": "2010-09-09",
+        "Description": "The AWS CloudFormation template for this Serverless application",
+        "Resources": {
+          "ServerlessDeploymentBucket": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "BucketEncryption": {
+                "ServerSideEncryptionConfiguration": [
+                  {
+                    "ServerSideEncryptionByDefault": {
+                      "SSEAlgorithm": "AES256"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "ServerlessDeploymentBucketPolicy": {
+            "Type": "AWS::S3::BucketPolicy",
+            "Properties": {
+              "Bucket": {
+                "Ref": "ServerlessDeploymentBucket"
+              },
+              "PolicyDocument": {
+                "Statement": [
+                  {
+                    "Action": "s3:*",
+                    "Effect": "Deny",
+                    "Principal": "*",
+                    "Resource": [
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "arn:",
+                            {
+                              "Ref": "AWS::Partition"
+                            },
+                            ":s3:::",
+                            {
+                              "Ref": "ServerlessDeploymentBucket"
+                            },
+                            "/*"
+                          ]
+                        ]
+                      },
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "arn:",
+                            {
+                              "Ref": "AWS::Partition"
+                            },
+                            ":s3:::",
+                            {
+                              "Ref": "ServerlessDeploymentBucket"
+                            }
+                          ]
+                        ]
+                      }
+                    ],
+                    "Condition": {
+                      "Bool": {
+                        "aws:SecureTransport": false
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "Outputs": {
+          "ServerlessDeploymentBucketName": {
+            "Value": {
+              "Ref": "ServerlessDeploymentBucket"
+            }
+          }
+        }
+      },
+      "vpc": {}
+    },
+    "pluginsData": {},
+    "functions": {
+      "addReview": {
+        "name": "addReview",
+        "handler": "bin/addReview",
+        "package": {
+          "include": [
+            "bin/addReview"
+          ],
+          "artifact": "C:\\Users\\marek\\OneDrive\\master-thesis\\Thesis_PoC\\evaluation\\movie_review_baseline\\faas\\.serverless\\addReview.zip"
+        },
+        "maximumRetryAttempts": 0,
+        "maximumEventAge": 60,
+        "events": [],
+        "memory": 1024,
+        "timeout": 6,
+        "runtime": "go1.x",
+        "vpc": {}
+      },
+      "deleteReview": {
+        "name": "deleteReview",
+        "handler": "bin/deleteReview",
+        "package": {
+          "include": [
+            "bin/deleteReview"
+          ],
+          "artifact": "C:\\Users\\marek\\OneDrive\\master-thesis\\Thesis_PoC\\evaluation\\movie_review_baseline\\faas\\.serverless\\deleteReview.zip"
+        },
+        "maximumRetryAttempts": 0,
+        "maximumEventAge": 60,
+        "events": [],
+        "memory": 1024,
+        "timeout": 6,
+        "runtime": "go1.x",
+        "vpc": {}
+      },
+      "getCategoryMovieList": {
+        "name": "getCategoryMovieList",
+        "handler": "bin/getCategoryMovieList",
+        "package": {
+          "include": [
+            "bin/getCategoryMovieList"
+          ],
+          "artifact": "C:\\Users\\marek\\OneDrive\\master-thesis\\Thesis_PoC\\evaluation\\movie_review_baseline\\faas\\.serverless\\getCategoryMovieList.zip"
+        },
+        "maximumRetryAttempts": 0,
+        "maximumEventAge": 60,
+        "events": [],
+        "memory": 1024,
+        "timeout": 6,
+        "runtime": "go1.x",
+        "vpc": {}
+      },
+      "getMovieById": {
+        "name": "getMovieById",
+        "handler": "bin/getMovieById",
+        "package": {
+          "include": [
+            "bin/getMovieById"
+          ],
+          "artifact": "C:\\Users\\marek\\OneDrive\\master-thesis\\Thesis_PoC\\evaluation\\movie_review_baseline\\faas\\.serverless\\getMovieById.zip"
+        },
+        "maximumRetryAttempts": 0,
+        "maximumEventAge": 60,
+        "events": [],
+        "memory": 1024,
+        "timeout": 6,
+        "runtime": "go1.x",
+        "vpc": {}
+      },
+      "getMovieReviews": {
+        "name": "getMovieReviews",
+        "handler": "bin/getMovieReviews",
+        "package": {
+          "include": [
+            "bin/getMovieReviews"
+          ],
+          "artifact": "C:\\Users\\marek\\OneDrive\\master-thesis\\Thesis_PoC\\evaluation\\movie_review_baseline\\faas\\.serverless\\getMovieReviews.zip"
+        },
+        "maximumRetryAttempts": 0,
+        "maximumEventAge": 60,
+        "events": [],
+        "memory": 1024,
+        "timeout": 6,
+        "runtime": "go1.x",
+        "vpc": {}
+      },
+      "login": {
+        "name": "login",
+        "handler": "bin/login",
+        "package": {
+          "include": [
+            "bin/login"
+          ],
+          "artifact": "C:\\Users\\marek\\OneDrive\\master-thesis\\Thesis_PoC\\evaluation\\movie_review_baseline\\faas\\.serverless\\login.zip"
+        },
+        "maximumRetryAttempts": 0,
+        "maximumEventAge": 60,
+        "events": [],
+        "memory": 1024,
+        "timeout": 6,
+        "runtime": "go1.x",
+        "vpc": {}
+      },
+      "register": {
+        "name": "register",
+        "handler": "bin/register",
+        "package": {
+          "include": [
+            "bin/register"
+          ],
+          "artifact": "C:\\Users\\marek\\OneDrive\\master-thesis\\Thesis_PoC\\evaluation\\movie_review_baseline\\faas\\.serverless\\register.zip"
+        },
+        "maximumRetryAttempts": 0,
+        "maximumEventAge": 60,
+        "events": [],
+        "memory": 1024,
+        "timeout": 6,
+        "runtime": "go1.x",
+        "vpc": {}
+      },
+      "voteOnReview": {
+        "name": "voteOnReview",
+        "handler": "bin/voteOnReview",
+        "package": {
+          "include": [
+            "bin/voteOnReview"
+          ],
+          "artifact": "C:\\Users\\marek\\OneDrive\\master-thesis\\Thesis_PoC\\evaluation\\movie_review_baseline\\faas\\.serverless\\voteOnReview.zip"
+        },
+        "maximumRetryAttempts": 0,
+        "maximumEventAge": 60,
+        "events": [],
+        "memory": 1024,
+        "timeout": 6,
+        "runtime": "go1.x",
+        "vpc": {}
+      }
+    },
+    "configValidationMode": "warn",
+    "serviceFilename": "serverless.yml",
+    "initialServerlessConfig": {
+      "frameworkVersion": ">3.24.0",
+      "service": "movie-review-baseline",
+      "provider": {
+        "$ref": "$[\"service\"][\"provider\"]"
+      },
+      "package": {
+        "individually": true,
+        "exclude": [
+          "bin/*",
+          "**/**"
+        ],
+        "artifactsS3KeyDirname": "serverless/movie-review-baseline/dev/code-artifacts",
+        "artifactDirectoryName": "serverless/movie-review-baseline/dev/1675209900299-2023-02-01T00:05:00.299Z"
+      },
+      "functions": {
+        "$ref": "$[\"service\"][\"functions\"]"
+      }
+    },
+    "layers": {},
+    "isDashboardMonitoringPreconfigured": false
+  },
+  "package": {
+    "individually": true,
+    "artifactDirectoryName": "serverless/movie-review-baseline/dev/1675209900299-2023-02-01T00:05:00.299Z",
+    "artifact": ""
+  }
+}
