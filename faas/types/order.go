@@ -8,15 +8,15 @@ import (
 
 type Order struct {
 	Id            string
-	Buyer         lib.Reference[User]
 	Products      []OrderedProduct
+	Buyer         lib.Reference[User]
 	Shipping      lib.Reference[Shipping]
 	isInitialized bool
 }
 
 type OrderedProduct struct {
 	Product  lib.Reference[Product]
-	Quantity float64
+	Quantity int
 }
 
 func NewOrder(order Order) (Order, error) {

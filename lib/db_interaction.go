@@ -264,6 +264,35 @@ func GetField(param GetFieldParam) (interface{}, error) {
 	return nil, err
 }
 
+func GetFieldOfType[N any](param GetFieldParam) (N, error) {
+	if err := param.Validate(); err != nil {
+		return *new(N), err
+	}
+
+	input := &dynamodb.GetItemInput{
+		TableName: aws.String(param.TypeName),
+		Key: map[string]*dynamodb.AttributeValue{
+			"Id": {
+				S: aws.String(param.Id),
+			},
+		},
+		ProjectionExpression: &param.FieldName,
+	}
+
+	item, err := DBClient.GetItem(input)
+	if err != nil {
+		return *new(N), err
+	}
+
+	if item.Item != nil {
+		parsedItem := new(N)
+		err = dynamodbattribute.Unmarshal(item.Item[param.FieldName], &parsedItem)
+		return *parsedItem, err
+	}
+
+	return *(new(N)), err
+}
+
 func SetField(param SetFieldParam) error {
 	if err := param.Validate(); err != nil {
 		return err

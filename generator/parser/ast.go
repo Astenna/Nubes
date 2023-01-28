@@ -72,9 +72,12 @@ func getGetterDBStmts(fn *ast.FuncDecl, input getDBStmtsParam) ast.IfStmt {
 		},
 		Rhs: []ast.Expr{
 			&ast.CallExpr{
-				Fun: &ast.SelectorExpr{
-					X:   &ast.Ident{Name: "lib"},
-					Sel: &ast.Ident{Name: "GetField"},
+				Fun: &ast.IndexExpr{
+					Index: &ast.Ident{Name: input.fieldType},
+					X: &ast.SelectorExpr{
+						X:   &ast.Ident{Name: "lib"},
+						Sel: &ast.Ident{Name: LibraryGetFieldOfType},
+					},
 				},
 				Args: []ast.Expr{
 					&ast.CompositeLit{
@@ -107,7 +110,8 @@ func getGetterDBStmts(fn *ast.FuncDecl, input getDBStmtsParam) ast.IfStmt {
 						},
 					},
 				},
-			}}}
+			},
+		}}
 	errorCheck := getErrorCheckExpr(fn, LibErrorVariableName)
 	fieldAssign := ast.AssignStmt{
 		Tok: token.ASSIGN,
@@ -118,10 +122,7 @@ func getGetterDBStmts(fn *ast.FuncDecl, input getDBStmtsParam) ast.IfStmt {
 			},
 		},
 		Rhs: []ast.Expr{
-			&ast.TypeAssertExpr{
-				Type: &ast.Ident{Name: input.fieldType},
-				X:    &ast.Ident{Name: "fieldValue"},
-			},
+			&ast.Ident{Name: "fieldValue"},
 		},
 	}
 

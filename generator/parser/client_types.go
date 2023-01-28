@@ -81,8 +81,15 @@ func (t *ClientTypesParser) detectAndSetNobjectsReturnTypes() {
 				typeDefinition.MemberFunctions[i].OptionalReturnTypeUpper = function.OptionalReturnType
 				typeDefinition.MemberFunctions[i].OptionalReturnType = lowerCasedFirstChar(function.OptionalReturnType)
 			}
+			if isOptionalParamNobject(function, t.DefinedTypes) {
+				typeDefinition.MemberFunctions[i].InputParamType = lowerCasedFirstChar(function.InputParamType)
+			}
 		}
 	}
+}
+
+func isOptionalParamNobject(f MethodDefinition, defTypes map[string]*StructTypeDefinition) bool {
+	return f.InputParamType != "" && defTypes[f.InputParamType] != nil && defTypes[f.InputParamType].NobjectImplementation != ""
 }
 
 func isReturnTypeDefined(f MethodDefinition) bool {

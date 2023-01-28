@@ -9,8 +9,9 @@ import (
 type Product struct {
 	Id			string
 	Name			string
-	QuantityAvailable	float64
+	QuantityAvailable	int
 	SoldBy			lib.Reference[Shop]
+	Discount		lib.ReferenceList[Discount]
 	Price			float64
 	isInitialized		bool
 }
@@ -19,7 +20,7 @@ func (Product) GetTypeName() string {
 	return "Product"
 }
 
-func (p *Product) DecreaseAvailabilityBy(decreaseNum float64) error {
+func (p *Product) DecreaseAvailabilityBy(decreaseNum int) error {
 	if p.isInitialized {
 		tempReceiverName, _libError := lib.GetObjectState[Product](p.Id)
 		if _libError != nil {
@@ -27,6 +28,9 @@ func (p *Product) DecreaseAvailabilityBy(decreaseNum float64) error {
 		}
 		p = tempReceiverName
 		p.Init()
+	}
+	for index, discount := range p.Discount {
+		_, _ = index, discount
 	}
 
 	if p.QuantityAvailable-decreaseNum < 0 {
@@ -42,24 +46,24 @@ func (p *Product) DecreaseAvailabilityBy(decreaseNum float64) error {
 	return nil
 }
 
-func (p Product) GetQuantityAvailable() (float64, error) {
+func (p Product) GetQuantityAvailable() (int, error) {
 	if p.isInitialized {
-		fieldValue, _libError := lib.GetField(lib.GetFieldParam{Id: p.Id, TypeName: "Product", FieldName: "QuantityAvailable"})
+		fieldValue, _libError := lib.GetFieldOfType[int](lib.GetFieldParam{Id: p.Id, TypeName: "Product", FieldName: "QuantityAvailable"})
 		if _libError != nil {
-			return *new(float64), _libError
+			return *new(int), _libError
 		}
-		p.QuantityAvailable = fieldValue.(float64)
+		p.QuantityAvailable = fieldValue
 	}
 	return p.QuantityAvailable, nil
 }
 
 func (p Product) GetSoldBy() (lib.Reference[Shop], error) {
 	if p.isInitialized {
-		fieldValue, _libError := lib.GetField(lib.GetFieldParam{Id: p.Id, TypeName: "Product", FieldName: "SoldBy"})
+		fieldValue, _libError := lib.GetFieldOfType[lib.Reference[Shop]](lib.GetFieldParam{Id: p.Id, TypeName: "Product", FieldName: "SoldBy"})
 		if _libError != nil {
 			return *new(lib.Reference[Shop]), _libError
 		}
-		p.SoldBy = fieldValue.(lib.Reference[Shop])
+		p.SoldBy = fieldValue
 	}
 	return p.SoldBy, nil
 }

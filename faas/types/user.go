@@ -9,7 +9,7 @@ import (
 type User struct {
 	FirstName     string
 	LastName      string
-	Email         string `dynamodbav:"Id" nubes:"id,readonly"`
+	Email         string `nubes:"id,readonly" dynamodbav:"Id"`
 	Password      string `nubes:"readonly"`
 	Address       string
 	Shops         lib.ReferenceNavigationList[Shop] `nubes:"hasMany-Owners" dynamodbav:"-"`
@@ -46,11 +46,11 @@ func (u *User) SetLastName(lastName string) error {
 
 func (u *User) GetLastName() (string, error) {
 	if u.isInitialized {
-		fieldValue, _libError := lib.GetField(lib.GetFieldParam{Id: u.Email, TypeName: "User", FieldName: "LastName"})
+		fieldValue, _libError := lib.GetFieldOfType[string](lib.GetFieldParam{Id: u.Email, TypeName: "User", FieldName: "LastName"})
 		if _libError != nil {
 			return *new(string), _libError
 		}
-		u.LastName = fieldValue.(string)
+		u.LastName = fieldValue
 	}
 	return u.LastName, nil
 }

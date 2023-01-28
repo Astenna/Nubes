@@ -74,7 +74,7 @@ func init() {
 
 type ServerlessTemplateInput struct {
 	ServiceName string
-	StateFuncs  []parser.MethodHandler
+	StateFuncs  []parser.StateChangingHandler
 	CustomCtors []parser.CustomCtorDefinition
 }
 
@@ -88,7 +88,7 @@ func GenerateDeploymentFiles(path string, templateInput ServerlessTemplateInput)
 	tp.CreateFileFromTemplate(buildScriptTempl, nil, fileName)
 }
 
-func GenerateStateChangingHandlers(path string, functions []parser.MethodHandler) {
+func GenerateStateChangingHandlers(path string, functions []parser.StateChangingHandler) {
 	var handlerDir string
 	var ownerHandlerNameCombined string
 	templ := tp.ParseOrExitOnError("templates/type_spec/state_changing_template.go.tmpl")
