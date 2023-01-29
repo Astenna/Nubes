@@ -3,7 +3,7 @@ package faas_lib_test
 import (
 	"testing"
 
-	"github.com/Astenna/Nubes/faas/types"
+	"github.com/Astenna/Nubes/example/faas/types"
 	"github.com/Astenna/Nubes/lib"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"

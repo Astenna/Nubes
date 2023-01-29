@@ -4,11 +4,11 @@ go 1.19
 
 replace github.com/Astenna/Nubes/lib v0.0.0 => ../../lib
 
-replace github.com/Astenna/Nubes/faas v0.0.0 => ../faas
+replace github.com/Astenna/Nubes/example/faas v0.0.0 => ../faas
 
 require github.com/Astenna/Nubes/lib v0.0.0
 
-require github.com/Astenna/Nubes/faas v0.0.0
+require github.com/Astenna/Nubes/example/faas v0.0.0
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect

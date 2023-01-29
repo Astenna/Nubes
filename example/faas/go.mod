@@ -1,4 +1,4 @@
-module github.com/Astenna/Nubes/faas
+module github.com/Astenna/Nubes/example/faas
 
 go 1.19
 

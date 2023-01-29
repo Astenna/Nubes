@@ -3,7 +3,7 @@ package client_lib_test
 import (
 	"testing"
 
-	clib "github.com/Astenna/Nubes/client_lib"
+	clib "github.com/Astenna/Nubes/example/client_lib"
 	"github.com/stretchr/testify/require"
 
 	"github.com/google/uuid"
