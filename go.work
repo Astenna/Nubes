@@ -8,4 +8,5 @@ use (
 	./example/faas
 	./example/faas_lib_test
 	./example/client_lib_test
+	./evaluation/movie_review
 )

@@ -28,7 +28,7 @@ func (t *ClientTypesParser) detectGenDecls() {
 								t.DefinedTypes[typeName].TypeNameOrginalCase = typeName
 								t.DefinedTypes[typeName].TypeNameLower = lowerCasedFirstChar(typeName)
 
-								t.parseStructFieldsForClients(strctType, typeName)
+								t.parseStructFields(strctType, typeName)
 							} else {
 								// DETECT AND SAVE CUSTOM TYPES (e.g. type MyInt int)
 								def, err := getTypeSpecAsString(t.tokenSet, typeSpec)
@@ -55,7 +55,7 @@ func (t *ClientTypesParser) detectGenDecls() {
 	}
 }
 
-func (t *ClientTypesParser) parseStructFieldsForClients(astStrct *ast.StructType, typeName string) {
+func (t *ClientTypesParser) parseStructFields(astStrct *ast.StructType, typeName string) {
 	if astStrct == nil || astStrct.Fields == nil || astStrct.Fields.List == nil {
 		return
 	}
@@ -134,6 +134,7 @@ func parseFields(field *ast.Field, fieldType string, structDef *StructTypeDefini
 		newFieldDefinition.FieldType = strings.TrimPrefix(newFieldDefinition.FieldType, ReferenceType)
 		newFieldDefinition.FieldTypeUpper = strings.Trim(newFieldDefinition.FieldType, "[]")
 		newFieldDefinition.FieldType = lowerCasedFirstChar(newFieldDefinition.FieldTypeUpper)
+		//newFieldDefinition.FieldType = strings.Replace(newFieldDefinition.FieldType, lowerCasedFirstChar(newFieldDefinition.FieldTypeUpper))
 		newFieldDefinition.IsReference = true
 	}
 

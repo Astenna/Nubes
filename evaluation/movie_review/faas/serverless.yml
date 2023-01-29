@@ -91,30 +91,30 @@ functions:
     maximumRetryAttempts: 0
     maximumEventAge: 60
 
-  UserVerifyPassword:
-    name:  UserVerifyPassword
-    handler: bin/UserVerifyPassword
+  AccountVerifyPassword:
+    name:  AccountVerifyPassword
+    handler: bin/AccountVerifyPassword
     package:
       include:
-        - bin/UserVerifyPassword
+        - bin/AccountVerifyPassword
     maximumRetryAttempts: 0
     maximumEventAge: 60
 
-  ProductDecreaseAvailabilityBy:
-    name:  ProductDecreaseAvailabilityBy
-    handler: bin/ProductDecreaseAvailabilityBy
+  MovieReviewDownvote:
+    name:  MovieReviewDownvote
+    handler: bin/MovieReviewDownvote
     package:
       include:
-        - bin/ProductDecreaseAvailabilityBy
+        - bin/MovieReviewDownvote
     maximumRetryAttempts: 0
     maximumEventAge: 60
 
-
-  NewOrder:
-    name:  NewOrder
-    handler: bin/NewOrder
+  MovieReviewUpvote:
+    name:  MovieReviewUpvote
+    handler: bin/MovieReviewUpvote
     package:
       include:
-        - bin/NewOrder
+        - bin/MovieReviewUpvote
     maximumRetryAttempts: 0
     maximumEventAge: 60
+

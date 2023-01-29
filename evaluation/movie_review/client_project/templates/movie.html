@@ -1,0 +1,27 @@
+<html>
+    <head>
+        <style>
+            #HASH {
+  display: flex;
+  justify-content: space-between;
+}
+        </style>
+    </head>
+    <body>
+        <h1>{{.GetTitle}} ({{.GetYear}})</h1>
+        <h2>{{.GetCategoryId}}<h2>
+
+        {{range .GetRewievs}}
+        <dl>
+            <dt><div id="HASH" class="blue-msg">
+                <span id="time-HASH" class="smalltext">{{.GetReviewer.GetNickname}}</span>
+                <span class="ios-circle">Downvotes: {{len .GetDownvotedBy}} Upvotes: {{len .GetUpvotedBy}}</span>
+                </div>
+            </dt>
+            <dd> <strong>Rating: {{.GetRate}}</strong>{{.GetText}}</dd>
+
+        </dl>
+        {{end}}
+
+    </body>
+</html>

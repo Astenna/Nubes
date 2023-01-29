@@ -23,6 +23,7 @@
 **/generated/
 **/bin/*
 **/.serverless/*
+**/client_lib/*
 example/client_lib
 
 

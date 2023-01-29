@@ -8,7 +8,14 @@
             "program": "client\\main.go"
         },
         {
-            "name": "Launch gen:handlers",
+            "name": "Launch evaluation client",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "evaluation\\movie_review\\client_project\\"
+        },
+        {
+            "name": "Generator: example handlers",
             "type": "go",
             "request": "launch",
             "mode": "debug",
@@ -16,12 +23,28 @@
             "args": ["handlers","-t=..//example//faas//types", "-o=..//example//faas", "-m=github.com/Astenna/Nubes/faas", "-g=true", "-i=false"]
         },
         {
-            "name": "Launch gen:client",
+            "name": "Generator: example client_lib",
             "type": "go",
             "request": "launch",
             "mode": "debug",
             "program": "generator\\main.go",
             "args": ["client","-t=..//example//faas//types", "-o=..//"]
+        },
+        {
+            "name": "Generator: evaluation handlers",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "generator\\main.go",
+            "args": ["handlers","-t=..//evaluation//movie_review//faas//types", "-o=..//evaluation//movie_review//faas", "-m=github.com/Astenna/Nubes/movie_review/faas", "-i=true"]
+        },
+        {
+            "name": "Generator: evaluation client_lib",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "generator\\main.go",
+            "args": ["client","-t=..//evaluation//movie_review//faas//types", "-o=..//evaluation//movie_review//"]
         },
         {
             "type": "aws-sam",
