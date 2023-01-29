@@ -6,7 +6,7 @@ import (
 	"github.com/Astenna/Nubes/lib"
 )
 
-type MovieReview struct {
+type Review struct {
 	Id            string
 	Rating        int
 	Movie         lib.Reference[Movie]
@@ -18,13 +18,13 @@ type MovieReview struct {
 	isInitialized bool
 }
 
-func (MovieReview) GetTypeName() string {
-	return "MovieReview"
+func (Review) GetTypeName() string {
+	return "Review"
 }
 
-func (m *MovieReview) Downvote(account Account) (int, error) {
+func (m *Review) Downvote(account Account) (int, error) {
 	if m.isInitialized {
-		tempReceiverName, _libError := lib.GetObjectState[MovieReview](m.Id)
+		tempReceiverName, _libError := lib.GetObjectState[Review](m.Id)
 		if _libError != nil {
 			return *new(int), _libError
 		}
@@ -52,9 +52,9 @@ func (m *MovieReview) Downvote(account Account) (int, error) {
 	return len(m.DownvotedBy), nil
 }
 
-func (m *MovieReview) Upvote(account Account) (int, error) {
+func (m *Review) Upvote(account Account) (int, error) {
 	if m.isInitialized {
-		tempReceiverName, _libError := lib.GetObjectState[MovieReview](m.Id)
+		tempReceiverName, _libError := lib.GetObjectState[Review](m.Id)
 		if _libError != nil {
 			return *new(int), _libError
 		}
@@ -77,6 +77,6 @@ func (m *MovieReview) Upvote(account Account) (int, error) {
 	return len(m.DownvotedBy), nil
 }
 
-func (receiver *MovieReview) Init() {
+func (receiver *Review) Init() {
 	receiver.isInitialized = true
 }

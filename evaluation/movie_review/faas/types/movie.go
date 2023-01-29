@@ -7,7 +7,7 @@ type Movie struct {
 	Title         string
 	Year          int
 	Category      lib.Reference[Category]
-	Reviews       lib.ReferenceNavigationList[Movie] `nubes:"hasOne-Movie" dynamodbav:"-"`
+	Reviews       lib.ReferenceNavigationList[Review] `nubes:"hasOne-Movie" dynamodbav:"-"`
 	isInitialized bool
 }
 

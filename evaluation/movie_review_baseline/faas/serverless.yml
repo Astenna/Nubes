@@ -1,0 +1,100 @@
+frameworkVersion: '>3.24.0'
+
+service: movie-review-baseline
+provider:
+  name: aws
+  runtime: go1.x
+  # Default memory size for functions (default: 1024MB)
+  memorySize: 1024
+  # Default timeout for functions (default: 6 seconds)
+  # Note: API Gateway has a maximum timeout of 30 seconds
+  #timeout: 60
+  # Use function versioning (enabled by default)
+  versionFunctions: false
+  # By default, one IAM Role is shared by all the Lambda functions in your service
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "dynamodb:*"
+      Resource:
+        - "*"
+
+package:
+  individually: true
+  exclude:
+    - "bin/*"
+    - "**/**"
+
+functions:
+  addReview:
+    name:  addReview
+    handler: bin/addReview
+    package:
+      include:
+        - bin/addReview
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
+  deleteReview:
+    name:  deleteReview
+    handler: bin/deleteReview
+    package:
+      include:
+        - bin/deleteReview
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
+  getCategoryMovieList:
+    name:  getCategoryMovieList
+    handler: bin/getCategoryMovieList
+    package:
+      include:
+        - bin/getCategoryMovieList
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
+  getMovieById:
+    name:  getMovieById
+    handler: bin/getMovieById
+    package:
+      include:
+        - bin/getMovieById
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
+  getMovieReviews:
+    name:  getMovieReviews
+    handler: bin/getMovieReviews
+    package:
+      include:
+        - bin/getMovieReviews
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
+  login:
+    name:  login
+    handler: bin/login
+    package:
+      include:
+        - bin/login
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
+  register:
+    name:  register
+    handler: bin/register
+    package:
+      include:
+        - bin/register
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
+  voteOnReview:
+    name:  voteOnReview
+    handler: bin/voteOnReview
+    package:
+      include:
+        - bin/voteOnReview
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
