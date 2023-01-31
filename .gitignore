@@ -20,6 +20,7 @@
 .idea/*
 
 # generated files
+.VSCodeCounter
 **/generated/
 **/bin/*
 **/.serverless/*

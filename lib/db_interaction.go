@@ -73,6 +73,7 @@ func GetObjectState[T Nobject](id string) (*T, error) {
 	}
 
 	typeName := (*new(T)).GetTypeName()
+
 	input := &dynamodb.GetItemInput{
 		TableName: aws.String(typeName),
 		Key: map[string]*dynamodb.AttributeValue{
@@ -88,6 +89,37 @@ func GetObjectState[T Nobject](id string) (*T, error) {
 	}
 
 	var parsedItem = new(T)
+	if item.Item != nil {
+		err = dynamodbattribute.UnmarshalMap(item.Item, parsedItem)
+		return parsedItem, err
+	}
+
+	return nil, fmt.Errorf("%s with id: %s not found", typeName, id)
+}
+
+func GetObjectStateWithTypeNameAsArg(id, typeName string) (interface{}, error) {
+	if id == "" {
+		return nil, fmt.Errorf("missing id of object to get")
+	}
+	if typeName == "" {
+		return nil, fmt.Errorf("missing typeName of object to get")
+	}
+
+	input := &dynamodb.GetItemInput{
+		TableName: aws.String(typeName),
+		Key: map[string]*dynamodb.AttributeValue{
+			"Id": {
+				S: aws.String(id),
+			},
+		},
+	}
+
+	item, err := DBClient.GetItem(input)
+	if err != nil {
+		return nil, err
+	}
+
+	var parsedItem interface{}
 	if item.Item != nil {
 		err = dynamodbattribute.UnmarshalMap(item.Item, parsedItem)
 		return parsedItem, err
@@ -235,9 +267,12 @@ func Update[T Nobject](values aws.JSONValue) error {
 	return err
 }
 
-func GetField(param GetFieldParam) (interface{}, error) {
+func GetField(param GetStateParam) (interface{}, error) {
 	if err := param.Validate(); err != nil {
 		return nil, err
+	}
+	if param.FieldName == "" {
+		return nil, fmt.Errorf("mising FieldName")
 	}
 
 	input := &dynamodb.GetItemInput{
@@ -264,7 +299,7 @@ func GetField(param GetFieldParam) (interface{}, error) {
 	return nil, err
 }
 
-func GetFieldOfType[N any](param GetFieldParam) (N, error) {
+func GetFieldOfType[N any](param GetStateParam) (N, error) {
 	if err := param.Validate(); err != nil {
 		return *new(N), err
 	}

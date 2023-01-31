@@ -146,7 +146,7 @@ func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}() ({{.FieldType}}, error) {
 		return *new({{.FieldType}}), errors.New("id of the type not set, use  Load{{$.TypeNameOrginalCase}} or Export{{$.TypeNameOrginalCase}} to create new instance of the type")
 	}
 
-	params := lib.GetFieldParam{
+	params := lib.GetStateParam{
 		Id: s.GetId(),
 		TypeName:  s.GetTypeName(),	
 		FieldName: "{{.FieldNameUpper}}",
@@ -187,7 +187,7 @@ func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}Ids() ([]string, error) {
 		return nil, errors.New("id of the type not set, use Load{{$.TypeNameOrginalCase}} or Export{{$.TypeNameOrginalCase}} to create new instance of the type")
 	}
 
-	params := lib.GetFieldParam{
+	params := lib.GetStateParam{
 		Id: s.GetId(),
 		TypeName:  s.GetTypeName(),	
 		FieldName: "{{.FieldNameUpper}}",
@@ -218,7 +218,7 @@ func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}() ([]{{.FieldType}}, error) 
 		return nil, errors.New("id of the type not set, use Load{{$.TypeNameOrginalCase}} or Export{{$.TypeNameOrginalCase}} to create new instance of the type")
 	}
 
-	params := lib.GetFieldParam{
+	params := lib.GetStateParam{
 		Id: s.GetId(),
 		TypeName:  s.GetTypeName(),	
 		FieldName: "{{.FieldNameUpper}}",
@@ -282,7 +282,7 @@ func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}Id() (string, error) {
 		return "", errors.New("id of the type not set, use  Load{{$.TypeNameOrginalCase}} or Export{{$.TypeNameOrginalCase}} to create new instance of the type")
 	}
 
-	params := lib.GetFieldParam{
+	params := lib.GetStateParam{
 		Id: s.GetId(),
 		TypeName:  s.GetTypeName(),	
 		FieldName: "{{.FieldNameUpper}}",
@@ -401,3 +401,35 @@ func ({{.ReceiverName}} {{$.TypeNameLower}}) {{.FuncName}}({{if .InputParamType}
 } 
 {{end}}
 {{end}} 
+
+
+func (r {{.TypeNameLower}}) GetStub() ({{.TypeNameOrginalCase}}Stub, error) {
+	if r.id == "" {
+		return *new({{.TypeNameOrginalCase}}Stub), errors.New("id of the type not set, use  Load{{.TypeNameOrginalCase}} or Export{{.TypeNameOrginalCase}} to create new instance of the type")
+	}
+
+	params := lib.GetStateParam{
+		Id:        r.GetId(),
+		TypeName:  r.GetTypeName(),
+		GetStub:   true,
+	}
+	jsonParam, err := json.Marshal(params)
+	if err != nil {
+		return *new({{.TypeNameOrginalCase}}Stub), err
+	}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
+	if _err != nil {
+		return *new({{.TypeNameOrginalCase}}Stub), _err
+	}
+	if out.FunctionError != nil {
+		return *new({{.TypeNameOrginalCase}}Stub), fmt.Errorf(string(out.Payload[:]))
+	}
+
+	result := new({{.TypeNameOrginalCase}}Stub)
+	err = json.Unmarshal(out.Payload, result)
+	if err != nil {
+		return *new({{.TypeNameOrginalCase}}Stub), err
+	}
+	return *result, err
+}

@@ -50,12 +50,12 @@ functions:
         - bin/Delete
     maximumRetryAttempts: 0
     maximumEventAge: 60
-  GetField:
-    name: GetField
-    handler: bin/GetField
+  GetState:
+    name: GetState
+    handler: bin/GetState
     package:
       include:
-        - bin/GetField
+        - bin/GetState
     maximumRetryAttempts: 0
     maximumEventAge: 60
   SetField:
@@ -66,14 +66,6 @@ functions:
         - bin/SetField
     maximumRetryAttempts: 0
     maximumEventAge: 60
-  ReferenceGetSortKeysByPartitionKey:
-    name: ReferenceGetSortKeysByPartitionKey
-    handler: bin/ReferenceGetSortKeysByPartitionKey
-    package:
-      include:
-        - bin/ReferenceGetSortKeysByPartitionKey
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
   ReferenceGetByIndex:
     name: ReferenceGetByIndex
     handler: bin/ReferenceGetByIndex
@@ -82,12 +74,23 @@ functions:
         - bin/ReferenceGetByIndex
     maximumRetryAttempts: 0
     maximumEventAge: 60
-  ReferenceAddToManyToMany:
-    name: ReferenceAddToManyToMany
-    handler: bin/ReferenceAddToManyToMany
+  
+
+  ReviewDownvote:
+    name:  ReviewDownvote
+    handler: bin/ReviewDownvote
     package:
       include:
-        - bin/ReferenceAddToManyToMany
+        - bin/ReviewDownvote
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
+  ReviewUpvote:
+    name:  ReviewUpvote
+    handler: bin/ReviewUpvote
+    package:
+      include:
+        - bin/ReviewUpvote
     maximumRetryAttempts: 0
     maximumEventAge: 60
 
@@ -97,24 +100,6 @@ functions:
     package:
       include:
         - bin/AccountVerifyPassword
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
-  MovieReviewDownvote:
-    name:  MovieReviewDownvote
-    handler: bin/MovieReviewDownvote
-    package:
-      include:
-        - bin/MovieReviewDownvote
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
-  MovieReviewUpvote:
-    name:  MovieReviewUpvote
-    handler: bin/MovieReviewUpvote
-    package:
-      include:
-        - bin/MovieReviewUpvote
     maximumRetryAttempts: 0
     maximumEventAge: 60
 

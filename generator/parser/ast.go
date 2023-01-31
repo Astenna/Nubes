@@ -83,7 +83,7 @@ func getGetterDBStmts(fn *ast.FuncDecl, input getDBStmtsParam) ast.IfStmt {
 					&ast.CompositeLit{
 						Type: &ast.SelectorExpr{
 							X:   &ast.Ident{Name: "lib"},
-							Sel: &ast.Ident{Name: "GetFieldParam"},
+							Sel: &ast.Ident{Name: "GetStateParam"},
 						},
 						Elts: []ast.Expr{
 							&ast.KeyValueExpr{

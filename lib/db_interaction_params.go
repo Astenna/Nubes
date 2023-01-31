@@ -2,18 +2,16 @@ package lib
 
 import "fmt"
 
-type GetFieldParam struct {
+type GetStateParam struct {
 	Id        string
 	FieldName string
 	TypeName  string
+	GetStub   bool
 }
 
-func (s GetFieldParam) Validate() error {
+func (s GetStateParam) Validate() error {
 	if s.Id == "" {
 		return fmt.Errorf("missing Id of object's field to get")
-	}
-	if s.FieldName == "" {
-		return fmt.Errorf("missing FieldName of object's field to get")
 	}
 	if s.TypeName == "" {
 		return fmt.Errorf("missing TypeName of object's field to get")

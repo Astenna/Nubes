@@ -40,7 +40,12 @@ var ssfSpecCmd = &cobra.Command{
 
 		if generateDeploymentFiles {
 			serviceName := lastString(strings.Split(moduleName, "/"))
-			serverlessInput := ServerlessTemplateInput{ServiceName: serviceName, StateFuncs: typeSpecParser.Handlers, CustomCtors: typeSpecParser.CustomCtors}
+			serverlessInput := ServerlessTemplateInput{
+				ServiceName:   serviceName,
+				StateFuncs:    typeSpecParser.Handlers,
+				CustomCtors:   typeSpecParser.CustomCtors,
+				ManyToManyRel: len(typeSpecParser.Output.ManyToManyRelationships) > 0,
+			}
 			GenerateDeploymentFiles(generationDestination, serverlessInput)
 		}
 
@@ -73,9 +78,10 @@ func init() {
 }
 
 type ServerlessTemplateInput struct {
-	ServiceName string
-	StateFuncs  []parser.StateChangingHandler
-	CustomCtors []parser.CustomCtorDefinition
+	ServiceName   string
+	StateFuncs    []parser.StateChangingHandler
+	CustomCtors   []parser.CustomCtorDefinition
+	ManyToManyRel bool
 }
 
 func GenerateDeploymentFiles(path string, templateInput ServerlessTemplateInput) {
@@ -104,11 +110,11 @@ func GenerateStateChangingHandlers(path string, functions []parser.StateChanging
 	}
 }
 
-func GenerateGenericHandlers(path string, paredPkg parser.ParsedPackage) {
-	templ := tp.ParseOrExitOnError("templates/type_spec/get_field_template.go.tmpl")
-	generationDestPath := tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "generics", "GetField"))
+func GenerateGenericHandlers(path string, parsedPkg parser.ParsedPackage) {
+	templ := tp.ParseOrExitOnError("templates/type_spec/get_state.go.tmpl")
+	generationDestPath := tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "generics", "GetState"))
 	os.MkdirAll(generationDestPath, 0777)
-	getPath := filepath.Join(generationDestPath, "GetField.go")
+	getPath := filepath.Join(generationDestPath, "GetState.go")
 	tp.CreateFileFromTemplate(templ, nil, getPath)
 
 	templ = tp.ParseOrExitOnError("templates/type_spec/set_field_template.go.tmpl")
@@ -127,7 +133,7 @@ func GenerateGenericHandlers(path string, paredPkg parser.ParsedPackage) {
 	generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "generics", "Export"))
 	os.MkdirAll(generationDestPath, 0777)
 	exportPath := filepath.Join(generationDestPath, "Export.go")
-	intput := tp.ExportTemplateInput{IsNobjectInOrginalPackage: paredPkg.IsNobjectInOrginalPackage, OrginalPackageAlias: parser.OrginalPackageAlias, OrginalPackage: paredPkg.ImportPath}
+	intput := tp.ExportTemplateInput{IsNobjectInOrginalPackage: parsedPkg.IsNobjectInOrginalPackage, OrginalPackageAlias: parser.OrginalPackageAlias, OrginalPackage: parsedPkg.ImportPath}
 	tp.CreateFileFromTemplate(templ, intput, exportPath)
 
 	templ = tp.ParseOrExitOnError("templates/type_spec/delete_template.go.tmpl")
@@ -142,17 +148,19 @@ func GenerateGenericHandlers(path string, paredPkg parser.ParsedPackage) {
 	referenceIndexPath := filepath.Join(generationDestPath, "ReferenceGetByIndex.go")
 	tp.CreateFileFromTemplate(templ, nil, referenceIndexPath)
 
-	templ = tp.ParseOrExitOnError("templates/type_spec/reference_get_sort_key.go.tmpl")
-	generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "reference", "GetSortKeysByPartionKey"))
-	os.MkdirAll(generationDestPath, 0777)
-	referenceSortKeyPath := filepath.Join(generationDestPath, "ReferenceGetSortKeysByPartitionKey.go")
-	tp.CreateFileFromTemplate(templ, nil, referenceSortKeyPath)
+	if len(parsedPkg.ManyToManyRelationships) > 0 {
+		templ = tp.ParseOrExitOnError("templates/type_spec/reference_get_sort_key.go.tmpl")
+		generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "reference", "GetSortKeysByPartionKey"))
+		os.MkdirAll(generationDestPath, 0777)
+		referenceSortKeyPath := filepath.Join(generationDestPath, "ReferenceGetSortKeysByPartitionKey.go")
+		tp.CreateFileFromTemplate(templ, nil, referenceSortKeyPath)
 
-	templ = tp.ParseOrExitOnError("templates/type_spec/add_many_to_may.template.go.tmpl")
-	generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "reference", "AddToManyToMany"))
-	os.MkdirAll(generationDestPath, 0777)
-	addManyToManyPath := filepath.Join(generationDestPath, "ReferenceAddToManyToMany.go")
-	tp.CreateFileFromTemplate(templ, nil, addManyToManyPath)
+		templ = tp.ParseOrExitOnError("templates/type_spec/add_many_to_may.template.go.tmpl")
+		generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "reference", "AddToManyToMany"))
+		os.MkdirAll(generationDestPath, 0777)
+		addManyToManyPath := filepath.Join(generationDestPath, "ReferenceAddToManyToMany.go")
+		tp.CreateFileFromTemplate(templ, nil, addManyToManyPath)
+	}
 }
 
 func GenerateCustomConstructorsHandlers(path string, customCtor []parser.CustomCtorDefinition) {
