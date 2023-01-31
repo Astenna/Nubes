@@ -58,6 +58,14 @@ functions:
         - bin/GetState
     maximumRetryAttempts: 0
     maximumEventAge: 60
+  GetBatch:
+    name: GetBatch
+    handler: bin/GetBatch
+    package:
+      include:
+        - bin/GetBatch
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
   SetField:
     name: SetField
     handler: bin/SetField
@@ -76,6 +84,15 @@ functions:
     maximumEventAge: 60
   
 
+  AccountVerifyPassword:
+    name:  AccountVerifyPassword
+    handler: bin/AccountVerifyPassword
+    package:
+      include:
+        - bin/AccountVerifyPassword
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
   ReviewDownvote:
     name:  ReviewDownvote
     handler: bin/ReviewDownvote
@@ -91,15 +108,6 @@ functions:
     package:
       include:
         - bin/ReviewUpvote
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
-  AccountVerifyPassword:
-    name:  AccountVerifyPassword
-    handler: bin/AccountVerifyPassword
-    package:
-      include:
-        - bin/AccountVerifyPassword
     maximumRetryAttempts: 0
     maximumEventAge: 60
 

@@ -14,11 +14,11 @@
     </head>
 
     <body>
-        <h1>Category {{.GetId}}</h1>
-        {{range .GetMovies}}
+        <h1>Category {{.Id}}</h1>
+        {{range .Movies}}
         <li>
         
-        <a href="/movie/{{.GetId}}">{{.GetTitle}}</a>
+        <a href="/movie/{{.Id}}">{{.Title}} ({{.ProductionYear}})</a>
 
         </li>
         {{end}}

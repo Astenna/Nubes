@@ -15,7 +15,7 @@ func AddToManyToManyHandler(input lib.AddToManyToManyParam) error {
 
 	exists, err := lib.IsInstanceAlreadyCreated(lib.IsInstanceAlreadyCreatedParam{Id: input.NewId, TypeName: input.TypeName})
 	if err != nil {
-		return fmt.Errorf("error occured while checking if typename %s with id %s exists. Error %w", input.TypeName, input.NewId, err)
+		return fmt.Errorf("error occurred while checking if typename %s with id %s exists. Error %w", input.TypeName, input.NewId, err)
 	}
 	if !exists {
 		return fmt.Errorf("only existing instances can be added to many to many relationships. Typename %s with id %s not found", input.TypeName, input.NewId)

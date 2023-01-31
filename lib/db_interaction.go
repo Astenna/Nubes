@@ -119,10 +119,10 @@ func GetObjectStateWithTypeNameAsArg(id, typeName string) (interface{}, error) {
 		return nil, err
 	}
 
-	var parsedItem interface{}
+	parsedItem := new(interface{})
 	if item.Item != nil {
-		err = dynamodbattribute.UnmarshalMap(item.Item, parsedItem)
-		return parsedItem, err
+		err = dynamodbattribute.UnmarshalMap(item.Item, &parsedItem)
+		return *parsedItem, err
 	}
 
 	return nil, fmt.Errorf("%s with id: %s not found", typeName, id)

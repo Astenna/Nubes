@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	clib "github.com/Astenna/Nubes/movie_review/client_lib"
 )
 
-func categoryHandler(w http.ResponseWriter, r *http.Request) {
+func CategoryHandler(w http.ResponseWriter, r *http.Request) {
 	categoryName := r.URL.Path[len("/category/"):]
 	initializedCategory, err := clib.LoadCategory(categoryName)
 	if initializedCategory == nil {
@@ -19,7 +19,16 @@ func categoryHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Error occurred when retrieving the category %s", err.Error())
 		return
 	}
+	stubs, err := initializedCategory.Movies.GetStubs()
+	if err != nil {
+		fmt.Fprintf(w, "Error occurred when retrieving movies of the category %s", err.Error())
+		return
+	}
 
+	templateInput := struct {
+		Id     string
+		Movies []clib.MovieStub
+	}{Id: categoryName, Movies: stubs}
 	t, _ := template.ParseFiles("templates//category.html")
-	t.Execute(w, initializedCategory)
+	t.Execute(w, templateInput)
 }

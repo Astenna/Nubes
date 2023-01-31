@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	clib "github.com/Astenna/Nubes/movie_review/client_lib"
 )
 
-func movieHandler(w http.ResponseWriter, r *http.Request) {
+func MovieHandler(w http.ResponseWriter, r *http.Request) {
 	movieId := r.URL.Path[len("/movie/"):]
 	initializedMovie, err := clib.LoadMovie(movieId)
 	if initializedMovie == nil {
@@ -20,6 +20,15 @@ func movieHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	movieStub, err := initializedMovie.GetStub()
+	reviewStubs, err := initializedMovie.Reviews.GetStubs()
+	_ = reviewStubs
+	if err != nil {
+		fmt.Fprintf(w, "Error occurred when retrieving the movie stub %s", err.Error())
+		return
+	}
+
 	t, _ := template.ParseFiles("templates//movie.html")
-	t.Execute(w, initializedMovie)
+	err = t.Execute(w, movieStub)
+	fmt.Println(err.Error())
 }

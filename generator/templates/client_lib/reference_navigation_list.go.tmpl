@@ -125,6 +125,10 @@ func (r referenceNavigationList[T, Stub]) GetStubs() ([]Stub, error) {
 		return nil, fmt.Errorf("invalid initialization of ReferenceNavigationList")
 	}
 
+	if len(ids) < 1 {
+		return *(new([]Stub)), nil
+	}
+
 	params := lib.GetBatchParam{
 		Ids:      ids,
 		TypeName: (*new(T)).GetTypeName(),

@@ -8,17 +8,17 @@
         </style>
     </head>
     <body>
-        <h1>{{.GetTitle}} ({{.GetYear}})</h1>
-        <h2>{{.GetCategoryId}}<h2>
+        <h1>{{.Title}} ({{.ProductionYear}})</h1>
+        <h2>{{.CategoryId}}<h2>
 
-        {{range .GetRewievs}}
+        {{range .Reviews}}
         <dl>
             <dt><div id="HASH" class="blue-msg">
-                <span id="time-HASH" class="smalltext">{{.GetReviewer.GetNickname}}</span>
-                <span class="ios-circle">Downvotes: {{len .GetDownvotedBy}} Upvotes: {{len .GetUpvotedBy}}</span>
+                <span id="time-HASH" class="smalltext">{{.GetNickname}}</span>
+                <span class="ios-circle">Downvotes: {{len .DownvotedBy}} Upvotes: {{len .UpvotedBy}}</span>
                 </div>
             </dt>
-            <dd> <strong>Rating: {{.GetRate}}</strong>{{.GetText}}</dd>
+            <dd> <strong>Rating: {{.Rating}}</strong>{{.Text}}</dd>
 
         </dl>
         {{end}}

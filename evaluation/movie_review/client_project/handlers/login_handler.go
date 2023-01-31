@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 
 var currentlyLoggedIn any
 
-func loginHandler(w http.ResponseWriter, r *http.Request) {
+func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		var account clib.AccountStub
 		account.Password = r.PostFormValue("Password")
@@ -31,6 +31,6 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	t, _ := template.ParseFiles("templates//register.html")
+	t, _ := template.ParseFiles("templates//login.html")
 	t.Execute(w, nil)
 }
