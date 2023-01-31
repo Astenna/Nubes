@@ -15,6 +15,7 @@ type ManyToManyRelationshipField struct {
 	PartionKeyName     string
 	SortKeyName        string
 	TableName          string
+	TypeName           string
 	TypeNameLower      string
 }
 

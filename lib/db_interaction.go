@@ -235,6 +235,41 @@ func GetBatch[T Nobject](ids []string) (*[]T, error) {
 	return nil, err
 }
 
+func GetBatchWithTypeNameAsArg(param GetBatchParam) ([]interface{}, error) {
+	if err := param.Validate(); err != nil {
+		return nil, err
+	}
+
+	keysToRetrieve := make([]map[string]*dynamodb.AttributeValue, len(param.Ids))
+	for i, id := range param.Ids {
+		keysToRetrieve[i] = map[string]*dynamodb.AttributeValue{"Id": {
+			S: aws.String(id),
+		}}
+	}
+
+	input := &dynamodb.BatchGetItemInput{
+		RequestItems: map[string]*dynamodb.KeysAndAttributes{
+			param.TypeName: {
+				Keys: keysToRetrieve,
+			},
+		},
+	}
+
+	items, err := DBClient.BatchGetItem(input)
+	if err != nil {
+		return nil, err
+	}
+
+	var parsedItem = new([]interface{})
+	if items.Responses[param.TypeName] != nil {
+
+		err = dynamodbattribute.UnmarshalListOfMaps(items.Responses[param.TypeName], parsedItem)
+		return *parsedItem, err
+	}
+
+	return nil, err
+}
+
 func Update[T Nobject](values aws.JSONValue) error {
 	if len(values) == 0 {
 		return fmt.Errorf("no values specified for update")

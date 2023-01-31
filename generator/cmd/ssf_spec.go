@@ -111,8 +111,14 @@ func GenerateStateChangingHandlers(path string, functions []parser.StateChanging
 }
 
 func GenerateGenericHandlers(path string, parsedPkg parser.ParsedPackage) {
-	templ := tp.ParseOrExitOnError("templates/type_spec/get_state.go.tmpl")
-	generationDestPath := tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "generics", "GetState"))
+	templ := tp.ParseOrExitOnError("templates/type_spec/get_batch.go.tmpl")
+	generationDestPath := tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "generics", "GetBatch"))
+	os.MkdirAll(generationDestPath, 0777)
+	getBatch := filepath.Join(generationDestPath, "GetBatch.go")
+	tp.CreateFileFromTemplate(templ, nil, getBatch)
+
+	templ = tp.ParseOrExitOnError("templates/type_spec/get_state.go.tmpl")
+	generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "generics", "GetState"))
 	os.MkdirAll(generationDestPath, 0777)
 	getPath := filepath.Join(generationDestPath, "GetState.go")
 	tp.CreateFileFromTemplate(templ, nil, getPath)
@@ -155,7 +161,7 @@ func GenerateGenericHandlers(path string, parsedPkg parser.ParsedPackage) {
 		referenceSortKeyPath := filepath.Join(generationDestPath, "ReferenceGetSortKeysByPartitionKey.go")
 		tp.CreateFileFromTemplate(templ, nil, referenceSortKeyPath)
 
-		templ = tp.ParseOrExitOnError("templates/type_spec/add_many_to_may.template.go.tmpl")
+		templ = tp.ParseOrExitOnError("templates/type_spec/add_many_to_many.template.go.tmpl")
 		generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "reference", "AddToManyToMany"))
 		os.MkdirAll(generationDestPath, 0777)
 		addManyToManyPath := filepath.Join(generationDestPath, "ReferenceAddToManyToMany.go")

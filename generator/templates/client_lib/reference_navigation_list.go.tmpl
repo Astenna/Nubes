@@ -14,7 +14,7 @@ type setId interface {
 	init()
 }
 
-type ReferenceNavigationList[T lib.Nobject] struct {
+type referenceNavigationList[T lib.Nobject, Stub any] struct {
 	ownerId       string
 	ownerTypeName string
 
@@ -24,8 +24,8 @@ type ReferenceNavigationList[T lib.Nobject] struct {
 	queryByPartitionKeyParam lib.QueryByPartitionKeyParam
 }
 
-func NewReferenceNavigationList[T lib.Nobject](ownerId, ownerTypeName, referringFieldName string, isManyToMany bool) *ReferenceNavigationList[T] {
-	r := new(ReferenceNavigationList[T])
+func newReferenceNavigationList[T lib.Nobject, Stub any](ownerId, ownerTypeName, referringFieldName string, isManyToMany bool) *referenceNavigationList[T, Stub] {
+	r := new(referenceNavigationList[T, Stub])
 	r.ownerId = ownerId
 	r.ownerTypeName = ownerTypeName
 	r.isManyToMany = isManyToMany
@@ -43,7 +43,7 @@ func NewReferenceNavigationList[T lib.Nobject](ownerId, ownerTypeName, referring
 	return r
 }
 
-func (r ReferenceNavigationList[T]) GetIds() ([]string, error) {
+func (r referenceNavigationList[T, Stub]) GetIds() ([]string, error) {
 
 	if r.usesIndex {
 		out, err := r.getByIndex()
@@ -58,7 +58,7 @@ func (r ReferenceNavigationList[T]) GetIds() ([]string, error) {
 	return nil, fmt.Errorf("invalid initialization of ReferenceNavigationList")
 }
 
-func (r ReferenceNavigationList[T]) Get() ([]T, error) {
+func (r referenceNavigationList[T, Stub]) Get() ([]T, error) {
 	var ids []string
 	var err error
 	if r.usesIndex {
@@ -78,6 +78,7 @@ func (r ReferenceNavigationList[T]) Get() ([]T, error) {
 
 	result := make([]T, len(ids))
 	typeName := (*new(T)).GetTypeName()
+	// TODO: do it in one call
 	for i, id := range ids {
 		params := lib.HandlerParameters{
 			Id:       id,
@@ -106,9 +107,50 @@ func (r ReferenceNavigationList[T]) Get() ([]T, error) {
 	return result, err
 }
 
+func (r referenceNavigationList[T, Stub]) GetStubs() ([]Stub, error) {
+	var ids []string
+	var err error
+	if r.usesIndex {
+		ids, err = r.getByIndex()
+		if err != nil {
+			return nil, err
+		}
+	} else if r.isManyToMany && !r.usesIndex {
+		ids, err = r.getSortKeysByPartitionKey()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		fmt.Println("")
+		return nil, fmt.Errorf("invalid initialization of ReferenceNavigationList")
+	}
 
+	params := lib.GetBatchParam{
+		Ids:      ids,
+		TypeName: (*new(T)).GetTypeName(),
+	}
+	jsonParam, err := json.Marshal(params)
+	if err != nil {
+		return nil, err
+	}
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetBatch"), Payload: jsonParam})
+	if _err != nil {
+		return nil, _err
+	}
+	if out.FunctionError != nil {
+		return nil, fmt.Errorf("lambda function designed to verify if instance exists failed. Error: %s", string(out.Payload))
+	}
 
-func (r ReferenceNavigationList[T]) AddToManyToMany(newId string) error {
+	stubs := make([]Stub, len(ids))
+	err = json.Unmarshal(out.Payload, &stubs)
+	if err != nil {
+		return nil, err
+	}
+
+	return stubs, err
+}
+
+func (r referenceNavigationList[T, Stub]) AddToManyToMany(newId string) error {
 	if newId == "" {
 		return fmt.Errorf("missing id")
 	}
@@ -142,7 +184,7 @@ func (r ReferenceNavigationList[T]) AddToManyToMany(newId string) error {
 	return fmt.Errorf("can not add elements to ReferenceNavigationList of OneToMany relationship")
 }
 
-func (r ReferenceNavigationList[T]) getByIndex() ([]string, error) {
+func (r referenceNavigationList[T, Stub]) getByIndex() ([]string, error) {
 
 	jsonParam, err := json.Marshal(r.queryByIndexParam)
 	if err != nil {
@@ -166,7 +208,7 @@ func (r ReferenceNavigationList[T]) getByIndex() ([]string, error) {
 	return result, nil
 }
 
-func (r ReferenceNavigationList[T]) getSortKeysByPartitionKey() ([]string, error) {
+func (r referenceNavigationList[T, Stub]) getSortKeysByPartitionKey() ([]string, error) {
 
 	jsonParam, err := json.Marshal(r.queryByPartitionKeyParam)
 	if err != nil {
@@ -190,7 +232,7 @@ func (r ReferenceNavigationList[T]) getSortKeysByPartitionKey() ([]string, error
 	return result, nil
 }
 
-func (r *ReferenceNavigationList[T]) setupOneToManyRelationship(referringFieldName string) {
+func (r *referenceNavigationList[T, Stub]) setupOneToManyRelationship(referringFieldName string) {
 	otherTypeName := (*(new(T))).GetTypeName()
 	r.queryByIndexParam.KeyAttributeName = referringFieldName
 	r.queryByIndexParam.OutputAttributeName = "Id"
@@ -199,7 +241,7 @@ func (r *ReferenceNavigationList[T]) setupOneToManyRelationship(referringFieldNa
 	r.queryByIndexParam.IndexName = otherTypeName + referringFieldName
 }
 
-func (r *ReferenceNavigationList[T]) setupManyToManyRelationship() {
+func (r *referenceNavigationList[T, Stub]) setupManyToManyRelationship() {
 	otherTypeName := (*(new(T))).GetTypeName()
 
 	for index := 0; ; index++ {

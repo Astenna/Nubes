@@ -95,3 +95,18 @@ type IsInstanceAlreadyCreatedParam struct {
 	Id       string
 	TypeName string
 }
+
+type GetBatchParam struct {
+	Ids      []string
+	TypeName string
+}
+
+func (q GetBatchParam) Validate() error {
+	if q.Ids == nil || len(q.Ids) < 1 {
+		return fmt.Errorf("empty list of Ids to retrieve")
+	}
+	if q.TypeName == "" {
+		return fmt.Errorf("missing TypeName")
+	}
+	return nil
+}

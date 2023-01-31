@@ -106,6 +106,7 @@ func (t *ClientTypesParser) parseRelationshipsTagsClient(field *ast.Field, typeN
 			navigationToTypeName = strings.Trim(navigationToTypeName, "[]")
 
 			newManyToManyRelationship := NewManyToManyRelationshipField(typeName, navigationToTypeName, field.Names[0].Name)
+			newManyToManyRelationship.TypeName = navigationToTypeName
 			newManyToManyRelationship.TypeNameLower = lowerCasedFirstChar(navigationToTypeName)
 			newManyToManyRelationship.FromFieldName = field.Names[0].Name
 			newManyToManyRelationship.FromFieldNameUpper = upperCaseFirstChar(newManyToManyRelationship.FromFieldName)

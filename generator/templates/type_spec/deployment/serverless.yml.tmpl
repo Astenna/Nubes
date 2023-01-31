@@ -58,6 +58,14 @@ functions:
         - bin/GetState
     maximumRetryAttempts: 0
     maximumEventAge: 60
+  GetBatch:
+    name: GetBatch
+    handler: bin/GetBatch
+    package:
+      include:
+        - bin/GetBatch
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
   SetField:
     name: SetField
     handler: bin/SetField

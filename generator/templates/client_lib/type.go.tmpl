@@ -20,10 +20,10 @@ type {{if eq .NobjectImplementation ""}} {{.TypeNameOrginalCase}} {{else}} {{.Ty
 	id string
 	{{end}} 
 	{{range .OneToManyRelationships}}
-	{{.FromFieldName}} ReferenceNavigationList[{{.TypeNameLower}}]
+	{{.FromFieldNameUpper}} referenceNavigationList[{{.TypeNameLower}}, {{.TypeName}}Stub]
 	{{end}}
 	{{range .ManyToManyRelationships}}
-	{{.FromFieldName}} ReferenceNavigationList[{{.TypeNameLower}}]
+	{{.FromFieldNameUpper}} referenceNavigationList[{{.TypeNameLower}}, {{.TypeName}}Stub]
 	{{end}}
 }
 
@@ -72,10 +72,10 @@ func (u *{{.TypeNameLower}})setId(id string) {
 
 func (r *{{.TypeNameLower}}) init() {
 	{{range .OneToManyRelationships}}
-	r.{{.FromFieldName}} = *NewReferenceNavigationList[{{.TypeNameLower}}](r.id, r.GetTypeName(), "{{.FieldName}}", false)
+	r.{{.FromFieldNameUpper}} = *newReferenceNavigationList[{{.TypeNameLower}}, {{.TypeName}}Stub](r.id, r.GetTypeName(), "{{.FieldName}}", false)
 	{{end}}
 	{{range .ManyToManyRelationships}}
-	r.{{.FromFieldName}} = *NewReferenceNavigationList[{{.TypeNameLower}}](r.id, r.GetTypeName(), "", true)
+	r.{{.FromFieldNameUpper}} = *newReferenceNavigationList[{{.TypeNameLower}}, {{.TypeName}}Stub(r.id, r.GetTypeName(), "", true)
 	{{end}}
 }
 
@@ -336,32 +336,6 @@ func (s {{$.TypeNameLower}}) Set{{.FieldNameUpper}}(newValue {{if .IsReference}}
 	return nil
 } 
 {{end}}{{end}}
-
-// REFERENCE NAVIGATION LIST GETTERS
-
-{{range .OneToManyRelationships}}
-func (s {{$.TypeNameLower}}) Get{{.FromFieldNameUpper}}() ([]{{.TypeNameLower}}, error) {
-	return s.{{.FromFieldName}}.Get()
-}
-
-func (s {{$.TypeNameLower}}) Get{{.FromFieldNameUpper}}Ids() ([]string, error) {
-	return s.{{.FromFieldName}}.GetIds()
-}
-{{end}}
-
-{{range .ManyToManyRelationships}}
-func (s {{$.TypeNameLower}}) Get{{.FromFieldNameUpper}}() ([]{{.TypeNameLower}}, error) {
-	return s.{{.FromFieldName}}.Get()
-}
-
-func (s {{$.TypeNameLower}}) Get{{.FromFieldNameUpper}}Ids() ([]string, error) {
-	return s.{{.FromFieldName}}.GetIds()
-}
-
-func (s {{$.TypeNameLower}}) Add{{.FromFieldNameUpper}}(id string) error {
-	return s.{{.FromFieldName}}.AddToManyToMany(id)
-}
-{{end}}
 
 // (STATE-CHANGING) METHODS
 
