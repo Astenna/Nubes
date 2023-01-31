@@ -51,7 +51,7 @@ func (r ReferenceNavigationList[T]) GetIds() ([]string, error) {
 	return nil, fmt.Errorf("invalid initialization of ReferenceNavigationList")
 }
 
-func (r ReferenceNavigationList[T]) Get() ([]T, error) {
+func (r ReferenceNavigationList[T]) GetLoaded() ([]T, error) {
 	var ids []string
 	var err error
 	if r.usesIndex {
@@ -80,6 +80,31 @@ func (r ReferenceNavigationList[T]) Get() ([]T, error) {
 	return result, err
 }
 
+func (r ReferenceNavigationList[T]) GetWithoutLoading() ([]T, error) {
+	var ids []string
+	var err error
+	if r.usesIndex {
+		ids, err = GetByIndex(r.queryByIndexParam)
+		if err != nil {
+			return nil, err
+		}
+	} else if r.isManyToMany && !r.usesIndex {
+		ids, err = GetSortKeysByPartitionKey(r.queryByPartitionKeyParam)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, fmt.Errorf("invalid initialization of ReferenceNavigationList")
+	}
+
+	batch, err := GetBatch[T](ids)
+
+	if err != nil {
+		return nil, fmt.Errorf("error occurred while retriving the objects from DB: %w", err)
+	}
+	return *batch, err
+}
+
 func (r ReferenceNavigationList[T]) AddToManyToMany(newId string) error {
 
 	if newId == "" {
@@ -91,7 +116,7 @@ func (r ReferenceNavigationList[T]) AddToManyToMany(newId string) error {
 		typeName := (*new(T)).GetTypeName()
 		exists, err := IsInstanceAlreadyCreated(IsInstanceAlreadyCreatedParam{Id: newId, TypeName: typeName})
 		if err != nil {
-			return fmt.Errorf("error occured while checking if typename %s with id %s exists. Error %w", typeName, newId, err)
+			return fmt.Errorf("error occurred while checking if typename %s with id %s exists. Error %w", typeName, newId, err)
 		}
 		if !exists {
 			return fmt.Errorf("only existing instances can be added to many to many relationships. Typename %s with id %s not found", typeName, newId)

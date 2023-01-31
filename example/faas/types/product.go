@@ -7,13 +7,13 @@ import (
 )
 
 type Product struct {
-	Id			string
-	Name			string
-	QuantityAvailable	int
-	SoldBy			lib.Reference[Shop]
-	Discount		lib.ReferenceList[Discount]
-	Price			float64
-	isInitialized		bool
+	Id                string
+	Name              string
+	QuantityAvailable int
+	SoldBy            lib.Reference[Shop]
+	Discount          lib.ReferenceList[Discount]
+	Price             float64
+	isInitialized     bool
 }
 
 func (Product) GetTypeName() string {
@@ -48,7 +48,7 @@ func (p *Product) DecreaseAvailabilityBy(decreaseNum int) error {
 
 func (p Product) GetQuantityAvailable() (int, error) {
 	if p.isInitialized {
-		fieldValue, _libError := lib.GetFieldOfType[int](lib.GetFieldParam{Id: p.Id, TypeName: "Product", FieldName: "QuantityAvailable"})
+		fieldValue, _libError := lib.GetFieldOfType[int](lib.GetStateParam{Id: p.Id, TypeName: "Product", FieldName: "QuantityAvailable"})
 		if _libError != nil {
 			return *new(int), _libError
 		}
@@ -59,7 +59,7 @@ func (p Product) GetQuantityAvailable() (int, error) {
 
 func (p Product) GetSoldBy() (lib.Reference[Shop], error) {
 	if p.isInitialized {
-		fieldValue, _libError := lib.GetFieldOfType[lib.Reference[Shop]](lib.GetFieldParam{Id: p.Id, TypeName: "Product", FieldName: "SoldBy"})
+		fieldValue, _libError := lib.GetFieldOfType[lib.Reference[Shop]](lib.GetStateParam{Id: p.Id, TypeName: "Product", FieldName: "SoldBy"})
 		if _libError != nil {
 			return *new(lib.Reference[Shop]), _libError
 		}

@@ -73,7 +73,7 @@ func parseRelationshipsTags(field *ast.Field, typeName string, fieldType string,
 	tags, err := getParsedTags(field)
 
 	if err != nil {
-		fmt.Println("error occured while checking struct tags of:", typeName, " field: ", field.Names[0].Name, ". Error: ", err)
+		fmt.Println("error occurerd while checking struct tags of:", typeName, " field: ", field.Names[0].Name, ". Error: ", err)
 	} else if tags != nil {
 		if tag, _ := tags.Get(NubesTagKey); tag != nil {
 

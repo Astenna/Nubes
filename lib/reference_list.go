@@ -13,7 +13,7 @@ func (r ReferenceList[T]) GetIds() []string {
 	return []string(r)
 }
 
-func (r ReferenceList[T]) Get() ([]T, error) {
+func (r ReferenceList[T]) GetLoaded() ([]T, error) {
 	result := make([]T, len(r))
 
 	for index, id := range r {
@@ -27,7 +27,7 @@ func (r ReferenceList[T]) Get() ([]T, error) {
 	return result, nil
 }
 
-func (r ReferenceList[T]) GetAt(index int) (*T, error) {
+func (r ReferenceList[T]) GetLoadedAt(index int) (*T, error) {
 	if len(r)-1 < index || index < 0 {
 		return nil, fmt.Errorf("provided index: %d is out of bounds of the list", index)
 	}
@@ -37,4 +37,13 @@ func (r ReferenceList[T]) GetAt(index int) (*T, error) {
 	}
 
 	return instance, nil
+}
+
+func (r ReferenceList[T]) GetWithoutLoading() ([]T, error) {
+	batch, err := GetBatch[T](r.GetIds())
+
+	if err != nil {
+		return nil, fmt.Errorf("error occurred while retriving the objects from DB: %w", err)
+	}
+	return *batch, err
 }

@@ -73,7 +73,7 @@ func TestLoadStateChangingMethodsShouldSaveChanges(t *testing.T) {
 	methodInovcationError := loadedProduct.DecreaseAvailabilityBy(decreaseBy)
 	require.Equal(t, nil, methodInovcationError, "error occurred while invoking method on product instances", methodInovcationError)
 	modifiedQuantity, quantityRetrievalError := exportedProduct.GetQuantityAvailable()
-	require.Equal(t, nil, quantityRetrievalError, "error occured while exucting GetQuantityAvailable", quantityRetrievalError)
+	require.Equal(t, nil, quantityRetrievalError, "error occurred while exucting GetQuantityAvailable", quantityRetrievalError)
 
 	// Assert
 	require.Equal(t, modifiedQuantity, initialQuantityAvailable-decreaseBy, "QuantityAvailable was not modified")

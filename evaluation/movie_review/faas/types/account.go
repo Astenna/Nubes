@@ -3,10 +3,10 @@ package types
 import "github.com/Astenna/Nubes/lib"
 
 type Account struct {
-	Nickname      string
-	Email         string `nubes:"id,readonly" dynamodbav:"Id"`
-	Password      string `nubes:"readonly"`
-	isInitialized bool
+	Nickname	string
+	Email		string	`nubes:"id,readonly" dynamodbav:"Id"`
+	Password	string	`nubes:"readonly"`
+	isInitialized	bool
 }
 
 func (Account) GetTypeName() string {
@@ -38,7 +38,6 @@ func (u Account) VerifyPassword(password string) (bool, error) {
 	}
 	return false, nil
 }
-
 func (receiver *Account) Init() {
 	receiver.isInitialized = true
 }

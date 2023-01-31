@@ -11,6 +11,10 @@ func (r Reference[T]) Id() string {
 	return string(r)
 }
 
-func (r Reference[T]) Get() (*T, error) {
+func (r Reference[T]) GetLoaded() (*T, error) {
 	return Load[T](string(r))
+}
+
+func (r Reference[T]) GetWithoutLoading() (*T, error) {
+	return GetObjectState[T](string(r))
 }
