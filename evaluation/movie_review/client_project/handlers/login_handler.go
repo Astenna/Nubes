@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"text/template"
 
-	clib "github.com/Astenna/Nubes/movie_review/client_lib"
+	clib "github.com/Astenna/Nubes/evaluation/movie_review/client_lib"
 )
 
 var currentlyLoggedIn any

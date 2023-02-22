@@ -4,9 +4,9 @@ use (
 	.
 	./lib
 	./generator
-	./example/client_lib
-	./example/faas
-	./example/faas_lib_test
-	./example/client_lib_test
-	./evaluation/movie_review
+	//./example/client_lib
+	//./example/faas
+	//./example/faas_lib_test
+	//./example/client_lib_test
+	./evaluation
 )

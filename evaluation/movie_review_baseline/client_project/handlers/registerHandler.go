@@ -5,19 +5,21 @@ import (
 	"net/http"
 	"text/template"
 
-	clib "github.com/Astenna/Nubes/evaluation/movie_review/client_lib"
+	"github.com/Astenna/Nubes/evaluation/movie_review_baseline/client_project/models"
 )
 
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
-		var account clib.AccountStub
+		var account models.Account
 		account.Password = r.PostFormValue("Password")
 		account.Email = r.PostFormValue("Email")
 		account.Nickname = r.PostFormValue("Name")
 
-		_, err := clib.ExportAccount(account)
+		_, err := invokeLambdaToGetSingleItem[string](account, "register")
+
 		if err != nil {
 			fmt.Fprintf(w, "Error occurred when creating the user")
+			return
 		}
 
 		fmt.Fprintf(w, "Account created successfully")

@@ -5,12 +5,12 @@ import (
 	"net/http"
 	"text/template"
 
-	clib "github.com/Astenna/Nubes/evaluation/movie_review/client_lib"
+	"github.com/Astenna/Nubes/evaluation/movie_review_baseline/client_project/models"
 )
 
 func MovieHandler(w http.ResponseWriter, r *http.Request) {
 	movieId := r.URL.Path[len("/movie/"):]
-	initializedMovie, err := clib.LoadMovie(movieId)
+	initializedMovie, err := invokeLambdaToGetSingleItem[models.Movie](movieId, "getMovieById")
 	if initializedMovie == nil {
 		fmt.Fprintf(w, "Movie not found")
 		return
@@ -20,15 +20,6 @@ func MovieHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	movieStub, err := initializedMovie.GetStub()
-	reviewStubs, err := initializedMovie.Reviews.GetStubs()
-	_ = reviewStubs
-	if err != nil {
-		fmt.Fprintf(w, "Error occurred when retrieving the movie stub %s", err.Error())
-		return
-	}
-
 	t, _ := template.ParseFiles("templates//movie.html")
-	err = t.Execute(w, movieStub)
-	fmt.Println(err.Error())
+	t.Execute(w, initializedMovie)
 }

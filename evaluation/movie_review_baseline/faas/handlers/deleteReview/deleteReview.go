@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/Astenna/Nubes/movie_review_baseline/faas/db"
+	"github.com/Astenna/Nubes/evaluation/movie_review_baseline/faas/db"
 	"github.com/aws/aws-lambda-go/lambda"
 )
 

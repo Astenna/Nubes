@@ -15,12 +15,19 @@
             "program": "evaluation\\movie_review\\client_project\\"
         },
         {
+            "name": "Launch evaluation BASELINE client",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "evaluation\\movie_review_baseline\\faas\\"
+        },
+        {
             "name": "Generator: example handlers",
             "type": "go",
             "request": "launch",
             "mode": "debug",
             "program": "generator\\main.go",
-            "args": ["handlers","-t=..//example//faas//types", "-o=..//example//faas", "-m=github.com/Astenna/Nubes/faas", "-g=true", "-i=false"]
+            "args": ["handlers","-t=..//example//faas//types", "-o=..//example//faas", "-m=github.com/Astenna/Nubes/faas/example", "-g=true", "-i=false"]
         },
         {
             "name": "Generator: example client_lib",
@@ -36,7 +43,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "generator\\main.go",
-            "args": ["handlers","-t=..//evaluation//movie_review//faas//types", "-o=..//evaluation//movie_review//faas", "-m=github.com/Astenna/Nubes/movie_review/faas", "-i=true"]
+            "args": ["handlers","-t=..//evaluation//movie_review//faas//types", "-o=..//evaluation//movie_review//faas", "-m=github.com/Astenna/Nubes/evaluation/movie_review/faas", "-i=true"]
         },
         {
             "name": "Generator: evaluation client_lib",

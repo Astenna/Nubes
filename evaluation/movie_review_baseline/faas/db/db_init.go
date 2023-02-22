@@ -3,7 +3,6 @@ package db
 import (
 	"fmt"
 
-	"github.com/Astenna/Nubes/generator/parser"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 )
@@ -13,10 +12,10 @@ type IndexDefinition struct {
 	IndexName string
 }
 
-func InitializeTables(parsedPackage parser.ParsedPackage) {
+func InitializeTables() {
 	tableNames := []string{"Account", "Review", "Movie"}
-	tableToIndex := map[string]IndexDefinition{"Review": {Column: "MovieId", IndexName: "ReviewMovieList"},
-		"Movie": {Column: "Category", IndexName: "CategoryMovieList"}}
+	tableToIndex := map[string]IndexDefinition{"Review": {Column: "MovieId", IndexName: "ReviewMovie"},
+		"Movie": {Column: "Category", IndexName: "MovieCategory"}}
 
 	for _, tableName := range tableNames {
 		createTableInput := &dynamodb.CreateTableInput{

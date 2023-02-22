@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Astenna/Nubes/movie_review_baseline/faas/models"
+	"github.com/Astenna/Nubes/evaluation/movie_review_baseline/faas/models"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
@@ -106,7 +106,7 @@ func GetMoviesByCategory(categoryName string) ([]models.CategoryListItem, error)
 		return nil, fmt.Errorf("missing categoryName")
 	}
 
-	keyCondition := expression.Key(categoryName).Equal(expression.Value("Category"))
+	keyCondition := expression.Key("Category").Equal(expression.Value(categoryName))
 	expr, errExpression := expression.NewBuilder().
 		WithKeyCondition(keyCondition).
 		Build()
@@ -117,7 +117,7 @@ func GetMoviesByCategory(categoryName string) ([]models.CategoryListItem, error)
 
 	queryInput := &dynamodb.QueryInput{
 		TableName:                 aws.String("Movie"),
-		IndexName:                 aws.String("CategoryMovieList"),
+		IndexName:                 aws.String("MovieCategory"),
 		ExpressionAttributeNames:  expr.Names(),
 		KeyConditionExpression:    expr.KeyCondition(),
 		ProjectionExpression:      expr.Projection(),
@@ -131,8 +131,9 @@ func GetMoviesByCategory(categoryName string) ([]models.CategoryListItem, error)
 
 	result := make([]models.CategoryListItem, len(items.Items))
 	for index, attr := range items.Items {
-		result[index].Title = *attr["Title"].S
 		result[index].Id = *attr["Id"].S
+		// TODO: Title is not here since it is not contained in the index!
+		result[index].Title = *attr["Title"].S
 	}
 	return result, nil
 }
@@ -153,7 +154,7 @@ func GetMovieReviews(movieId string) ([]models.Review, error) {
 
 	queryInput := &dynamodb.QueryInput{
 		TableName:                 aws.String("Movie"),
-		IndexName:                 aws.String("ReviewMovieList"),
+		IndexName:                 aws.String("ReviewMovie"),
 		ExpressionAttributeNames:  expr.Names(),
 		KeyConditionExpression:    expr.KeyCondition(),
 		ProjectionExpression:      expr.Projection(),

@@ -3,10 +3,11 @@ package main
 import (
 	"net/http"
 
-	"github.com/Astenna/Nubes/evaluation/movie_review/client_project/handlers"
+	"github.com/Astenna/Nubes/evaluation/movie_review_baseline/client_project/handlers"
 )
 
 func main() {
+
 	http.HandleFunc("/register", handlers.RegisterHandler)
 	http.HandleFunc("/login", handlers.LoginHandler)
 	http.HandleFunc("/category/", handlers.CategoryHandler)

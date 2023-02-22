@@ -11,3 +11,8 @@ type CategoryListItem struct {
 	Id    string
 	Title string
 }
+
+type MoviesOfCategoryTemplateInput struct {
+	Name   string
+	Movies []CategoryListItem
+}
