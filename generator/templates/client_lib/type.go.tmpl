@@ -75,7 +75,7 @@ func (r *{{.TypeNameLower}}) init() {
 	r.{{.FromFieldNameUpper}} = *newReferenceNavigationList[{{.TypeNameLower}}, {{.TypeName}}Stub](r.id, r.GetTypeName(), "{{.FieldName}}", false)
 	{{end}}
 	{{range .ManyToManyRelationships}}
-	r.{{.FromFieldNameUpper}} = *newReferenceNavigationList[{{.TypeNameLower}}, {{.TypeName}}Stub(r.id, r.GetTypeName(), "", true)
+	r.{{.FromFieldNameUpper}} = *newReferenceNavigationList[{{.TypeNameLower}}, {{.TypeName}}Stub](r.id, r.GetTypeName(), "", true)
 	{{end}}
 }
 
@@ -376,7 +376,7 @@ func ({{.ReceiverName}} {{$.TypeNameLower}}) {{.FuncName}}({{if .InputParamType}
 {{end}}
 {{end}} 
 
-
+{{if .NobjectImplementation}}
 func (r {{.TypeNameLower}}) GetStub() ({{.TypeNameOrginalCase}}Stub, error) {
 	if r.id == "" {
 		return *new({{.TypeNameOrginalCase}}Stub), errors.New("id of the type not set, use  Load{{.TypeNameOrginalCase}} or Export{{.TypeNameOrginalCase}} to create new instance of the type")
@@ -407,3 +407,4 @@ func (r {{.TypeNameLower}}) GetStub() ({{.TypeNameOrginalCase}}Stub, error) {
 	}
 	return *result, err
 }
+{{end}} 

@@ -50,12 +50,20 @@ functions:
         - bin/Delete
     maximumRetryAttempts: 0
     maximumEventAge: 60
-  GetField:
-    name: GetField
-    handler: bin/GetField
+  GetState:
+    name: GetState
+    handler: bin/GetState
     package:
       include:
-        - bin/GetField
+        - bin/GetState
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+  GetBatch:
+    name: GetBatch
+    handler: bin/GetBatch
+    package:
+      include:
+        - bin/GetBatch
     maximumRetryAttempts: 0
     maximumEventAge: 60
   SetField:
@@ -66,14 +74,6 @@ functions:
         - bin/SetField
     maximumRetryAttempts: 0
     maximumEventAge: 60
-  ReferenceGetSortKeysByPartitionKey:
-    name: ReferenceGetSortKeysByPartitionKey
-    handler: bin/ReferenceGetSortKeysByPartitionKey
-    package:
-      include:
-        - bin/ReferenceGetSortKeysByPartitionKey
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
   ReferenceGetByIndex:
     name: ReferenceGetByIndex
     handler: bin/ReferenceGetByIndex
@@ -82,12 +82,31 @@ functions:
         - bin/ReferenceGetByIndex
     maximumRetryAttempts: 0
     maximumEventAge: 60
+  
   ReferenceAddToManyToMany:
     name: ReferenceAddToManyToMany
     handler: bin/ReferenceAddToManyToMany
     package:
       include:
         - bin/ReferenceAddToManyToMany
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+  ReferenceGetSortKeysByPartitionKey:
+    name: ReferenceGetSortKeysByPartitionKey
+    handler: bin/ReferenceGetSortKeysByPartitionKey
+    package:
+      include:
+        - bin/ReferenceGetSortKeysByPartitionKey
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
+
+  ProductDecreaseAvailabilityBy:
+    name:  ProductDecreaseAvailabilityBy
+    handler: bin/ProductDecreaseAvailabilityBy
+    package:
+      include:
+        - bin/ProductDecreaseAvailabilityBy
     maximumRetryAttempts: 0
     maximumEventAge: 60
 
@@ -97,15 +116,6 @@ functions:
     package:
       include:
         - bin/UserVerifyPassword
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
-  ProductDecreaseAvailabilityBy:
-    name:  ProductDecreaseAvailabilityBy
-    handler: bin/ProductDecreaseAvailabilityBy
-    package:
-      include:
-        - bin/ProductDecreaseAvailabilityBy
     maximumRetryAttempts: 0
     maximumEventAge: 60
 

@@ -22,14 +22,14 @@ type OrderedProduct struct {
 func NewOrder(order Order) (Order, error) {
 
 	for _, orderedProduct := range order.Products {
-		product, err := orderedProduct.Product.Get()
+		product, err := orderedProduct.Product.GetLoaded()
 		if err != nil {
 			return *new(Order), errors.New("item " + orderedProduct.Product.Id() + " not available")
 		}
 		product.DecreaseAvailabilityBy(orderedProduct.Quantity)
 	}
 
-	buyer, err := order.Buyer.Get()
+	buyer, err := order.Buyer.GetLoaded()
 	if err != nil {
 		return *new(Order), errors.New("unable to retrieve user's address for shipping")
 	}

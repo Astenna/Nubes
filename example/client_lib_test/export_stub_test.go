@@ -60,9 +60,9 @@ func TestReferenceNavigationListOneToMany(t *testing.T) {
 	exportedProduct, err := clib.ExportProduct(newProduct)
 	require.Equal(t, nil, err, "error occurred in ExportProduct invocation", err)
 	// retrieve newProduct ID from newShop
-	productsIds, err := exportedShop.GetProductsIds()
+	productsIds, err := exportedShop.Products.GetIds()
 	require.Equal(t, nil, err, "error occurred in GetProductsIds invocation", err)
-	products, err := exportedShop.GetProducts()
+	products, err := exportedShop.Products.Get()
 	require.Equal(t, nil, err, "error occurred in GetProducts invocation", err)
 
 	// Assert
@@ -90,10 +90,10 @@ func TestReferenceNavigationListManyToManyByPartiotionKey(t *testing.T) {
 	exportedShop, err := clib.ExportShop(newShop)
 	require.Equal(t, nil, err, "error occurred in ExportShop invocation", err)
 
-	err = exportedShop.AddOwners(newUserId)
+	err = exportedShop.Owners.AddToManyToMany(newUserId)
 	require.Equal(t, nil, err, "error occurred in AddOwners invocation", err)
 
-	ownedShops, err := exportedUser.GetShopsIds()
+	ownedShops, err := exportedUser.Shops.GetIds()
 	require.Equal(t, nil, err, "error occurred in AddOwners invocation", err)
 
 	// Assert
@@ -120,10 +120,10 @@ func TestReferenceNavigationListManyToManyByWithIndex(t *testing.T) {
 	exportedUser, err := clib.ExportUser(newUser)
 	require.Equal(t, nil, err, "error occurred in ExportUser invocation", err)
 
-	err = exportedUser.AddShops(exportedShop.GetId())
+	err = exportedUser.Shops.AddToManyToMany(exportedShop.GetId())
 	require.Equal(t, nil, err, "error occurred in AddOwners invocation", err)
 
-	shopOwners, err := exportedShop.GetOwnersIds()
+	shopOwners, err := exportedShop.Owners.GetIds()
 	require.Equal(t, nil, err, "error occurred in AddOwners invocation", err)
 
 	// Assert

@@ -27,7 +27,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "generator\\main.go",
-            "args": ["handlers","-t=..//example//faas//types", "-o=..//example//faas", "-m=github.com/Astenna/Nubes/faas/example", "-g=true", "-i=false"]
+            "args": ["handlers","-t=..//example//faas//types", "-o=..//example//faas", "-m=github.com/Astenna/Nubes/example/faas", "-g=true", "-i=false"]
         },
         {
             "name": "Generator: example client_lib",
@@ -35,7 +35,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "generator\\main.go",
-            "args": ["client","-t=..//example//faas//types", "-o=..//"]
+            "args": ["client","-t=..//example//faas//types", "-o=..//example"]
         },
         {
             "name": "Generator: evaluation handlers",
