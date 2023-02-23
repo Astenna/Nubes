@@ -66,7 +66,7 @@ func (t *TypeSpecParser) prepareHandleres() {
 					OrginalPackageAlias: OrginalPackageAlias,
 					MethodName:          f.Name.Name,
 					ReceiverType:        receiverTypeName,
-					ReceiverIdFieldName: "Id",
+					ReceiverIdFieldName: Id,
 					Imports:             getImportsAsString(t.tokenSet, detectedFunction.Imports),
 				}
 

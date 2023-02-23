@@ -11,14 +11,17 @@ const LibraryGetFieldOfType = "GetFieldOfType"
 const LibraryGetObjectStateMethod = "GetObjectState"
 const InitFunctionName = "Init"
 const ReferenceNavigationListCtor = "NewReferenceNavigationList"
+const SetField = "SetField"
+const Upsert = "Upsert"
 
-// FIELDS
-const OrginalPackageAlias = "org"
+// FIELDS & PARAMETER TYPES
+const GetStateParamType = "GetStateParam"
 const HandlerInputParameterType = "lib.HandlerParameters"
 const ReferenceType = "lib.Reference"
 const ReferenceListType = "lib.ReferenceList"
 const LibraryReferenceNavigationList = "lib.ReferenceNavigationList"
 const IsInitializedFieldName = "isInitialized"
+const SetFieldParam = "SetFieldParam"
 
 // TAGS
 const NubesTagKey = "nubes"
@@ -31,6 +34,9 @@ const DynamoDBIgnoreValueTag = "-"
 const DynamoDBKeyTag = "dynamodbav"
 
 // PARAMETER NAMES
+const Id = "Id"
+const TypeName = "TypeName"
+const FieldName = "FieldName"
 const HandlerInputParameterName = "input"
 const HandlerParameters = "(" + HandlerInputParameterName + " " + HandlerInputParameterType + ")"
 const HandlerInputParameterFieldName = "Parameter"
@@ -39,6 +45,7 @@ const TemporaryReceiverName = "tempReceiverName"
 
 // OTHERS
 const LibImportPath = "\"github.com/Astenna/Nubes/lib\""
+const OrginalPackageAlias = "org"
 
 // Prefixes of repository operations
 const (

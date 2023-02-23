@@ -37,7 +37,7 @@ func getReadFromLibExpr(fn *ast.FuncDecl, typesWithCustomId map[string]string) (
 	if idField, isPresent := typesWithCustomId[typeName]; isPresent {
 		idFieldName = idField
 	} else {
-		idFieldName = "Id"
+		idFieldName = Id
 	}
 
 	assignStmt := ast.AssignStmt{
@@ -75,7 +75,7 @@ func getUpsertInLibExpr(fn *ast.FuncDecl, typesWithCustomId map[string]string) a
 	if idField, isPresent := typesWithCustomId[typeName]; isPresent {
 		idFieldName = idField
 	} else {
-		idFieldName = "Id"
+		idFieldName = Id
 	}
 
 	return ast.AssignStmt{
@@ -87,7 +87,7 @@ func getUpsertInLibExpr(fn *ast.FuncDecl, typesWithCustomId map[string]string) a
 			&ast.CallExpr{
 				Fun: &ast.SelectorExpr{
 					X:   &ast.Ident{Name: "lib"},
-					Sel: &ast.Ident{Name: "Upsert"},
+					Sel: &ast.Ident{Name: Upsert},
 				},
 				Args: []ast.Expr{
 					&ast.Ident{Name: fn.Recv.List[0].Names[0].Name},

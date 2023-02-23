@@ -135,7 +135,6 @@ func parseFields(field *ast.Field, fieldType string, structDef *StructTypeDefini
 		newFieldDefinition.FieldType = strings.TrimPrefix(newFieldDefinition.FieldType, ReferenceType)
 		newFieldDefinition.FieldTypeUpper = strings.Trim(newFieldDefinition.FieldType, "[]")
 		newFieldDefinition.FieldType = lowerCasedFirstChar(newFieldDefinition.FieldTypeUpper)
-		//newFieldDefinition.FieldType = strings.Replace(newFieldDefinition.FieldType, lowerCasedFirstChar(newFieldDefinition.FieldTypeUpper))
 		newFieldDefinition.IsReference = true
 	}
 

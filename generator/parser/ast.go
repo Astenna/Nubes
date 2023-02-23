@@ -83,25 +83,25 @@ func getGetterDBStmts(fn *ast.FuncDecl, input getDBStmtsParam) ast.IfStmt {
 					&ast.CompositeLit{
 						Type: &ast.SelectorExpr{
 							X:   &ast.Ident{Name: "lib"},
-							Sel: &ast.Ident{Name: "GetStateParam"},
+							Sel: &ast.Ident{Name: GetStateParamType},
 						},
 						Elts: []ast.Expr{
 							&ast.KeyValueExpr{
-								Key: &ast.Ident{Name: "Id"},
+								Key: &ast.Ident{Name: Id},
 								Value: &ast.SelectorExpr{
 									X:   &ast.Ident{Name: input.receiverVariableName},
 									Sel: &ast.Ident{Name: input.idFieldName},
 								},
 							},
 							&ast.KeyValueExpr{
-								Key: &ast.Ident{Name: "TypeName"},
+								Key: &ast.Ident{Name: TypeName},
 								Value: &ast.BasicLit{
 									Kind:  token.STRING,
 									Value: "\"" + input.typeName + "\"",
 								},
 							},
 							&ast.KeyValueExpr{
-								Key: &ast.Ident{Name: "FieldName"},
+								Key: &ast.Ident{Name: FieldName},
 								Value: &ast.BasicLit{
 									Kind:  token.STRING,
 									Value: "\"" + input.fieldName + "\"",
@@ -172,31 +172,31 @@ func getSetterDBStmts(fn *ast.FuncDecl, input getDBStmtsParam) ast.IfStmt {
 			&ast.CallExpr{
 				Fun: &ast.SelectorExpr{
 					X:   &ast.Ident{Name: "lib"},
-					Sel: &ast.Ident{Name: "SetField"},
+					Sel: &ast.Ident{Name: SetField},
 				},
 				Args: []ast.Expr{
 					&ast.CompositeLit{
 						Type: &ast.SelectorExpr{
 							X:   &ast.Ident{Name: "lib"},
-							Sel: &ast.Ident{Name: "SetFieldParam"},
+							Sel: &ast.Ident{Name: SetFieldParam},
 						},
 						Elts: []ast.Expr{
 							&ast.KeyValueExpr{
-								Key: &ast.Ident{Name: "Id"},
+								Key: &ast.Ident{Name: Id},
 								Value: &ast.SelectorExpr{
 									X:   &ast.Ident{Name: input.receiverVariableName},
 									Sel: &ast.Ident{Name: input.idFieldName},
 								},
 							},
 							&ast.KeyValueExpr{
-								Key: &ast.Ident{Name: "TypeName"},
+								Key: &ast.Ident{Name: TypeName},
 								Value: &ast.BasicLit{
 									Kind:  token.STRING,
 									Value: "\"" + input.typeName + "\"",
 								},
 							},
 							&ast.KeyValueExpr{
-								Key: &ast.Ident{Name: "FieldName"},
+								Key: &ast.Ident{Name: FieldName},
 								Value: &ast.BasicLit{
 									Kind:  token.STRING,
 									Value: "\"" + input.fieldName + "\"",
