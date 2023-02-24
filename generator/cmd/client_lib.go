@@ -36,12 +36,12 @@ var clientCmd = &cobra.Command{
 		for _, typeDefinition := range definedTypes {
 			typeDefinition.PackageName = projectName
 			filePath := filepath.Join(outputDirectoryPath, typeDefinition.TypeNameLower+".go")
-			templ.CreateFile("templates/client_lib/type.go.tmpl", typeDefinition, filePath)
+			templ.CreateFile("template/client_lib/type.go.tmpl", typeDefinition, filePath)
 			templ.RunGoimportsOnFile(filePath)
 		}
 
 		filePath := filepath.Join(outputDirectoryPath, "stubs.go")
-		templ.CreateFile("templates/client_lib/type_stubes.go.tmpl", struct {
+		templ.CreateFile("template/client_lib/type_stubes.go.tmpl", struct {
 			PackageName string
 			Types       []*parser.StructTypeDefinition
 		}{PackageName: projectName, Types: definedTypes}, filePath)
@@ -52,7 +52,7 @@ var clientCmd = &cobra.Command{
 			CustomCtors []parser.CustomCtorDefinition
 		}{PackageName: projectName, CustomCtors: typesParser.CustomCtorDefinitions}
 		filePath = filepath.Join(outputDirectoryPath, "custom_ctors.go")
-		templ.CreateFile("templates/client_lib/custom_ctors.go.tmpl", customCtorTemplInput, filePath)
+		templ.CreateFile("template/client_lib/custom_ctors.go.tmpl", customCtorTemplInput, filePath)
 		templ.RunGoimportsOnFile(filePath)
 
 		othetDeclsTemplInput := struct {
@@ -60,19 +60,19 @@ var clientCmd = &cobra.Command{
 			OtherDecls  parser.OtherDecls
 		}{PackageName: projectName, OtherDecls: typesParser.OtherDecls}
 		filePath = filepath.Join(outputDirectoryPath, "other_decls.go")
-		templ.CreateFile("templates/client_lib/other_decls.go.tmpl", othetDeclsTemplInput, filePath)
+		templ.CreateFile("template/client_lib/other_decls.go.tmpl", othetDeclsTemplInput, filePath)
 
 		referenceTmplInput := struct {
 			PackageName string
 		}{PackageName: projectName}
 		filePath = filepath.Join(outputDirectoryPath, "reference.go")
-		templ.CreateFile("templates/client_lib/reference.go.tmpl", referenceTmplInput, filePath)
+		templ.CreateFile("template/client_lib/reference.go.tmpl", referenceTmplInput, filePath)
 
 		filePath = filepath.Join(outputDirectoryPath, "reference_navigation_list.go")
-		templ.CreateFile("templates/client_lib/reference_navigation_list.go.tmpl", referenceTmplInput, filePath)
+		templ.CreateFile("template/client_lib/reference_navigation_list.go.tmpl", referenceTmplInput, filePath)
 
 		lambdaClientTemplInput := struct{ PackageName string }{PackageName: projectName}
-		templ.CreateFile("templates/client_lib/lambda_client.go.tmpl", lambdaClientTemplInput, filepath.Join(outputDirectoryPath, "lambda_client.go"))
+		templ.CreateFile("template/client_lib/lambda_client.go.tmpl", lambdaClientTemplInput, filepath.Join(outputDirectoryPath, "lambda_client.go"))
 	},
 }
 
