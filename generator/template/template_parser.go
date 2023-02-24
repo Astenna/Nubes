@@ -1,4 +1,4 @@
-package template_parser
+package template
 
 import (
 	"fmt"
@@ -6,17 +6,6 @@ import (
 	"path/filepath"
 	"text/template"
 )
-
-func ParseOrExitOnError(templatePath string) template.Template {
-	templ, err := template.ParseFiles(templatePath)
-
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	return *templ
-}
 
 func MakePathAbosoluteOrExitOnError(path string) string {
 	absPath, err := filepath.Abs(path)
@@ -28,10 +17,18 @@ func MakePathAbosoluteOrExitOnError(path string) string {
 	return absPath
 }
 
-func CreateFileFromTemplate(templ template.Template, data any, newFilePath string) {
+func CreateFile(relativeTemplPath string, data any, newFilePath string) {
+	path, _ := os.Executable()
+	generatorPath := filepath.Dir(path)
+	templ, err := template.ParseFiles(filepath.Join(generatorPath, relativeTemplPath))
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
 	file, err := os.Create(newFilePath)
 	if err != nil {
-		fmt.Println("error occurred when creating a file", err)
+		fmt.Println("error occurred while creating a file", err)
 	}
 	err = templ.Execute(file, data)
 	if err != nil {

@@ -20,7 +20,7 @@ A library providing an abstraction layer built for the stateful serverless funct
 
 ## Prerequisites
 
-Nubes requires **Golang version 1.18 or greater**. 
+Nubes requires **Golang version 1.18 or greater**.
 
 To successfully run Nubes generator, [goimports](https://pkg.go.dev/golang.org/x/tools/cmd/goimports) must be installed.
 
@@ -35,16 +35,15 @@ Additionally, as one of the commands required for serverless functions deployemn
 
 To see an example of project developed with Nubes, see the code and README in the `example` directory. The high-level overview of the development workflow and the programming model details are described in the sections below. The details of the code generation done by the Nubes generator are described in the readme in the `generator` directory.
 
-## Development overview
+## Programming model
 
 The basic building block of Nubes projects are object types called Nobjects. They represent state persisted by the Nubes and expose methods for interactions with the state.  A valid declaration of Nubes object type, must adhere to several specific requirements:
 
 - the `GetTypeName` method that returns a string used to determine the type's name
 - the `Id` field of type string unless the implementation of custom Id field is provided
 
-![DREAM Demo](images/nubes-overview.png)
+## Implementation details
 
-## Programming model
+![Nubes Overview](images/nubes-overview.png)
 
 ## Limitations
-

@@ -1,4 +1,4 @@
-package template_parser
+package template
 
 import (
 	"fmt"
