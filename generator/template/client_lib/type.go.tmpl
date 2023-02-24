@@ -1,0 +1,410 @@
+package {{.PackageName}}
+{{if or .MemberFunctions .FieldDefinitions}}
+import (
+    "errors"
+	"encoding/json"
+	"strconv"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/lambda"
+	"github.com/Astenna/Nubes/lib"
+){{end}}
+
+type {{if eq .NobjectImplementation ""}} {{.TypeNameOrginalCase}} {{else}} {{.TypeNameLower}} {{end}} struct {
+	{{if eq .NobjectImplementation ""}}
+		{{range .FieldDefinitions}}
+    		{{if .IsReference}} {{.FieldNameUpper}} lib.Reference[{{.FieldTypeUpper}}Stub] 
+    		{{else if .IsReferenceList}} {{.FieldNameUpper}} lib.ReferenceList[{{.FieldType}}] 
+			{{else}} {{.FieldNameUpper}} {{.FieldType}} {{end}} 
+		{{end}}
+	{{else}}
+	id string
+	{{end}} 
+	{{range .OneToManyRelationships}}
+	{{.FromFieldNameUpper}} referenceNavigationList[{{.TypeNameLower}}, {{.TypeName}}Stub]
+	{{end}}
+	{{range .ManyToManyRelationships}}
+	{{.FromFieldNameUpper}} referenceNavigationList[{{.TypeNameLower}}, {{.TypeName}}Stub]
+	{{end}}
+}
+
+
+{{if .NobjectImplementation}} // ALL THE CODE BELOW IS GENERATED ONLY FOR NOBJECTS TYPES
+func ({{$.TypeNameLower}})GetTypeName() string {{.NobjectImplementation}} 
+
+
+// LOAD AND EXPORT
+
+func Load{{.TypeNameOrginalCase}}(id string) (*{{.TypeNameLower}}, error) {	
+	newInstance := new({{.TypeNameLower}})
+
+	params := lib.HandlerParameters{
+		Id:  id,
+		TypeName:  newInstance.GetTypeName(),
+	}
+	jsonParam, err := json.Marshal(params)
+	if err != nil {
+		return nil, err
+	}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("Load"), Payload: jsonParam})
+	if _err != nil {
+		return nil, _err
+	}
+	if out.FunctionError != nil {
+		return nil, fmt.Errorf("lambda function designed to verify if instance exists failed. Error: %s", string(out.Payload))
+	}
+
+	newInstance.id = id
+	newInstance.init()
+	return newInstance, nil
+} 
+
+func load{{.TypeNameOrginalCase}}WithoutCheckIfExists(id string) *{{.TypeNameLower}} {	
+	newInstance := new({{.TypeNameLower}})
+	newInstance.id = id
+	return newInstance
+} 
+
+// setId interface for initilization in ReferenceNavigationList
+func (u *{{.TypeNameLower}})setId(id string) {
+	u.id = id
+}
+
+func (r *{{.TypeNameLower}}) init() {
+	{{range .OneToManyRelationships}}
+	r.{{.FromFieldNameUpper}} = *newReferenceNavigationList[{{.TypeNameLower}}, {{.TypeName}}Stub](r.id, r.GetTypeName(), "{{.FieldName}}", false)
+	{{end}}
+	{{range .ManyToManyRelationships}}
+	r.{{.FromFieldNameUpper}} = *newReferenceNavigationList[{{.TypeNameLower}}, {{.TypeName}}Stub](r.id, r.GetTypeName(), "", true)
+	{{end}}
+}
+
+
+func Export{{.TypeNameOrginalCase}}(input {{.TypeNameOrginalCase}}Stub) (*{{.TypeNameLower}}, error) {	
+	newInstance := new({{.TypeNameLower}})
+
+	params := lib.HandlerParameters{
+		TypeName:  newInstance.GetTypeName(),
+		Parameter: input,
+	}
+	jsonParam, err := json.Marshal(params)
+	if err != nil {
+		return nil, err
+	}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("Export"), Payload: jsonParam})
+	if _err != nil {
+		return nil, _err
+	}
+	if out.FunctionError != nil {
+		return nil, fmt.Errorf("lambda function designed to verify if instance exists failed. Error: %s", string(out.Payload[:]))
+	}
+
+	newInstance.id, err = strconv.Unquote(string(out.Payload[:]))
+	newInstance.init()
+	return newInstance, err
+} 
+ 
+// DELETE
+
+func Delete{{.TypeNameOrginalCase}}(id string) error {	
+	newInstance := new({{.TypeNameLower}})
+
+	params := lib.HandlerParameters{
+		Id:  id,
+		TypeName:  newInstance.GetTypeName(),
+	}
+	jsonParam, err := json.Marshal(params)
+	if err != nil {
+		return err
+	}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("Delete"), Payload: jsonParam})
+	if _err != nil {
+		return  _err
+	}
+	if out.FunctionError != nil {
+		return fmt.Errorf("lambda function failed. Error: %s", string(out.Payload))
+	}
+
+	return nil
+} 
+
+// GETID
+
+func (s {{$.TypeNameLower}})GetId() string {
+	return s.id
+}
+
+// GETTERS AND SETTERS
+
+{{range .FieldDefinitions}}
+{{if ne .FieldNameUpper "Id"}}
+{{if eq .IsReferenceList false}}
+func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}() ({{.FieldType}}, error) {
+	if s.id == "" {
+		return *new({{.FieldType}}), errors.New("id of the type not set, use  Load{{$.TypeNameOrginalCase}} or Export{{$.TypeNameOrginalCase}} to create new instance of the type")
+	}
+
+	params := lib.GetStateParam{
+		Id: s.GetId(),
+		TypeName:  s.GetTypeName(),	
+		FieldName: "{{.FieldNameUpper}}",
+	}
+	jsonParam, err := json.Marshal(params)
+	if err != nil {
+		return *new({{.FieldType}}), err
+	}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
+	if _err != nil {
+		return *new({{.FieldType}}), _err
+	}
+	if out.FunctionError != nil {
+		return *new({{.FieldType}}), fmt.Errorf(string(out.Payload[:]))
+	}
+
+	{{if .IsReference}}
+	result := new(lib.Reference[{{.FieldType}}])
+	err = json.Unmarshal(out.Payload, result)
+	if err != nil {
+		return *new({{.FieldType}}), err
+	}
+	var referenceResult = load{{.FieldTypeUpper}}WithoutCheckIfExists(result.Id())
+	return *referenceResult, err
+	{{else}}
+	result := new({{.FieldType}})
+	err = json.Unmarshal(out.Payload, result)
+	if err != nil {
+		return *new({{.FieldType}}), err
+	}
+	return *result, err
+	{{end}}
+} {{else}}
+// REFENCE LIST GETTER - returns ids
+func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}Ids() ([]string, error) {
+	if s.id == "" {
+		return nil, errors.New("id of the type not set, use Load{{$.TypeNameOrginalCase}} or Export{{$.TypeNameOrginalCase}} to create new instance of the type")
+	}
+
+	params := lib.GetStateParam{
+		Id: s.GetId(),
+		TypeName:  s.GetTypeName(),	
+		FieldName: "{{.FieldNameUpper}}",
+	}
+	jsonParam, err := json.Marshal(params)
+	if err != nil {
+		return nil, err
+	}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
+	if _err != nil {
+		return nil, _err
+	}
+	if out.FunctionError != nil {
+		return nil, fmt.Errorf(string(out.Payload[:]))
+	}
+
+	var result []string
+	err = json.Unmarshal(out.Payload, &result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+} 
+// REFERENCE LIST GETTER - returns initialized isntances
+func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}() ([]{{.FieldType}}, error) {
+	if s.id == "" {
+		return nil, errors.New("id of the type not set, use Load{{$.TypeNameOrginalCase}} or Export{{$.TypeNameOrginalCase}} to create new instance of the type")
+	}
+
+	params := lib.GetStateParam{
+		Id: s.GetId(),
+		TypeName:  s.GetTypeName(),	
+		FieldName: "{{.FieldNameUpper}}",
+	}
+	jsonParam, err := json.Marshal(params)
+	if err != nil {
+		return nil, err
+	}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
+	if _err != nil {
+		return nil, _err
+	}
+	if out.FunctionError != nil {
+		return nil, fmt.Errorf(string(out.Payload[:]))
+	}
+
+	var ids []string
+	err = json.Unmarshal(out.Payload, &ids)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]{{.FieldType}}, len(ids))
+	for index, id := range ids {
+		instance := load{{.FieldTypeUpper}}WithoutCheckIfExists(id)
+		result[index] = *instance
+	}
+
+	return result, nil
+} 
+func (s {{$.TypeNameLower}}) Set{{.FieldNameUpper}}(ids []string) error {
+	if s.id == "" {
+		return errors.New("id of the type not set, use Load{{$.TypeNameOrginalCase}} or Export{{$.TypeNameOrginalCase}} to create new instance of the type")
+	}
+	
+	params := lib.SetFieldParam{
+		Id: s.GetId(),
+		TypeName:  s.GetTypeName(),
+		FieldName: "{{.FieldNameUpper}}",
+		Value: ids,
+	}
+	jsonParam, err := json.Marshal(params)
+	if err != nil {
+		return err
+	}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("SetField"), Payload: jsonParam})
+	if _err != nil {
+		return _err
+	}
+	if out.FunctionError != nil {
+		return fmt.Errorf(string(out.Payload[:]))
+	}
+	return nil
+} 
+{{end}}{{end}}
+{{if .IsReference}}
+func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}Id() (string, error) {
+	if s.id == "" {
+		return "", errors.New("id of the type not set, use  Load{{$.TypeNameOrginalCase}} or Export{{$.TypeNameOrginalCase}} to create new instance of the type")
+	}
+
+	params := lib.GetStateParam{
+		Id: s.GetId(),
+		TypeName:  s.GetTypeName(),	
+		FieldName: "{{.FieldNameUpper}}",
+	}
+	jsonParam, err := json.Marshal(params)
+	if err != nil {
+		return "", err
+	}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
+	if _err != nil {
+		return "", _err
+	}
+	if out.FunctionError != nil {
+		return "", fmt.Errorf(string(out.Payload[:]))
+	}
+
+	result := new(lib.Reference[{{.FieldType}}])
+	err = json.Unmarshal(out.Payload, result)
+	if err != nil {
+		return "", err
+	}
+
+	return result.Id(), err
+}
+{{end}}
+{{if and (eq .IsReferenceList false) (eq .IsReadonly false)}}
+func (s {{$.TypeNameLower}}) Set{{.FieldNameUpper}}(newValue {{if .IsReference}}string{{else}}{{.FieldType}}{{end}}) error {
+	if s.id == "" {
+		return errors.New("id of the type not set, use Load{{$.TypeNameOrginalCase}} or Export{{$.TypeNameOrginalCase}} to create new instance of the type")
+	}
+	
+	params := lib.SetFieldParam{
+		Id: s.GetId(),
+		TypeName:  s.GetTypeName(),
+		FieldName: "{{.FieldNameUpper}}",
+		Value: newValue,
+	}
+	jsonParam, err := json.Marshal(params)
+	if err != nil {
+		return err
+	}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("SetField"), Payload: jsonParam})
+	if _err != nil {
+		return _err
+	}
+	if out.FunctionError != nil {
+		return fmt.Errorf(string(out.Payload[:]))
+	}
+	return nil
+} 
+{{end}}{{end}}
+
+// (STATE-CHANGING) METHODS
+
+{{range .MemberFunctions}}
+func ({{.ReceiverName}} {{$.TypeNameLower}}) {{.FuncName}}({{if .InputParamType}}input {{.InputParamType}}{{end}}) {{if .OptionalReturnType}} ({{.OptionalReturnType}}, error) {{else}} error {{end}} {
+	{{if.ReceiverName}} if {{.ReceiverName}}.id == "" {
+		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} errors.New("id of the type not set, use  Load{{$.TypeNameOrginalCase}} or Export{{$.TypeNameOrginalCase}} to create new instance of the type")
+	}{{end}}
+	
+	{{if or .ReceiverName .InputParamType}}params := new(lib.HandlerParameters) {{end}}
+    {{if .ReceiverName}} params.Id = {{.ReceiverName}}.id {{end}}
+    {{if .InputParamType}} params.Parameter = input {{end}}
+
+	{{if or .ReceiverName .InputParamType}} jsonParam, err := json.Marshal(params)
+	if err != nil {
+		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} err
+	} {{end}}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("{{$.TypeNameOrginalCase}}{{.FuncName}}") {{if or .ReceiverName .InputParamType}}, Payload: jsonParam {{end}}})
+	if _err != nil {
+		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} _err
+	}
+	if out.FunctionError != nil {
+		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} fmt.Errorf(string(out.Payload[:]))
+	}
+
+    {{if .OptionalReturnType}}
+	{{if .IsReturnTypeNobject}} result := new({{.OptionalReturnTypeUpper}}Stub)
+	{{else}} result := new({{.OptionalReturnType}})
+	{{end}}
+	_err = json.Unmarshal(out.Payload, result)
+	if _err != nil {
+		return *new({{.OptionalReturnType}}), err
+	}{{end}}
+	
+	return {{if .OptionalReturnType}}{{if .IsReturnTypeNobject}}New{{.OptionalReturnTypeUpper}}(result.GetId()),{{else}}*result,{{end}}{{end}} _err
+} 
+{{end}}
+{{end}} 
+
+{{if .NobjectImplementation}}
+func (r {{.TypeNameLower}}) GetStub() ({{.TypeNameOrginalCase}}Stub, error) {
+	if r.id == "" {
+		return *new({{.TypeNameOrginalCase}}Stub), errors.New("id of the type not set, use  Load{{.TypeNameOrginalCase}} or Export{{.TypeNameOrginalCase}} to create new instance of the type")
+	}
+
+	params := lib.GetStateParam{
+		Id:        r.GetId(),
+		TypeName:  r.GetTypeName(),
+		GetStub:   true,
+	}
+	jsonParam, err := json.Marshal(params)
+	if err != nil {
+		return *new({{.TypeNameOrginalCase}}Stub), err
+	}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
+	if _err != nil {
+		return *new({{.TypeNameOrginalCase}}Stub), _err
+	}
+	if out.FunctionError != nil {
+		return *new({{.TypeNameOrginalCase}}Stub), fmt.Errorf(string(out.Payload[:]))
+	}
+
+	result := new({{.TypeNameOrginalCase}}Stub)
+	err = json.Unmarshal(out.Payload, result)
+	if err != nil {
+		return *new({{.TypeNameOrginalCase}}Stub), err
+	}
+	return *result, err
+}
+{{end}} 

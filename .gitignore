@@ -25,6 +25,7 @@
 **/bin/*
 **/.serverless/*
 **/client_lib/*
+!generator/template/client_lib/*
 example/client_lib
 
 
