@@ -3,6 +3,7 @@ package parser
 import (
 	"fmt"
 	"go/ast"
+	"go/types"
 	"strings"
 
 	"github.com/fatih/structtag"
@@ -67,10 +68,12 @@ func NewManyToManyRelationshipField(typeName1, typeName2, fieldName string) *Man
 // If tag is found, it adds dynamodbav:"-" tag
 // so that the field is ignored in dynamodb interaction.
 // If the dynamodb tag was already added, it does nothing.
+// It fills the t.Output with relationships discovered in its execution.
 // The parseRelationshipsTags return value indicates whether
 // the ast was modified (= whether the dynamodb tag was added).
-func parseRelationshipsTags(field *ast.Field, typeName string, fieldType string, parsedPackage *ParsedPackage) bool {
+func (t *TypeSpecParser) parseRelationshipsTags(field *ast.Field, typeName string) bool {
 	tags, err := getParsedTags(field)
+	fieldType := types.ExprString(field.Type)
 
 	if err != nil {
 		fmt.Println("error occurerd while checking struct tags of:", typeName, " field: ", field.Names[0].Name, ". Error: ", err)
@@ -92,9 +95,9 @@ func parseRelationshipsTags(field *ast.Field, typeName string, fieldType string,
 					navigationToTypeName := strings.TrimPrefix(fieldType, LibraryReferenceNavigationList)
 					navigationToTypeName = strings.Trim(navigationToTypeName, "[]")
 
-					parsedPackage.TypeAttributesIndexes[navigationToTypeName] = append(parsedPackage.TypeAttributesIndexes[navigationToTypeName], navigationToFieldName)
+					t.Output.TypeAttributesIndexes[navigationToTypeName] = append(t.Output.TypeAttributesIndexes[navigationToTypeName], navigationToFieldName)
 					navToField := OneToManyRelationshipField{TypeName: navigationToTypeName, FieldName: navigationToFieldName, FromFieldName: field.Names[0].Name}
-					parsedPackage.TypeNavListsReferringFieldName[typeName] = append(parsedPackage.TypeNavListsReferringFieldName[typeName], navToField)
+					t.Output.TypeNavListsReferringFieldName[typeName] = append(t.Output.TypeNavListsReferringFieldName[typeName], navToField)
 
 					return addDynamoDBIgnoreTag(tags, field, typeName)
 				} else {
@@ -109,7 +112,7 @@ func parseRelationshipsTags(field *ast.Field, typeName string, fieldType string,
 
 					newManyToManyRelationship := NewManyToManyRelationshipField(typeName, navigationToTypeName, field.Names[0].Name)
 					newManyToManyRelationship.FromFieldName = field.Names[0].Name
-					parsedPackage.ManyToManyRelationships[typeName] = append(parsedPackage.ManyToManyRelationships[typeName], *newManyToManyRelationship)
+					t.Output.ManyToManyRelationships[typeName] = append(t.Output.ManyToManyRelationships[typeName], *newManyToManyRelationship)
 					return addDynamoDBIgnoreTag(tags, field, typeName)
 				} else {
 					fmt.Println(HasManyTag, " or ", HasOneTag, " can be used only with ", LibraryReferenceNavigationList, " fields!")
@@ -123,14 +126,14 @@ func parseRelationshipsTags(field *ast.Field, typeName string, fieldType string,
 }
 
 func addDynamoDBIgnoreTag(tags *structtag.Tags, field *ast.Field, typeName string) bool {
-	dynamoTag, _ := tags.Get(DynamoDBKeyTag)
+	dynamoTag, _ := tags.Get(DynamoDBTagKey)
 	if dynamoTag == nil {
 		field.Tag.Value = field.Tag.Value[0:len(field.Tag.Value)-1] + " " + DynamoDBIgnoreTag + "`"
 		return true
 	}
 	if dynamoTag.Name != "-" {
 		fmt.Println("invalid definition of dynamodb struct tag fixed in", typeName, "field:", field.Names[0].Name, " replaced with mandatory ignore tag for", LibraryReferenceNavigationList)
-		tags.Set(&structtag.Tag{Key: DynamoDBKeyTag, Name: DynamoDBIgnoreValueTag})
+		tags.Set(&structtag.Tag{Key: DynamoDBTagKey, Name: DynamoDBIgnoreValueTag})
 		field.Tag.Value = "`" + tags.String() + "`"
 		return true
 	}

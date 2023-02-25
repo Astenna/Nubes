@@ -72,12 +72,7 @@ func (t *TypeSpecParser) Run(moduleName string) {
 
 	t.detectNobjectTypes(moduleName)
 	t.detectAndAdjustDecls()
-
-	isTypeNewCtorImplemented := make(map[string]bool)
-	isTypeReNewCtorImplemented := make(map[string]bool)
-	isTypeDestructorImplemented := make(map[string]bool)
-
-	t.adjustMethods(isTypeNewCtorImplemented, isTypeReNewCtorImplemented, isTypeDestructorImplemented)
+	t.adjustMethods()
 	t.prepareHandleres()
 	t.saveChangesInAst()
 }

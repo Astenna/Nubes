@@ -7,7 +7,6 @@ import (
 	"go/printer"
 	"go/token"
 	"go/types"
-	"strconv"
 	"strings"
 )
 
@@ -21,30 +20,6 @@ func getFunctionReceiverTypeAsString(fieldList *ast.FieldList) string {
 
 func isFunctionStateless(fields *ast.FieldList) bool {
 	return fields.List == nil || fields.List[0].Names == nil || fields.List[0].Names[0].Name == ""
-}
-
-func getFunctionReturnTypesAsString(results *ast.FieldList, isNobjectInOrgPkg map[string]bool) (string, error) {
-
-	if len(results.List) > 2 {
-		return "", fmt.Errorf("maximum allowed number of non-error return parameters is 1, found " + strconv.Itoa(len(results.List)))
-	}
-	if types.ExprString(results.List[len(results.List)-1].Type) != "error" {
-		return "", fmt.Errorf("the last return parameter type of repository function must be error")
-	}
-
-	if len(results.List) == 1 {
-		return "error", nil
-	}
-
-	// given the prev. conditions now we're sure
-	// the case is: (optionalReturnType, error)
-	returnParam := types.ExprString(results.List[0].Type)
-
-	if _, isPresent := isNobjectInOrgPkg[returnParam]; isPresent {
-		return "( " + OrginalPackageAlias + "." + returnParam + " , error)", nil
-	}
-
-	return "( " + returnParam + " , error)", nil
 }
 
 func getFunctionBodyAsString(fset *token.FileSet, body *ast.BlockStmt) (string, error) {

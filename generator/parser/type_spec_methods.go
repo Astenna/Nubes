@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func (t TypeSpecParser) adjustMethods(isTypeNewCtorImplemented map[string]bool, isTypeReNewCtorImplemented map[string]bool, isTypeDestructorImplemented map[string]bool) {
+func (t TypeSpecParser) adjustMethods() {
 
 	for path, detectedFunctionsList := range t.detectedFunctions {
 		for _, detectedFunction := range detectedFunctionsList {

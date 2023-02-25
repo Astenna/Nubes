@@ -148,6 +148,16 @@ func parseFields(field *ast.Field, fieldType string, structDef *StructTypeDefini
 	structDef.FieldDefinitions = append(structDef.FieldDefinitions, newFieldDefinition)
 }
 
+func getTypeSpecAsString(fset *token.FileSet, detectedStruct *ast.TypeSpec) (string, error) {
+	var buf bytes.Buffer
+	buf.WriteString("type ")
+	err := printer.Fprint(&buf, fset, detectedStruct)
+	if err != nil {
+		return "", fmt.Errorf("error occurred when parsing the struct")
+	}
+	return buf.String(), nil
+}
+
 func getConstAsString(fset *token.FileSet, detectedGenDecl *ast.GenDecl) (string, error) {
 	var buf bytes.Buffer
 	err := printer.Fprint(&buf, fset, detectedGenDecl)

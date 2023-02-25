@@ -31,7 +31,10 @@ const HasOneTag = "hasOne"
 const HasManyTag = "hasMany"
 const DynamoDBIgnoreTag = "dynamodbav:\"-\""
 const DynamoDBIgnoreValueTag = "-"
-const DynamoDBKeyTag = "dynamodbav"
+const DynamoDBTagKey = "dynamodbav"
+const DynamoDBIdTagValue = "Id"
+const DynamoDBIdTag = "dynamodbav:\"Id\""
+const CustomIdTag = "Id"
 
 // PARAMETER NAMES
 const Id = "Id"
