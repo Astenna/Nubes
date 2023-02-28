@@ -15,7 +15,7 @@ To deploy serverless functions:
 - [AWS credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html) must be configured
 - [serverless framework](https://www.serverless.com/framework/docs/getting-started) must be installed
 
-Additionally, as one of the commands required for serverless functions deployemnt uses shell script, Windows users need bash-emulating command-line (e.g. Git Bash usually installed along with Git for Windows).
+Additionally, as one of the commands required for serverless functions deployemnt uses shell script, Windows users need bash-emulating command-line (e.g. Git Bash usually installed `along with Git for Windows).
 
 ## How to run
 

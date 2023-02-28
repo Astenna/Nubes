@@ -83,36 +83,39 @@ func (t *TypeSpecParser) detectNobjectTypes(moduleName string) {
 			for _, d := range f.Decls {
 				if fn, isFn := d.(*ast.FuncDecl); isFn {
 
-					if fn.Recv != nil {
-						ownerType := getFunctionReceiverTypeAsString(fn.Recv)
-						switch fn.Name.Name {
-						case NobjectImplementationMethod:
-							t.Output.IsNobjectInOrginalPackage[ownerType] = true
-							continue
-						case InitFunctionName:
-							t.isInitAlreadyAdded[ownerType] = true
-							continue
-						case CustomIdImplementationMethod:
-							idFieldName, err := getIdFieldNameFromCustomIdImpl(fn)
-							if err != nil {
-								fmt.Println(err)
+					// ignore unexported functions (i.e. starting with lowercase letter)
+					if fn.Name.IsExported() {
+
+						if fn.Recv != nil {
+							ownerType := getFunctionReceiverTypeAsString(fn.Recv)
+							switch fn.Name.Name {
+							case NobjectImplementationMethod:
+								t.Output.IsNobjectInOrginalPackage[ownerType] = true
+								continue
+							case InitFunctionName:
+								t.isInitAlreadyAdded[ownerType] = true
+								continue
+							case CustomIdImplementationMethod:
+								idFieldName, err := getIdFieldNameFromCustomIdImpl(fn)
+								if err != nil {
+									fmt.Println(err)
+									continue
+								}
+								t.Output.TypesWithCustomId[ownerType] = idFieldName
 								continue
 							}
-							t.Output.TypesWithCustomId[ownerType] = idFieldName
-							continue
 						}
-					}
 
-					t.detectedFunctions[path] = append(t.detectedFunctions[path], detectedFunction{
-						Function: fn,
-						Imports:  f.Imports,
-					})
+						t.detectedFunctions[path] = append(t.detectedFunctions[path], detectedFunction{
+							Function: fn,
+							Imports:  f.Imports,
+						})
+
+					}
 				}
 			}
 		}
 
-		// TODO: recognize CustomIds via fieldType
-		// TODO: what if there is more than one package?
 		t.Output.ImportPath = moduleName + "/" + packageName
 	}
 }
