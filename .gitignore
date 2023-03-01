@@ -23,10 +23,8 @@
 .VSCodeCounter
 **/generated/
 **/bin/*
-**/.serverless/*
+**/.serverless/
 **/client_lib/*
-!generator/template/client_lib/*
 example/client_lib
 
-
-client/*
+!generator/template/client_lib/*

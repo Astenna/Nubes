@@ -9,7 +9,15 @@ import (
 	"github.com/fatih/structtag"
 )
 
-func (t *TypeSpecParser) detectAndAdjustDecls() {
+type structPath struct {
+	strctType *ast.StructType
+	path      string
+}
+
+func (t *TypeSpecParser) detectAndModifyAstStructs() {
+
+	detectedStructTypeWithFile := map[string]structPath{}
+
 	for _, pack := range t.packs {
 		for path, f := range pack.Files {
 			t.fileChanged[path] = false
@@ -20,6 +28,7 @@ func (t *TypeSpecParser) detectAndAdjustDecls() {
 							typeName := strings.TrimPrefix(typeSpec.Name.Name, "*")
 
 							if strctType, ok := typeSpec.Type.(*ast.StructType); ok {
+								detectedStructTypeWithFile[typeName] = structPath{strctType: strctType, path: path}
 								modified := t.parseStructFieldsForTypeSpec(f, strctType, typeName)
 
 								if !t.fileChanged[path] {
@@ -43,11 +52,60 @@ func (t *TypeSpecParser) detectAndAdjustDecls() {
 			}
 		}
 	}
+
+	t.addIgnoreEmptyTagToBidirectionalOneToManyRel(detectedStructTypeWithFile)
+}
+
+// The addIgnoreEmptyTagToBidirectionalOneToManyRel method adds `dynamodbav:",omitempty"` tag
+// to the side with Reference type of bidirectional one-to-many relationship
+// without the tag, every Reference field one the side of bidirectional
+// one-to-many relationship is mandatory
+// for in-depth exaplanation, see: https://github.com/aws/aws-sdk-go/issues/1803 and
+// https://notes.serverlessfirst.com/public/How+does+DynamoDB+handle+NULL%2C+empty+and+undefined+fields
+func (t *TypeSpecParser) addIgnoreEmptyTagToBidirectionalOneToManyRel(detectedStructTypeWithFile map[string]structPath) {
+	for _, oneToManyRels := range t.Output.BidrectionalOneToManyRel {
+		for _, oneToMany := range oneToManyRels {
+			strctWithReferenceField := detectedStructTypeWithFile[oneToMany.TypeName]
+			for _, field := range strctWithReferenceField.strctType.Fields.List {
+				if field.Names[0].Name == oneToMany.FieldName {
+					// field to which the oneToMany relationships refers found
+
+					tags, err := getParsedTags(field)
+					if err != nil {
+						fmt.Println("error occurerd while checking struct tags of:", oneToMany.TypeName, " field: ", field.Names[0].Name, ". Error: ", err)
+					} else if tags != nil {
+						dynamodbTag, err := tags.Get(DynamoDBTagKey)
+						if err != nil {
+							fmt.Println("error occurerd while checking struct tags of:", oneToMany.TypeName, " field: ", field.Names[0].Name, ". Error: ", err)
+						} else if dynamodbTag == nil {
+							// no dynamoDB tags added before
+
+							tags.AddOptions(DynamoDBTagKey, DynamoDBIgnoreEmptyTagValue)
+							field.Tag.Value = "`" + tags.String() + "`"
+							t.fileChanged[strctWithReferenceField.path] = true
+						} else if !strings.Contains(dynamodbTag.GoString(), DynamoDBIgnoreEmptyTagValue) {
+							// dynamoDB tags added before, but not omniempty option
+
+							dynamodbTag.Options = append(dynamodbTag.Options, DynamoDBIgnoreEmptyTagValue)
+							field.Tag.Value = "`" + tags.String() + "`"
+							t.fileChanged[strctWithReferenceField.path] = true
+						}
+					} else {
+						// no tags added to field
+
+						field.Tag = &ast.BasicLit{Value: "`" + DynamoDBIgnoreEmptyTag + "`"}
+						t.fileChanged[strctWithReferenceField.path] = true
+					}
+					break
+				}
+			}
+		}
+	}
 }
 
 func (t *TypeSpecParser) addInitMethod(f *ast.File, typeName string) {
 	idFieldName := getIdFieldNameOfType(typeName, t.Output.TypesWithCustomId)
-	function := getInitFunctionForType(typeName, idFieldName, t.Output.TypeNavListsReferringFieldName[typeName], t.Output.ManyToManyRelationships[typeName])
+	function := getInitFunctionForType(typeName, idFieldName, t.Output.BidrectionalOneToManyRel[typeName], t.Output.ManyToManyRelationships[typeName])
 	f.Decls = append(f.Decls, function)
 }
 

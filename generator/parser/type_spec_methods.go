@@ -8,7 +8,7 @@ import (
 	"golang.org/x/tools/go/ast/astutil"
 )
 
-func (t TypeSpecParser) adjustMethods() {
+func (t TypeSpecParser) modifyAstMethods() {
 
 	for path, detectedFunctionsList := range t.detectedFunctions {
 		for _, detectedFunction := range detectedFunctionsList {
@@ -175,13 +175,6 @@ func getIdFieldNameOfType(typeName string, typesWithCustomId map[string]string) 
 }
 
 func appendBeforeLastElem[T any](stmtList []T, toInsert T) []T {
-	x := append(stmtList, *new(T))
-	x[len(x)-1] = x[len(x)-2]
-	x[len(x)-2] = toInsert
-	return x
-}
-
-func prependBeforeLastElem[T any](stmtList []T, toInsert T) []T {
 	x := append(stmtList, *new(T))
 	x[len(x)-1] = x[len(x)-2]
 	x[len(x)-2] = toInsert

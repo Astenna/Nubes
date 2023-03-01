@@ -14,7 +14,7 @@ func isReadonly(field *ast.Field) bool {
 }
 
 func getParsedTags(field *ast.Field) (*structtag.Tags, error) {
-	if field.Tag != nil && field.Tag.Kind == token.STRING && strings.Contains(field.Tag.Value, NubesTagKey) {
+	if field.Tag != nil && field.Tag.Kind == token.STRING {
 		unquotedTag, err := strconv.Unquote(field.Tag.Value)
 		if err != nil {
 			return nil, err

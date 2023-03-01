@@ -25,13 +25,13 @@ type TypeSpecParser struct {
 }
 
 type ParsedPackage struct {
-	ImportPath                     string
-	IsNobjectInOrginalPackage      map[string]bool
-	TypeFields                     map[string]map[string]string
-	TypeAttributesIndexes          map[string][]string
-	TypeNavListsReferringFieldName map[string][]OneToManyRelationshipField
-	ManyToManyRelationships        map[string][]ManyToManyRelationshipField
-	TypesWithCustomId              map[string]string
+	ImportPath                string
+	IsNobjectInOrginalPackage map[string]bool
+	TypeFields                map[string]map[string]string
+	TypeAttributesIndexes     map[string][]string
+	BidrectionalOneToManyRel  map[string][]OneToManyRelationshipField
+	ManyToManyRelationships   map[string][]ManyToManyRelationshipField
+	TypesWithCustomId         map[string]string
 }
 
 type CustomCtorDefinition struct {
@@ -51,14 +51,13 @@ func NewTypeSpecParser(path string) (*TypeSpecParser, error) {
 	}
 
 	typeSpecParser.packs = packg
-
 	typeSpecParser.Output = ParsedPackage{
-		IsNobjectInOrginalPackage:      make(map[string]bool),
-		TypesWithCustomId:              map[string]string{},
-		TypeAttributesIndexes:          map[string][]string{},
-		TypeNavListsReferringFieldName: map[string][]OneToManyRelationshipField{},
-		ManyToManyRelationships:        map[string][]ManyToManyRelationshipField{},
-		TypeFields:                     map[string]map[string]string{},
+		IsNobjectInOrginalPackage: make(map[string]bool),
+		TypesWithCustomId:         map[string]string{},
+		TypeAttributesIndexes:     map[string][]string{},
+		BidrectionalOneToManyRel:  map[string][]OneToManyRelationshipField{},
+		ManyToManyRelationships:   map[string][]ManyToManyRelationshipField{},
+		TypeFields:                map[string]map[string]string{},
 	}
 	typeSpecParser.Handlers = []StateChangingHandler{}
 	typeSpecParser.CustomCtors = []CustomCtorDefinition{}
@@ -72,14 +71,19 @@ func NewTypeSpecParser(path string) (*TypeSpecParser, error) {
 
 func (t *TypeSpecParser) Run(moduleName string) {
 
-	t.detectNobjectTypes(moduleName)
-	t.detectAndAdjustDecls()
-	t.adjustMethods()
-	t.prepareHandleres()
+	t.detectNobjectTypesAndFunctions(moduleName)
+	t.detectAndModifyAstStructs()
+	t.modifyAstMethods()
+	t.prepareDataForHandlers()
+	t.addNubesLibImportIfMissing()
 	t.saveChangesInAst()
 }
 
-func (t *TypeSpecParser) detectNobjectTypes(moduleName string) {
+// The detectNobjectTypesAndFunctions detects object types
+// and methods defined in the package.
+// Nobject types are recognised as the types that implement
+// Nobject interface (i.e. GetTypeName method)
+func (t *TypeSpecParser) detectNobjectTypesAndFunctions(moduleName string) {
 	for packageName, pack := range t.packs {
 		for path, f := range pack.Files {
 			for _, d := range f.Decls {
@@ -125,10 +129,12 @@ func (t *TypeSpecParser) detectNobjectTypes(moduleName string) {
 	}
 }
 
-func (t TypeSpecParser) saveChangesInAst() {
+func (t TypeSpecParser) addNubesLibImportIfMissing() {
 	for _, pack := range t.packs {
 		for path, f := range pack.Files {
-
+			// the import is added if missing only to the modified files
+			// it is assumed that not modified ones do not require
+			// the library as it was already added or is not needed at all
 			if value, exists := t.fileChanged[path]; exists && value {
 				libImported := false
 				for _, imp := range f.Imports {
@@ -145,6 +151,16 @@ func (t TypeSpecParser) saveChangesInAst() {
 					}
 					f.Decls = prepend[ast.Decl](f.Decls, importNubes)
 				}
+			}
+		}
+	}
+}
+
+func (t TypeSpecParser) saveChangesInAst() {
+	for _, pack := range t.packs {
+		for path, f := range pack.Files {
+
+			if value, exists := t.fileChanged[path]; exists && value {
 
 				var buf bytes.Buffer
 				err := printer.Fprint(&buf, t.tokenSet, f)

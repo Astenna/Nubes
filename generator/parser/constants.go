@@ -1,12 +1,9 @@
 package parser
 
-// Every type to be used in the system must
-// implement the interface with the NobjectImplementationMethod method
 // METHODS
 const NobjectImplementationMethod = "GetTypeName"
 const CustomIdImplementationMethod = "GetId"
 const ConstructorPrefix = "New"
-const DestructorPrefix = "Delete"
 const LibraryGetFieldOfType = "GetFieldOfType"
 const LibraryGetObjectStateMethod = "GetObjectState"
 const InitFunctionName = "Init"
@@ -35,6 +32,8 @@ const DynamoDBIgnoreValueTag = "-"
 const DynamoDBTagKey = "dynamodbav"
 const DynamoDBIdTagValue = "Id"
 const DynamoDBIdTag = "dynamodbav:\"Id\""
+const DynamoDBIgnoreEmptyTagValue = "omitempty"
+const DynamoDBIgnoreEmptyTag = "dynamodbav:\",omitempty\""
 const CustomIdTag = "Id"
 
 // PARAMETER NAMES
@@ -54,9 +53,6 @@ const OrginalPackageAlias = "org"
 
 // Prefixes of repository operations
 const (
-	GetPrefix    = "Get"
-	SetPrefix    = "Set"
-	CreatePrefix = "Create"
-	DeletePrefix = "Delete"
-	UpdatePrefix = "Update"
+	GetPrefix = "Get"
+	SetPrefix = "Set"
 )

@@ -26,7 +26,7 @@ type detectedFunction struct {
 	Imports  []*ast.ImportSpec
 }
 
-func (t *TypeSpecParser) prepareHandleres() {
+func (t *TypeSpecParser) prepareDataForHandlers() {
 	fileFunctionsMap := t.detectedFunctions
 
 	for _, functions := range fileFunctionsMap {

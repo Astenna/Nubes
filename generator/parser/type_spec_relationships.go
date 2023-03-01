@@ -97,7 +97,7 @@ func (t *TypeSpecParser) parseRelationshipsTags(field *ast.Field, typeName strin
 
 					t.Output.TypeAttributesIndexes[navigationToTypeName] = append(t.Output.TypeAttributesIndexes[navigationToTypeName], navigationToFieldName)
 					navToField := OneToManyRelationshipField{TypeName: navigationToTypeName, FieldName: navigationToFieldName, FromFieldName: field.Names[0].Name}
-					t.Output.TypeNavListsReferringFieldName[typeName] = append(t.Output.TypeNavListsReferringFieldName[typeName], navToField)
+					t.Output.BidrectionalOneToManyRel[typeName] = append(t.Output.BidrectionalOneToManyRel[typeName], navToField)
 
 					return addDynamoDBIgnoreTag(tags, field, typeName)
 				} else {

@@ -10,7 +10,7 @@ type Product struct {
 	Id			string
 	Name			string
 	QuantityAvailable	int
-	SoldBy			lib.Reference[Shop]
+	SoldBy			lib.Reference[Shop]	`dynamodbav:",omitempty"`
 	Discount		lib.ReferenceList[Discount]
 	Price			float64
 	isInitialized		bool
