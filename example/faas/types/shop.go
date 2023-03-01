@@ -7,11 +7,11 @@ import (
 )
 
 type Shop struct {
-	Id            string
-	Name          string
-	Owners        lib.ReferenceNavigationList[User]    `nubes:"hasMany-Shops" dynamodbav:"-"`
-	Products      lib.ReferenceNavigationList[Product] `nubes:"hasOne-SoldBy,readonly" dynamodbav:"-"`
-	isInitialized bool
+	Id		string
+	Name		string
+	Owners		lib.ReferenceNavigationList[User]	`nubes:"hasMany-Shops" dynamodbav:"-"`
+	Products	lib.ReferenceNavigationList[Product]	`nubes:"hasOne-SoldBy,readonly" dynamodbav:"-"`
+	isInitialized	bool
 }
 
 func (Shop) GetTypeName() string {
@@ -30,4 +30,13 @@ func (receiver *Shop) Init() {
 	receiver.isInitialized = true
 	receiver.Products = *lib.NewReferenceNavigationList[Product](receiver.Id, receiver.GetTypeName(), "SoldBy", false)
 	receiver.Owners = *lib.NewReferenceNavigationList[User](receiver.Id, receiver.GetTypeName(), "", true)
+}
+func (receiver *Shop) saveChangesIfInitialized() error {
+	if receiver.isInitialized {
+		_libError := lib.Upsert(receiver, receiver.Id)
+		if _libError != nil {
+			return _libError
+		}
+	}
+	return nil
 }

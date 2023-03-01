@@ -16,11 +16,12 @@ type TypeSpecParser struct {
 	Handlers    []StateChangingHandler
 	CustomCtors []CustomCtorDefinition
 
-	tokenSet           *token.FileSet
-	packs              map[string]*ast.Package
-	detectedFunctions  map[string][]detectedFunction
-	isInitAlreadyAdded map[string]bool
-	fileChanged        map[string]bool
+	tokenSet                  *token.FileSet
+	packs                     map[string]*ast.Package
+	detectedFunctions         map[string][]detectedFunction
+	isSaveChangesAlreadyAdded map[string]bool
+	isInitAlreadyAdded        map[string]bool
+	fileChanged               map[string]bool
 }
 
 type ParsedPackage struct {
@@ -64,6 +65,7 @@ func NewTypeSpecParser(path string) (*TypeSpecParser, error) {
 	typeSpecParser.fileChanged = map[string]bool{}
 	typeSpecParser.detectedFunctions = make(map[string][]detectedFunction)
 	typeSpecParser.isInitAlreadyAdded = map[string]bool{}
+	typeSpecParser.isSaveChangesAlreadyAdded = map[string]bool{}
 
 	return typeSpecParser, nil
 }
@@ -82,6 +84,10 @@ func (t *TypeSpecParser) detectNobjectTypes(moduleName string) {
 		for path, f := range pack.Files {
 			for _, d := range f.Decls {
 				if fn, isFn := d.(*ast.FuncDecl); isFn {
+
+					if fn.Name.Name == SaveChangesIfInitialized && fn.Recv != nil {
+						t.isSaveChangesAlreadyAdded[getFunctionReceiverTypeAsString(fn.Recv)] = true
+					}
 
 					// ignore unexported functions (i.e. starting with lowercase letter)
 					if fn.Name.IsExported() {
@@ -110,7 +116,6 @@ func (t *TypeSpecParser) detectNobjectTypes(moduleName string) {
 							Function: fn,
 							Imports:  f.Imports,
 						})
-
 					}
 				}
 			}

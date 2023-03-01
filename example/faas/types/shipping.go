@@ -1,19 +1,21 @@
 package types
 
+import "github.com/Astenna/Nubes/lib"
+
 type ShippingState string
 
 const (
-	InPreparation   ShippingState = "InPreparation"
-	InTransit       ShippingState = "InTransit"
-	PickupAvailavle ShippingState = "PickupAvailable"
-	Delivered       ShippingState = "Delivered"
+	InPreparation	ShippingState	= "InPreparation"
+	InTransit	ShippingState	= "InTransit"
+	PickupAvailavle	ShippingState	= "PickupAvailable"
+	Delivered	ShippingState	= "Delivered"
 )
 
 type Shipping struct {
-	Id            string
-	Address       string
-	State         ShippingState
-	isInitialized bool
+	Id		string
+	Address		string
+	State		ShippingState
+	isInitialized	bool
 }
 
 func (s Shipping) GetTypeName() string {
@@ -21,4 +23,13 @@ func (s Shipping) GetTypeName() string {
 }
 func (receiver *Shipping) Init() {
 	receiver.isInitialized = true
+}
+func (receiver *Shipping) saveChangesIfInitialized() error {
+	if receiver.isInitialized {
+		_libError := lib.Upsert(receiver, receiver.Id)
+		if _libError != nil {
+			return _libError
+		}
+	}
+	return nil
 }

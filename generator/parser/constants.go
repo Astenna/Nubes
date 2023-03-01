@@ -13,6 +13,7 @@ const InitFunctionName = "Init"
 const ReferenceNavigationListCtor = "NewReferenceNavigationList"
 const SetField = "SetField"
 const Upsert = "Upsert"
+const SaveChangesIfInitialized = "saveChangesIfInitialized"
 
 // FIELDS & PARAMETER TYPES
 const GetStateParamType = "GetStateParam"
@@ -44,6 +45,7 @@ const HandlerInputParameterName = "input"
 const HandlerParameters = "(" + HandlerInputParameterName + " " + HandlerInputParameterType + ")"
 const HandlerInputParameterFieldName = "Parameter"
 const LibErrorVariableName = "_libError"
+const UpsertLibErrorVariableName = "_libUpsertError"
 const TemporaryReceiverName = "tempReceiverName"
 
 // OTHERS

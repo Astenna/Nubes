@@ -27,7 +27,13 @@ func (t *TypeSpecParser) detectAndAdjustDecls() {
 								}
 
 								if t.Output.IsNobjectInOrginalPackage[typeName] && !t.isInitAlreadyAdded[typeName] {
-									t.addInitFunctionDefinition(f, typeName)
+									t.addInitMethod(f, typeName)
+									t.fileChanged[path] = true
+								}
+
+								if t.Output.IsNobjectInOrginalPackage[typeName] && !t.isSaveChangesAlreadyAdded[typeName] {
+
+									t.addSaveChangesIfInitializedMethod(f, typeName)
 									t.fileChanged[path] = true
 								}
 							}
@@ -39,9 +45,14 @@ func (t *TypeSpecParser) detectAndAdjustDecls() {
 	}
 }
 
-func (t *TypeSpecParser) addInitFunctionDefinition(f *ast.File, typeName string) {
+func (t *TypeSpecParser) addInitMethod(f *ast.File, typeName string) {
 	idFieldName := getIdFieldNameOfType(typeName, t.Output.TypesWithCustomId)
 	function := getInitFunctionForType(typeName, idFieldName, t.Output.TypeNavListsReferringFieldName[typeName], t.Output.ManyToManyRelationships[typeName])
+	f.Decls = append(f.Decls, function)
+}
+
+func (t *TypeSpecParser) addSaveChangesIfInitializedMethod(f *ast.File, typeName string) {
+	function := getSaveChangesMethodForType(typeName, t.Output)
 	f.Decls = append(f.Decls, function)
 }
 

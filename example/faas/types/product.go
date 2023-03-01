@@ -7,13 +7,13 @@ import (
 )
 
 type Product struct {
-	Id                string
-	Name              string
-	QuantityAvailable int
-	SoldBy            lib.Reference[Shop]
-	Discount          lib.ReferenceList[Discount]
-	Price             float64
-	isInitialized     bool
+	Id			string
+	Name			string
+	QuantityAvailable	int
+	SoldBy			lib.Reference[Shop]
+	Discount		lib.ReferenceList[Discount]
+	Price			float64
+	isInitialized		bool
 }
 
 func (Product) GetTypeName() string {
@@ -37,13 +37,8 @@ func (p *Product) DecreaseAvailabilityBy(decreaseNum int) error {
 		return errors.New("not enough quantity available")
 	}
 	p.QuantityAvailable = p.QuantityAvailable - decreaseNum
-	if p.isInitialized {
-		_libError := lib.Upsert(p, p.Id)
-		if _libError != nil {
-			return _libError
-		}
-	}
-	return nil
+	_libUpsertError := p.saveChangesIfInitialized()
+	return _libUpsertError
 }
 
 func (p Product) GetQuantityAvailable() (int, error) {
@@ -81,4 +76,13 @@ func (p *Product) SetSoldBy(id string) error {
 
 func (receiver *Product) Init() {
 	receiver.isInitialized = true
+}
+func (receiver *Product) saveChangesIfInitialized() error {
+	if receiver.isInitialized {
+		_libError := lib.Upsert(receiver, receiver.Id)
+		if _libError != nil {
+			return _libError
+		}
+	}
+	return nil
 }

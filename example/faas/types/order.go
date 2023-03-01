@@ -7,16 +7,16 @@ import (
 )
 
 type Order struct {
-	Id            string
-	Products      []OrderedProduct
-	Buyer         lib.Reference[User]
-	Shipping      lib.Reference[Shipping]
-	isInitialized bool
+	Id		string
+	Products	[]OrderedProduct
+	Buyer		lib.Reference[User]
+	Shipping	lib.Reference[Shipping]
+	isInitialized	bool
 }
 
 type OrderedProduct struct {
-	Product  lib.Reference[Product]
-	Quantity int
+	Product		lib.Reference[Product]
+	Quantity	int
 }
 
 func NewOrder(order Order) (Order, error) {
@@ -34,8 +34,8 @@ func NewOrder(order Order) (Order, error) {
 		return *new(Order), errors.New("unable to retrieve user's address for shipping")
 	}
 	shipping, err := lib.Export[Shipping](Shipping{
-		State:   InPreparation,
-		Address: buyer.Address,
+		State:		InPreparation,
+		Address:	buyer.Address,
 	})
 	if err != nil {
 		return *new(Order), errors.New("failed to create shipping for the order: " + err.Error())
@@ -50,4 +50,13 @@ func (o Order) GetTypeName() string {
 }
 func (receiver *Order) Init() {
 	receiver.isInitialized = true
+}
+func (receiver *Order) saveChangesIfInitialized() error {
+	if receiver.isInitialized {
+		_libError := lib.Upsert(receiver, receiver.Id)
+		if _libError != nil {
+			return _libError
+		}
+	}
+	return nil
 }

@@ -7,14 +7,14 @@ import (
 )
 
 type User struct {
-	FirstName     string
-	LastName      string
-	Email         string `nubes:"id,readonly" dynamodbav:"Id"`
-	Password      string `nubes:"readonly"`
-	Address       string
-	Shops         lib.ReferenceNavigationList[Shop] `nubes:"hasMany-Owners" dynamodbav:"-"`
-	Orders        lib.ReferenceList[Order]
-	isInitialized bool
+	FirstName	string
+	LastName	string
+	Email		string	`nubes:"id,readonly" dynamodbav:"Id"`
+	Password	string	`nubes:"readonly"`
+	Address		string
+	Shops		lib.ReferenceNavigationList[Shop]	`nubes:"hasMany-Owners" dynamodbav:"-"`
+	Orders		lib.ReferenceList[Order]
+	isInitialized	bool
 }
 
 func DeleteUser(id string) error {
@@ -74,18 +74,23 @@ func (u User) VerifyPassword(password string) (bool, error) {
 	}
 
 	if u.Password == password {
-		return true, nil
+		_libUpsertError := u.saveChangesIfInitialized()
+		return true, _libUpsertError
 	}
-	if u.isInitialized {
-		_libError := lib.Upsert(u, u.Email)
-		if _libError != nil {
-			return *new(bool), _libError
-		}
-	}
-	return false, nil
+	_libUpsertError := u.saveChangesIfInitialized()
+	return false, _libUpsertError
 }
 
 func (receiver *User) Init() {
 	receiver.isInitialized = true
 	receiver.Shops = *lib.NewReferenceNavigationList[Shop](receiver.Email, receiver.GetTypeName(), "", true)
+}
+func (receiver *User) saveChangesIfInitialized() error {
+	if receiver.isInitialized {
+		_libError := lib.Upsert(receiver, receiver.Email)
+		if _libError != nil {
+			return _libError
+		}
+	}
+	return nil
 }

@@ -4,6 +4,8 @@ import (
 	"go/ast"
 	"go/types"
 	"strings"
+
+	"golang.org/x/tools/go/ast/astutil"
 )
 
 func (t TypeSpecParser) adjustMethods() {
@@ -23,22 +25,41 @@ func (t TypeSpecParser) adjustMethods() {
 				if !isGetter {
 					isSetter := t.addDBOperationsIfSetter(fn, path)
 					if !isSetter {
-						if !isFunctionStateless(fn.Recv) && retParamsVerifier.Check(fn) && !isInitFieldCheckAlreadyAddedAsFirstStmt(fn.Body) {
-							t.fileChanged[path] = true
-							t.addDBOperationsToStateChangingMethod(fn)
+						if !isFunctionStateless(fn.Recv) && retParamsVerifier.Check(fn) {
+							// add retrieve from DB if it doesn't exist
+							if !isInitFieldCheckAlreadyAddedAsFirstStmt(fn.Body) {
+								t.fileChanged[path] = true
+								retrieveStateIfInitialized := getNobjectStateConditionalRetrieval(fn, t.Output)
+								fn.Body.List = prepend[ast.Stmt](fn.Body.List, &retrieveStateIfInitialized)
+							}
+
+							// add invocation of a function that save changes in DB
+							// only if the error returned is nil
+							astutil.Apply(fn, nil, func(c *astutil.Cursor) bool {
+								n := c.Node()
+
+								if x, ok := n.(*ast.ReturnStmt); ok {
+
+									if isErrorToBeReturnedNil(*x) {
+										c.InsertBefore(invokeSaveChangesMethodForType(fn, t.Output))
+										if len(x.Results) > 1 {
+											ident := x.Results[1].(*ast.Ident)
+											ident.Name = UpsertLibErrorVariableName
+										} else {
+											ident := x.Results[0].(*ast.Ident)
+											ident.Name = UpsertLibErrorVariableName
+										}
+									}
+									t.fileChanged[path] = true
+								}
+								return true
+							})
 						}
 					}
 				}
 			}
 		}
 	}
-}
-
-func (t TypeSpecParser) addDBOperationsToStateChangingMethod(fn *ast.FuncDecl) {
-	retrieveStateIfInitialized := getNobjectStateConditionalRetrieval(fn, t.Output)
-	saveStateIfInitialized := getNobjectStateConditionalUpsert(fn, t.Output)
-	fn.Body.List = prepend[ast.Stmt](fn.Body.List, &retrieveStateIfInitialized)
-	fn.Body.List = prependBeforeLastElem[ast.Stmt](fn.Body.List, &saveStateIfInitialized)
 }
 
 func (t TypeSpecParser) addDBOperationsIfSetter(fn *ast.FuncDecl, path string) bool {
@@ -117,6 +138,10 @@ func (t TypeSpecParser) addDBOperationsIfGetter(fn *ast.FuncDecl, path string) b
 	}
 
 	return false
+}
+
+func isErrorToBeReturnedNil(x ast.ReturnStmt) bool {
+	return (len(x.Results) > 1 && types.ExprString(x.Results[1]) == "nil") || (len(x.Results) == 1 && types.ExprString(x.Results[0]) == "nil")
 }
 
 func isInitFieldCheckAlreadyAddedAsFirstStmt(funcBlock *ast.BlockStmt) bool {

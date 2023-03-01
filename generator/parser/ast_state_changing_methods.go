@@ -232,13 +232,80 @@ func getNobjectStateConditionalRetrieval(fn *ast.FuncDecl, parsedPackage ParsedP
 	return isInitializedCheck
 }
 
-func getNobjectStateConditionalUpsert(fn *ast.FuncDecl, parsedPackage ParsedPackage) ast.IfStmt {
-	isInitializedCheck := getIsInitializedCheck(fn.Recv.List[0].Names[0].Name)
-	saveExpr := getUpsertInLibExpr(fn, parsedPackage.TypesWithCustomId)
-	erorCheck := getErrorCheckExpr(fn, LibErrorVariableName)
+func getNobjectStateConditionalUpsert(typeName, receiverVarName string, parsedPackage ParsedPackage) ast.IfStmt {
+	isInitializedCheck := getIsInitializedCheck(receiverVarName)
+	saveExpr := getUpsertInLibExpr(typeName, receiverVarName, parsedPackage.TypesWithCustomId)
+	erorCheck := ast.IfStmt{
+		Cond: &ast.BinaryExpr{
+			X:  &ast.Ident{Name: LibErrorVariableName},
+			Op: token.NEQ,
+			Y:  &ast.Ident{Name: "nil"},
+		},
+		Body: &ast.BlockStmt{
+			List: []ast.Stmt{
+				&ast.ReturnStmt{
+					Results: []ast.Expr{
+						&ast.Ident{
+							Name: LibErrorVariableName,
+						},
+					},
+				},
+			},
+		},
+	}
 
 	isInitializedCheck.Body.List = []ast.Stmt{&saveExpr, &erorCheck}
 	return isInitializedCheck
+}
+
+func getSaveChangesMethodForType(typeName string, parsedPackage ParsedPackage) *ast.FuncDecl {
+	receiverVarName := "receiver"
+	ifStmt := getNobjectStateConditionalUpsert(typeName, receiverVarName, parsedPackage)
+
+	function := &ast.FuncDecl{
+		Name: &ast.Ident{Name: SaveChangesIfInitialized},
+		Recv: &ast.FieldList{
+			List: []*ast.Field{
+				{
+					Names: []*ast.Ident{{Name: receiverVarName}},
+					Type:  &ast.StarExpr{X: &ast.Ident{Name: typeName}},
+				},
+			},
+		},
+		Body: &ast.BlockStmt{
+			List: []ast.Stmt{
+				&ifStmt,
+				&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: "nil"}}},
+			},
+		},
+		Type: &ast.FuncType{
+			Params: &ast.FieldList{},
+			Results: &ast.FieldList{
+				List: []*ast.Field{
+					{Type: &ast.Ident{Name: "error"}},
+				},
+			},
+		},
+	}
+
+	return function
+}
+
+func invokeSaveChangesMethodForType(fn *ast.FuncDecl, parsedPackage ParsedPackage) *ast.AssignStmt {
+	return &ast.AssignStmt{
+		Tok: token.DEFINE,
+		Rhs: []ast.Expr{
+			&ast.CallExpr{
+				Fun: &ast.SelectorExpr{
+					X:   &ast.Ident{Name: fn.Recv.List[0].Names[0].Name},
+					Sel: &ast.Ident{Name: SaveChangesIfInitialized},
+				},
+			},
+		},
+		Lhs: []ast.Expr{
+			&ast.Ident{Name: UpsertLibErrorVariableName},
+		},
+	}
 }
 
 func getReadFromLibExpr(fn *ast.FuncDecl, typesWithCustomId map[string]string) (ast.AssignStmt, bool) {
@@ -282,8 +349,7 @@ func getReadFromLibExpr(fn *ast.FuncDecl, typesWithCustomId map[string]string) (
 	return assignStmt, isPointerReceiver
 }
 
-func getUpsertInLibExpr(fn *ast.FuncDecl, typesWithCustomId map[string]string) ast.AssignStmt {
-	typeName := getFunctionReceiverTypeAsString(fn.Recv)
+func getUpsertInLibExpr(typeName, receiverVariableName string, typesWithCustomId map[string]string) ast.AssignStmt {
 	idFieldName := ""
 	if idField, isPresent := typesWithCustomId[typeName]; isPresent {
 		idFieldName = idField
@@ -303,9 +369,9 @@ func getUpsertInLibExpr(fn *ast.FuncDecl, typesWithCustomId map[string]string) a
 					Sel: &ast.Ident{Name: Upsert},
 				},
 				Args: []ast.Expr{
-					&ast.Ident{Name: fn.Recv.List[0].Names[0].Name},
+					&ast.Ident{Name: receiverVariableName},
 					&ast.SelectorExpr{
-						X:   &ast.Ident{Name: fn.Recv.List[0].Names[0].Name},
+						X:   &ast.Ident{Name: receiverVariableName},
 						Sel: &ast.Ident{Name: idFieldName},
 					}},
 			},
