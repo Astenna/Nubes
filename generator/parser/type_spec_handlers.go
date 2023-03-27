@@ -88,7 +88,12 @@ func (t *TypeSpecParser) prepareDataForHandlers() {
 					fmt.Println("Maximum allowed number of parameters is 1. Handler generation for " + f.Name.Name + "skipped")
 					continue
 				}
-				newHandler.Invocation = f.Name.Name + "(" + HandlerInputParameterName + "." + HandlerInputParameterFieldName + ".(" + parameters + "))"
+				if parameters == "" {
+					newHandler.Invocation = f.Name.Name + "()"
+				} else {
+
+					newHandler.Invocation = f.Name.Name + "(" + HandlerInputParameterName + "." + HandlerInputParameterFieldName + ".(" + parameters + "))"
+				}
 				t.Handlers = append(t.Handlers, newHandler)
 			}
 		}
