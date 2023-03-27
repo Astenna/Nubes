@@ -19,6 +19,7 @@ const ReferenceType = "lib.Reference"
 const ReferenceListType = "lib.ReferenceList"
 const LibraryReferenceNavigationList = "lib.ReferenceNavigationList"
 const IsInitializedFieldName = "isInitialized"
+const InvocationDepthFieldName = "invocationDepth"
 const SetFieldParam = "SetFieldParam"
 
 // TAGS

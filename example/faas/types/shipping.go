@@ -16,6 +16,7 @@ type Shipping struct {
 	Address		string
 	State		ShippingState
 	isInitialized	bool
+	invocationDepth	int
 }
 
 func (s Shipping) GetTypeName() string {
@@ -25,7 +26,7 @@ func (receiver *Shipping) Init() {
 	receiver.isInitialized = true
 }
 func (receiver *Shipping) saveChangesIfInitialized() error {
-	if receiver.isInitialized {
+	if receiver.isInitialized && receiver.invocationDepth == 1 {
 		_libError := lib.Upsert(receiver, receiver.Id)
 		if _libError != nil {
 			return _libError

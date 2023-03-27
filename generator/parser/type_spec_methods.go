@@ -2,6 +2,7 @@ package parser
 
 import (
 	"go/ast"
+	"go/token"
 	"go/types"
 	"strings"
 
@@ -27,10 +28,10 @@ func (t TypeSpecParser) modifyAstMethods() {
 					if !isSetter {
 						if !isFunctionStateless(fn.Recv) && retParamsVerifier.Check(fn) {
 							// add retrieve from DB if it doesn't exist
-							if !isInitFieldCheckAlreadyAddedAsFirstStmt(fn.Body) {
+							if !isInvocationDepthIncrementedInFirstStmt(fn.Body) {
+								functionProlog := getNobjectFunctionProlog(fn, t.Output)
+								fn.Body.List = prependList(fn.Body.List, functionProlog)
 								t.fileChanged[path] = true
-								retrieveStateIfInitialized := getNobjectStateConditionalRetrieval(fn, t.Output)
-								fn.Body.List = prepend[ast.Stmt](fn.Body.List, &retrieveStateIfInitialized)
 							}
 
 							// add invocation of a function that save changes in DB
@@ -49,8 +50,14 @@ func (t TypeSpecParser) modifyAstMethods() {
 											ident := x.Results[0].(*ast.Ident)
 											ident.Name = UpsertLibErrorVariableName
 										}
+										t.fileChanged[path] = true
 									}
-									t.fileChanged[path] = true
+
+									// insert invocation depth decrement
+									if !isInvocationDepthDecreasedBefore(c) {
+										c.InsertBefore(getInvocationDepthDecremntStmt(fn.Recv.List[0].Names[0].Name))
+										t.fileChanged[path] = true
+									}
 								}
 								return true
 							})
@@ -62,6 +69,20 @@ func (t TypeSpecParser) modifyAstMethods() {
 	}
 }
 
+func isInvocationDepthDecreasedBefore(c *astutil.Cursor) bool {
+	stmts := c.Parent().(*ast.BlockStmt)
+	if index := c.Index(); index > 0 {
+		decStmt, casted := stmts.List[index-1].(*ast.IncDecStmt)
+		if decStmt == nil || !casted {
+			return false
+		}
+
+		return decStmt.Tok == token.DEC && strings.Contains(types.ExprString(decStmt.X), InvocationDepthFieldName)
+	}
+
+	return false
+}
+
 func (t TypeSpecParser) addDBOperationsIfSetter(fn *ast.FuncDecl, path string) bool {
 	typeName := getFunctionReceiverTypeAsString(fn.Recv)
 	if strings.HasPrefix(fn.Name.Name, SetPrefix) {
@@ -70,14 +91,8 @@ func (t TypeSpecParser) addDBOperationsIfSetter(fn *ast.FuncDecl, path string) b
 			if !isInitFieldCheckAlreadyAddedAsSecondLastStmt(fn.Body) {
 				idFieldName := getIdFieldNameOfType(typeName, t.Output.TypesWithCustomId)
 				if strings.Contains(fieldType, LibraryReferenceNavigationList) {
-					returnErrorIfNotInitialized := getReferenceNavigationListDBStmts(fn, getDBStmtsParam{
-						idFieldName:          idFieldName,
-						typeName:             typeName,
-						fieldName:            fieldName,
-						fieldType:            fieldType,
-						receiverVariableName: fn.Recv.List[0].Names[0].Name,
-					})
-					fn.Body.List = prepend[ast.Stmt](fn.Body.List, &returnErrorIfNotInitialized)
+					returnErrorIfNotInitialized := getReferenceNavigationListDBStmts(fn)
+					fn.Body.List = prependElem[ast.Stmt](fn.Body.List, &returnErrorIfNotInitialized)
 					t.fileChanged[path] = true
 				} else {
 					saveInDbIfInitialized := getSetterDBStmts(fn, getDBStmtsParam{
@@ -111,14 +126,8 @@ func (t TypeSpecParser) addDBOperationsIfGetter(fn *ast.FuncDecl, path string) b
 			idFieldName := getIdFieldNameOfType(typeName, t.Output.TypesWithCustomId)
 			if !isInitFieldCheckAlreadyAddedAsFirstStmt(fn.Body) {
 				if strings.Contains(fieldType, LibraryReferenceNavigationList) {
-					returnErrorIfNotInitialized := getReferenceNavigationListDBStmts(fn, getDBStmtsParam{
-						idFieldName:          idFieldName,
-						typeName:             typeName,
-						fieldName:            fieldName,
-						fieldType:            fieldType,
-						receiverVariableName: fn.Recv.List[0].Names[0].Name,
-					})
-					fn.Body.List = prepend[ast.Stmt](fn.Body.List, &returnErrorIfNotInitialized)
+					returnErrorIfNotInitialized := getReferenceNavigationListDBStmts(fn)
+					fn.Body.List = prependElem[ast.Stmt](fn.Body.List, &returnErrorIfNotInitialized)
 					t.fileChanged[path] = true
 				} else {
 					retrieveFromDbIfInitialized := getGetterDBStmts(fn, getDBStmtsParam{
@@ -128,7 +137,7 @@ func (t TypeSpecParser) addDBOperationsIfGetter(fn *ast.FuncDecl, path string) b
 						fieldType:            fieldType,
 						receiverVariableName: fn.Recv.List[0].Names[0].Name,
 					})
-					fn.Body.List = prepend[ast.Stmt](fn.Body.List, &retrieveFromDbIfInitialized)
+					fn.Body.List = prependElem[ast.Stmt](fn.Body.List, &retrieveFromDbIfInitialized)
 				}
 
 				t.fileChanged[path] = true
@@ -142,6 +151,17 @@ func (t TypeSpecParser) addDBOperationsIfGetter(fn *ast.FuncDecl, path string) b
 
 func isErrorToBeReturnedNil(x ast.ReturnStmt) bool {
 	return (len(x.Results) > 1 && types.ExprString(x.Results[1]) == "nil") || (len(x.Results) == 1 && types.ExprString(x.Results[0]) == "nil")
+}
+
+func isInvocationDepthIncrementedInFirstStmt(funcBlock *ast.BlockStmt) bool {
+	if funcBlock != nil && funcBlock.List != nil && len(funcBlock.List) > 0 {
+		incrementStmt, _ := funcBlock.List[0].(*ast.IncDecStmt)
+		if incrementStmt != nil && incrementStmt.X != nil {
+			incrementedVariable := types.ExprString(incrementStmt.X)
+			return strings.Contains(incrementedVariable, InvocationDepthFieldName)
+		}
+	}
+	return false
 }
 
 func isInitFieldCheckAlreadyAddedAsFirstStmt(funcBlock *ast.BlockStmt) bool {
@@ -181,9 +201,16 @@ func appendBeforeLastElem[T any](stmtList []T, toInsert T) []T {
 	return x
 }
 
-func prepend[T any](list []T, toPrepend T) []T {
+func prependElem[T any](list []T, toPrepend T) []T {
 	x := append(list, *new(T))
 	copy(x[1:], x)
 	x[0] = toPrepend
+	return x
+}
+
+func prependList[T any](list []T, toPrepend []T) []T {
+	x := append(list, toPrepend...)
+	copy(x[len(toPrepend):], x)
+	copy(x[:len(toPrepend)], toPrepend)
 	return x
 }

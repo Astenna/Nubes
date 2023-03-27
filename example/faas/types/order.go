@@ -12,6 +12,7 @@ type Order struct {
 	Buyer		lib.Reference[User]
 	Shipping	lib.Reference[Shipping]
 	isInitialized	bool
+	invocationDepth	int
 }
 
 type OrderedProduct struct {
@@ -52,7 +53,7 @@ func (receiver *Order) Init() {
 	receiver.isInitialized = true
 }
 func (receiver *Order) saveChangesIfInitialized() error {
-	if receiver.isInitialized {
+	if receiver.isInitialized && receiver.invocationDepth == 1 {
 		_libError := lib.Upsert(receiver, receiver.Id)
 		if _libError != nil {
 			return _libError

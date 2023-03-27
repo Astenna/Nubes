@@ -149,7 +149,7 @@ func (t TypeSpecParser) addNubesLibImportIfMissing() {
 						Tok:    token.IMPORT,
 						Specs:  []ast.Spec{&ast.ImportSpec{Path: &ast.BasicLit{Kind: token.STRING, Value: LibImportPath}}},
 					}
-					f.Decls = prepend[ast.Decl](f.Decls, importNubes)
+					f.Decls = prependElem[ast.Decl](f.Decls, importNubes)
 				}
 			}
 		}

@@ -101,21 +101,21 @@ functions:
     maximumEventAge: 60
 
 
-  ProductDecreaseAvailabilityBy:
-    name:  ProductDecreaseAvailabilityBy
-    handler: bin/ProductDecreaseAvailabilityBy
-    package:
-      include:
-        - bin/ProductDecreaseAvailabilityBy
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
   UserVerifyPassword:
     name:  UserVerifyPassword
     handler: bin/UserVerifyPassword
     package:
       include:
         - bin/UserVerifyPassword
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
+  ProductDecreaseAvailabilityBy:
+    name:  ProductDecreaseAvailabilityBy
+    handler: bin/ProductDecreaseAvailabilityBy
+    package:
+      include:
+        - bin/ProductDecreaseAvailabilityBy
     maximumRetryAttempts: 0
     maximumEventAge: 60
 

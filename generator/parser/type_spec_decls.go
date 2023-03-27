@@ -29,7 +29,7 @@ func (t *TypeSpecParser) detectAndModifyAstStructs() {
 
 							if strctType, ok := typeSpec.Type.(*ast.StructType); ok {
 								detectedStructTypeWithFile[typeName] = structPath{strctType: strctType, path: path}
-								modified := t.parseStructFieldsForTypeSpec(f, strctType, typeName)
+								modified := t.parseStructFields(f, strctType, typeName)
 
 								if !t.fileChanged[path] {
 									t.fileChanged[path] = modified
@@ -114,9 +114,9 @@ func (t *TypeSpecParser) addSaveChangesIfInitializedMethod(f *ast.File, typeName
 	f.Decls = append(f.Decls, function)
 }
 
-// The parseStructFieldsForTypeSpec returns true if the ast representing
+// The parseStructFields returns true if the ast representing
 // the struct was modified, otherwise false
-func (t *TypeSpecParser) parseStructFieldsForTypeSpec(f *ast.File, strctType *ast.StructType, typeName string) bool {
+func (t *TypeSpecParser) parseStructFields(f *ast.File, strctType *ast.StructType, typeName string) bool {
 	structDefinitionModified := false
 	if strctType == nil || strctType.Fields == nil || len(strctType.Fields.List) == 0 {
 		return structDefinitionModified
@@ -142,6 +142,12 @@ func (t *TypeSpecParser) parseStructFieldsForTypeSpec(f *ast.File, strctType *as
 	if _, exists := t.Output.TypeFields[typeName][IsInitializedFieldName]; !exists && isNobject {
 		strctType.Fields.List = append(strctType.Fields.List, &ast.Field{
 			Names: []*ast.Ident{{Name: IsInitializedFieldName}}, Type: &ast.Ident{Name: "bool"},
+		})
+		return true
+	}
+	if _, exists := t.Output.TypeFields[typeName][InvocationDepthFieldName]; !exists && isNobject {
+		strctType.Fields.List = append(strctType.Fields.List, &ast.Field{
+			Names: []*ast.Ident{{Name: InvocationDepthFieldName}}, Type: &ast.Ident{Name: "int"},
 		})
 		return true
 	}

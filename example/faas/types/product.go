@@ -14,6 +14,7 @@ type Product struct {
 	Discount		lib.ReferenceList[Discount]
 	Price			float64
 	isInitialized		bool
+	invocationDepth		int
 }
 
 func (Product) GetTypeName() string {
@@ -21,9 +22,11 @@ func (Product) GetTypeName() string {
 }
 
 func (p *Product) DecreaseAvailabilityBy(decreaseNum int) error {
-	if p.isInitialized {
+	p.invocationDepth++
+	if p.isInitialized && p.invocationDepth == 1 {
 		tempReceiverName, _libError := lib.GetObjectState[Product](p.Id)
 		if _libError != nil {
+			p.invocationDepth--
 			return _libError
 		}
 		p = tempReceiverName
@@ -34,11 +37,27 @@ func (p *Product) DecreaseAvailabilityBy(decreaseNum int) error {
 	}
 
 	if p.QuantityAvailable-decreaseNum < 0 {
+		p.invocationDepth--
 		return errors.New("not enough quantity available")
 	}
 	p.QuantityAvailable = p.QuantityAvailable - decreaseNum
 	_libUpsertError := p.saveChangesIfInitialized()
+	p.invocationDepth--
+
 	return _libUpsertError
+}
+
+func (p *Product) privateDecreaseAvailabilityBy(decreaseNum int) error {
+	for index, discount := range p.Discount {
+		_, _ = index, discount
+	}
+
+	if p.QuantityAvailable-decreaseNum < 0 {
+		p.invocationDepth--
+		return errors.New("not enough quantity available")
+	}
+	p.QuantityAvailable = p.QuantityAvailable - decreaseNum
+	return nil
 }
 
 func (p Product) GetQuantityAvailable() (int, error) {
@@ -78,7 +97,7 @@ func (receiver *Product) Init() {
 	receiver.isInitialized = true
 }
 func (receiver *Product) saveChangesIfInitialized() error {
-	if receiver.isInitialized {
+	if receiver.isInitialized && receiver.invocationDepth == 1 {
 		_libError := lib.Upsert(receiver, receiver.Id)
 		if _libError != nil {
 			return _libError

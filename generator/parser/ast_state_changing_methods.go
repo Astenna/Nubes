@@ -64,7 +64,7 @@ type getDBStmtsParam struct {
 }
 
 func getGetterDBStmts(fn *ast.FuncDecl, input getDBStmtsParam) ast.IfStmt {
-	isInitializedCheck := getIsInitializedCheck(fn.Recv.List[0].Names[0].Name)
+	isInitializedCheck := getIsInitializeCheck(fn.Recv.List[0].Names[0].Name)
 	getFieldFromLib := ast.AssignStmt{
 		Tok: token.DEFINE,
 		Lhs: []ast.Expr{
@@ -131,7 +131,7 @@ func getGetterDBStmts(fn *ast.FuncDecl, input getDBStmtsParam) ast.IfStmt {
 	return isInitializedCheck
 }
 
-func getReferenceNavigationListDBStmts(fn *ast.FuncDecl, input getDBStmtsParam) ast.IfStmt {
+func getReferenceNavigationListDBStmts(fn *ast.FuncDecl) ast.IfStmt {
 
 	isUnInitializedCheck := ast.IfStmt{
 		Cond: &ast.UnaryExpr{
@@ -163,7 +163,7 @@ func getReferenceNavigationListDBStmts(fn *ast.FuncDecl, input getDBStmtsParam) 
 }
 
 func getSetterDBStmts(fn *ast.FuncDecl, input getDBStmtsParam) ast.IfStmt {
-	isInitializedCheck := getIsInitializedCheck(fn.Recv.List[0].Names[0].Name)
+	isInitializedCheck := getIsInitializeCheck(fn.Recv.List[0].Names[0].Name)
 	getFieldFromLib := ast.AssignStmt{
 		Tok: token.DEFINE,
 		Lhs: []ast.Expr{
@@ -220,8 +220,9 @@ func getSetterDBStmts(fn *ast.FuncDecl, input getDBStmtsParam) ast.IfStmt {
 	return isInitializedCheck
 }
 
-func getNobjectStateConditionalRetrieval(fn *ast.FuncDecl, parsedPackage ParsedPackage) ast.IfStmt {
-	isInitializedCheck := getIsInitializedCheck(fn.Recv.List[0].Names[0].Name)
+func getNobjectFunctionProlog(fn *ast.FuncDecl, parsedPackage ParsedPackage) []ast.Stmt {
+	invocationDepthInc := getInvocationDepthInceremntStmt(fn.Recv.List[0].Names[0].Name)
+	isInitializedCheck := getIsInitializedAndInvocationDepthEqOneCheck(fn.Recv.List[0].Names[0].Name)
 	readFromLibExpr, isPointerReceiver := getReadFromLibExpr(fn, parsedPackage.TypesWithCustomId)
 	errorCheck := getErrorCheckExpr(fn, LibErrorVariableName)
 
@@ -229,11 +230,11 @@ func getNobjectStateConditionalRetrieval(fn *ast.FuncDecl, parsedPackage ParsedP
 	initCall := getInitCall(fn.Recv.List[0].Names[0].Name)
 	isInitializedCheck.Body.List = []ast.Stmt{&readFromLibExpr, &errorCheck, &tempRecvAssignment, &initCall}
 
-	return isInitializedCheck
+	return []ast.Stmt{&invocationDepthInc, &isInitializedCheck}
 }
 
 func getNobjectStateConditionalUpsert(typeName, receiverVarName string, parsedPackage ParsedPackage) ast.IfStmt {
-	isInitializedCheck := getIsInitializedCheck(receiverVarName)
+	isInitializedCheck := getIsInitializedAndInvocationDepthEqOneCheck(receiverVarName)
 	saveExpr := getUpsertInLibExpr(typeName, receiverVarName, parsedPackage.TypesWithCustomId)
 	erorCheck := ast.IfStmt{
 		Cond: &ast.BinaryExpr{
@@ -400,7 +401,54 @@ func getTempRecvAssignStmt(receiverName string, isPointerReceiver bool) ast.Assi
 	return assign
 }
 
-func getIsInitializedCheck(receiverVariableName string) ast.IfStmt {
+func getInvocationDepthInceremntStmt(receiverVariableName string) ast.IncDecStmt {
+	return ast.IncDecStmt{
+		Tok: token.INC,
+		X: &ast.SelectorExpr{
+			Sel: &ast.Ident{Name: InvocationDepthFieldName},
+			X:   &ast.Ident{Name: receiverVariableName},
+		},
+	}
+}
+
+func getInvocationDepthDecremntStmt(receiverVariableName string) *ast.IncDecStmt {
+	return &ast.IncDecStmt{
+		Tok: token.DEC,
+		X: &ast.SelectorExpr{
+			Sel: &ast.Ident{Name: InvocationDepthFieldName},
+			X:   &ast.Ident{Name: receiverVariableName},
+		},
+	}
+}
+
+func getIsInitializedAndInvocationDepthEqOneCheck(receiverVariableName string) ast.IfStmt {
+	ifStmt := ast.IfStmt{
+		Cond: &ast.BinaryExpr{
+			Op: token.LAND,
+			X: &ast.SelectorExpr{
+				X:   &ast.Ident{Name: receiverVariableName},
+				Sel: &ast.Ident{Name: IsInitializedFieldName},
+			},
+			Y: &ast.BinaryExpr{
+				Op: token.EQL,
+				X: &ast.SelectorExpr{
+					X:   &ast.Ident{Name: receiverVariableName},
+					Sel: &ast.Ident{Name: InvocationDepthFieldName},
+				},
+				Y: &ast.BasicLit{
+					Kind:  token.INT,
+					Value: "1",
+				},
+			},
+		},
+
+		Body: &ast.BlockStmt{},
+	}
+
+	return ifStmt
+}
+
+func getIsInitializeCheck(receiverVariableName string) ast.IfStmt {
 	ifStmt := ast.IfStmt{
 		Cond: &ast.SelectorExpr{
 			X:   &ast.Ident{Name: receiverVariableName},

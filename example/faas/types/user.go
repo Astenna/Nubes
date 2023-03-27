@@ -15,6 +15,7 @@ type User struct {
 	Shops		lib.ReferenceNavigationList[Shop]	`nubes:"hasMany-Owners" dynamodbav:"-"`
 	Orders		lib.ReferenceList[Order]
 	isInitialized	bool
+	invocationDepth	int
 }
 
 func DeleteUser(id string) error {
@@ -64,20 +65,23 @@ func (u User) GetShops() ([]string, error) {
 }
 
 func (u User) VerifyPassword(password string) (bool, error) {
-	if u.isInitialized {
+	u.invocationDepth++
+	if u.isInitialized && u.invocationDepth == 1 {
 		tempReceiverName, _libError := lib.GetObjectState[User](u.Email)
 		if _libError != nil {
+			u.invocationDepth--
 			return *new(bool), _libError
 		}
 		u = *tempReceiverName
 		u.Init()
 	}
-
 	if u.Password == password {
 		_libUpsertError := u.saveChangesIfInitialized()
+		u.invocationDepth--
 		return true, _libUpsertError
 	}
 	_libUpsertError := u.saveChangesIfInitialized()
+	u.invocationDepth--
 	return false, _libUpsertError
 }
 
@@ -86,7 +90,7 @@ func (receiver *User) Init() {
 	receiver.Shops = *lib.NewReferenceNavigationList[Shop](receiver.Email, receiver.GetTypeName(), "", true)
 }
 func (receiver *User) saveChangesIfInitialized() error {
-	if receiver.isInitialized {
+	if receiver.isInitialized && receiver.invocationDepth == 1 {
 		_libError := lib.Upsert(receiver, receiver.Email)
 		if _libError != nil {
 			return _libError
