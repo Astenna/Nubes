@@ -20,7 +20,6 @@ func (t *ClientTypesParser) detectGenDecls() {
 							if strctType, ok := typeSpec.Type.(*ast.StructType); ok {
 								typeName := strings.TrimPrefix(typeSpec.Name.Name, "*")
 
-								makeFieldsUnexported(strctType.Fields)
 								if _, ok := t.DefinedTypes[typeName]; !ok {
 									t.DefinedTypes[typeName] = &StructTypeDefinition{}
 								}
@@ -63,14 +62,18 @@ func (t *ClientTypesParser) parseStructFields(astStrct *ast.StructType, typeName
 	for _, field := range astStrct.Fields.List {
 		fieldType := strings.TrimPrefix(types.ExprString(field.Type), "*")
 
-		if strings.Contains(fieldType, LibraryReferenceNavigationList) {
-			err := t.parseRelationshipsTagsClient(field, typeName, fieldType)
-			if err != nil {
-				fmt.Println("error occurred when parsing relationship tags", err)
-			}
+		if field.Names[0].IsExported() {
+			field.Names[0].Name = lowerCasedFirstChar(field.Names[0].Name)
 
-		} else if field.Names[0].Name != IsInitializedFieldName {
-			parseFields(field, fieldType, t.DefinedTypes[typeName])
+			if strings.Contains(fieldType, LibraryReferenceNavigationList) {
+				err := t.parseRelationshipsTagsClient(field, typeName, fieldType)
+				if err != nil {
+					fmt.Println("error occurred when parsing relationship tags", err)
+				}
+
+			} else if field.Names[0].Name != IsInitializedFieldName {
+				parseFields(field, fieldType, t.DefinedTypes[typeName])
+			}
 		}
 	}
 }
@@ -165,12 +168,6 @@ func getConstAsString(fset *token.FileSet, detectedGenDecl *ast.GenDecl) (string
 		return "", fmt.Errorf("error occurred when parsing the struct")
 	}
 	return buf.String(), nil
-}
-
-func makeFieldsUnexported(fieldList *ast.FieldList) {
-	for _, field := range fieldList.List {
-		field.Names[0].Name = lowerCasedFirstChar(field.Names[0].Name)
-	}
 }
 
 func lowerCasedFirstChar(str string) string {
