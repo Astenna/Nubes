@@ -67,13 +67,11 @@ func (u User) GetShops() ([]string, error) {
 func (u User) VerifyPassword(password string) (bool, error) {
 	u.invocationDepth++
 	if u.isInitialized && u.invocationDepth == 1 {
-		tempReceiverName, _libError := lib.GetObjectState[User](u.Email)
+		_libError := lib.GetObjectState(u.Email, &u)
 		if _libError != nil {
 			u.invocationDepth--
 			return *new(bool), _libError
 		}
-		u = *tempReceiverName
-		u.Init()
 	}
 	if u.Password == password {
 		_libUpsertError := u.saveChangesIfInitialized()

@@ -67,15 +67,14 @@ func Upsert(objToInsert Nobject, id string) error {
 	return nil
 }
 
-func GetObjectState[T Nobject](id string) (*T, error) {
-	if id == "" {
-		return nil, fmt.Errorf("missing id of object to get")
+func GetObjectState[T Nobject](id string, object *T) error {
+
+	if object == nil {
+		return fmt.Errorf("object whose state is to be retrieved is nil")
 	}
 
-	typeName := (*new(T)).GetTypeName()
-
 	input := &dynamodb.GetItemInput{
-		TableName: aws.String(typeName),
+		TableName: aws.String((*object).GetTypeName()),
 		Key: map[string]*dynamodb.AttributeValue{
 			"Id": {
 				S: aws.String(id),
@@ -85,16 +84,15 @@ func GetObjectState[T Nobject](id string) (*T, error) {
 
 	item, err := DBClient.GetItem(input)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	var parsedItem = new(T)
 	if item.Item != nil {
-		err = dynamodbattribute.UnmarshalMap(item.Item, parsedItem)
-		return parsedItem, err
+		err = dynamodbattribute.UnmarshalMap(item.Item, object)
+		return err
 	}
 
-	return nil, fmt.Errorf("%s with id: %s not found", typeName, id)
+	return fmt.Errorf("%s with id: %s not found", (*object).GetTypeName(), id)
 }
 
 func GetObjectStateWithTypeNameAsArg(id, typeName string) (interface{}, error) {

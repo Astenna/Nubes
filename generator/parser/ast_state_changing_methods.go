@@ -223,13 +223,10 @@ func getSetterDBStmts(fn *ast.FuncDecl, input getDBStmtsParam) ast.IfStmt {
 func getNobjectFunctionProlog(fn *ast.FuncDecl, parsedPackage ParsedPackage) []ast.Stmt {
 	invocationDepthInc := getInvocationDepthInceremntStmt(fn.Recv.List[0].Names[0].Name)
 	isInitializedCheck := getIsInitializedAndInvocationDepthEqOneCheck(fn.Recv.List[0].Names[0].Name)
-	readFromLibExpr, isPointerReceiver := getReadFromLibExpr(fn, parsedPackage.TypesWithCustomId)
+	readFromLibExpr := getReadFromLibExpr(fn, parsedPackage.TypesWithCustomId)
 	errorCheck := getErrorCheckExpr(fn, LibErrorVariableName)
 
-	tempRecvAssignment := getTempRecvAssignStmt(fn.Recv.List[0].Names[0].Name, isPointerReceiver)
-	initCall := getInitCall(fn.Recv.List[0].Names[0].Name)
-	isInitializedCheck.Body.List = []ast.Stmt{&readFromLibExpr, &errorCheck, &tempRecvAssignment, &initCall}
-
+	isInitializedCheck.Body.List = []ast.Stmt{&readFromLibExpr, &errorCheck}
 	return []ast.Stmt{&invocationDepthInc, &isInitializedCheck}
 }
 
@@ -309,7 +306,7 @@ func invokeSaveChangesMethodForType(fn *ast.FuncDecl, parsedPackage ParsedPackag
 	}
 }
 
-func getReadFromLibExpr(fn *ast.FuncDecl, typesWithCustomId map[string]string) (ast.AssignStmt, bool) {
+func getReadFromLibExpr(fn *ast.FuncDecl, typesWithCustomId map[string]string) ast.AssignStmt {
 	typeName := types.ExprString(fn.Recv.List[0].Type)
 	isPointerReceiver := strings.Contains(typeName, "*")
 	typeName = strings.TrimPrefix(typeName, "*")
@@ -325,12 +322,9 @@ func getReadFromLibExpr(fn *ast.FuncDecl, typesWithCustomId map[string]string) (
 		Tok: token.DEFINE,
 		Rhs: []ast.Expr{
 			&ast.CallExpr{
-				Fun: &ast.IndexExpr{
-					Index: &ast.Ident{Name: typeName},
-					X: &ast.SelectorExpr{
-						X:   &ast.Ident{Name: "lib"},
-						Sel: &ast.Ident{Name: LibraryGetObjectStateMethod},
-					},
+				Fun: &ast.SelectorExpr{
+					X:   &ast.Ident{Name: "lib"},
+					Sel: &ast.Ident{Name: LibraryGetObjectStateMethod},
 				},
 				Args: []ast.Expr{
 					&ast.SelectorExpr{
@@ -342,12 +336,17 @@ func getReadFromLibExpr(fn *ast.FuncDecl, typesWithCustomId map[string]string) (
 		},
 	}
 
+	if isPointerReceiver {
+		(assignStmt.Rhs[0].(*ast.CallExpr)).Args = append((assignStmt.Rhs[0].(*ast.CallExpr)).Args, ast.NewIdent(fn.Recv.List[0].Names[0].Name))
+	} else {
+		(assignStmt.Rhs[0].(*ast.CallExpr)).Args = append((assignStmt.Rhs[0].(*ast.CallExpr)).Args, &ast.UnaryExpr{Op: token.AND, X: ast.NewIdent(fn.Recv.List[0].Names[0].Name)})
+	}
+
 	assignStmt.Lhs = []ast.Expr{
-		&ast.Ident{Name: TemporaryReceiverName},
 		&ast.Ident{Name: LibErrorVariableName},
 	}
 
-	return assignStmt, isPointerReceiver
+	return assignStmt
 }
 
 func getUpsertInLibExpr(typeName, receiverVariableName string, typesWithCustomId map[string]string) ast.AssignStmt {
@@ -378,27 +377,6 @@ func getUpsertInLibExpr(typeName, receiverVariableName string, typesWithCustomId
 			},
 		},
 	}
-}
-
-func getTempRecvAssignStmt(receiverName string, isPointerReceiver bool) ast.AssignStmt {
-	assign := ast.AssignStmt{
-		Tok: token.ASSIGN,
-		Lhs: []ast.Expr{
-			&ast.Ident{Name: receiverName},
-		},
-	}
-
-	if isPointerReceiver {
-		assign.Rhs = []ast.Expr{&ast.Ident{Name: TemporaryReceiverName}}
-	} else {
-		assign.Rhs = []ast.Expr{
-			&ast.StarExpr{
-				X: &ast.Ident{Name: TemporaryReceiverName},
-			},
-		}
-	}
-
-	return assign
 }
 
 func getInvocationDepthInceremntStmt(receiverVariableName string) ast.IncDecStmt {
@@ -458,14 +436,4 @@ func getIsInitializeCheck(receiverVariableName string) ast.IfStmt {
 	}
 
 	return ifStmt
-}
-
-func getInitCall(receiverVariableName string) ast.ExprStmt {
-	return ast.ExprStmt{X: &ast.CallExpr{
-		Fun: &ast.SelectorExpr{
-			X:   &ast.Ident{Name: receiverVariableName},
-			Sel: &ast.Ident{Name: InitFunctionName},
-		},
-		Args: []ast.Expr{},
-	}}
 }

@@ -20,8 +20,8 @@ func TestLoadFailsIfIdDoesNotExist(t *testing.T) {
 	// Act
 	result, err := lib.Load[types.User](uuid.New().String())
 	// Assert
-	if err == nil || result == nil {
-		t.Error("export should failed, but found no error")
+	if err == nil || result != nil {
+		t.Error("export should fail, but no error found")
 	}
 }
 

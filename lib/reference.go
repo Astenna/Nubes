@@ -16,5 +16,7 @@ func (r Reference[T]) GetLoaded() (*T, error) {
 }
 
 func (r Reference[T]) GetWithoutLoading() (*T, error) {
-	return GetObjectState[T](string(r))
+	object := new(T)
+	err := GetObjectState(string(r), object)
+	return object, err
 }

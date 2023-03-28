@@ -24,13 +24,11 @@ func (Product) GetTypeName() string {
 func (p *Product) DecreaseAvailabilityBy(decreaseNum int) error {
 	p.invocationDepth++
 	if p.isInitialized && p.invocationDepth == 1 {
-		tempReceiverName, _libError := lib.GetObjectState[Product](p.Id)
+		_libError := lib.GetObjectState(p.Id, p)
 		if _libError != nil {
 			p.invocationDepth--
 			return _libError
 		}
-		p = tempReceiverName
-		p.Init()
 	}
 	for index, discount := range p.Discount {
 		_, _ = index, discount
