@@ -118,6 +118,12 @@ func (s discount) GetId() string {
 	return s.id
 }
 
+// REFERENCE
+
+func (s discount) Reference() Reference[discount] {
+	return *NewReference[discount](s.GetId())
+}
+
 // GETTERS AND SETTERS
 
 func (s discount) GetPercentage() (string, error) {
@@ -135,7 +141,7 @@ func (s discount) GetPercentage() (string, error) {
 		return *new(string), err
 	}
 
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
 	if _err != nil {
 		return *new(string), _err
 	}

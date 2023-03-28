@@ -17,7 +17,7 @@ var clientCmd = &cobra.Command{
 	Short: "Generates client project",
 	Long:  `Generates client project based on types and repositories.`,
 
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		typesPath, _ := cmd.Flags().GetString("types")
 		output, _ := cmd.Flags().GetString("output")
 		projectName, _ := cmd.Flags().GetString("project-name")
@@ -41,7 +41,7 @@ var clientCmd = &cobra.Command{
 		}
 
 		filePath := filepath.Join(outputDirectoryPath, "stubs.go")
-		templ.CreateFile("template/client_lib/type_stubes.go.tmpl", struct {
+		templ.CreateFile("template/client_lib/type_stubs.go.tmpl", struct {
 			PackageName string
 			Types       []*parser.StructTypeDefinition
 		}{PackageName: projectName, Types: definedTypes}, filePath)
@@ -70,6 +70,12 @@ var clientCmd = &cobra.Command{
 
 		filePath = filepath.Join(outputDirectoryPath, "reference_navigation_list.go")
 		templ.CreateFile("template/client_lib/reference_navigation_list.go.tmpl", referenceTmplInput, filePath)
+
+		filePath = filepath.Join(outputDirectoryPath, "reference_ctors.go")
+		templ.CreateFile("template/client_lib/reference_ctors.go.tmpl", struct {
+			PackageName string
+			Types       []*parser.StructTypeDefinition
+		}{PackageName: projectName, Types: definedTypes}, filePath)
 
 		lambdaClientTemplInput := struct{ PackageName string }{PackageName: projectName}
 		templ.CreateFile("template/client_lib/lambda_client.go.tmpl", lambdaClientTemplInput, filepath.Join(outputDirectoryPath, "lambda_client.go"))

@@ -1,0 +1,13 @@
+package {{.PackageName}}
+
+{{range .Types}}
+{{if .NobjectImplementation}}
+
+func {{.TypeNameOrginalCase}}ReferenceList(capacity ...int) ReferenceList[{{.TypeNameLower}}] {
+	if capacity != nil {
+		return make(ReferenceList[{{.TypeNameLower}}], 0, capacity[0])
+	}
+	return *new(ReferenceList[{{.TypeNameLower}}])
+}
+{{end}} 
+{{end}}

@@ -18,7 +18,7 @@ var ssfSpecCmd = &cobra.Command{
 	Short: "Generates handlers' definitions for AWS lambda deployment",
 	Long:  `Generates handlers' definitions for AWS lambda deployment based on types indicated by the path`,
 
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		typesPath, _ := cmd.Flags().GetString("types")
 		generationDestination, _ := cmd.Flags().GetString("output")
 		moduleName, _ := cmd.Flags().GetString("module")

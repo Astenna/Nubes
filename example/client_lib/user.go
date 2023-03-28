@@ -122,6 +122,12 @@ func (s user) GetId() string {
 	return s.id
 }
 
+// REFERENCE
+
+func (s user) Reference() Reference[user] {
+	return *NewReference[user](s.GetId())
+}
+
 // GETTERS AND SETTERS
 
 func (s user) GetFirstName() (string, error) {
@@ -139,7 +145,7 @@ func (s user) GetFirstName() (string, error) {
 		return *new(string), err
 	}
 
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
 	if _err != nil {
 		return *new(string), _err
 	}
@@ -197,7 +203,7 @@ func (s user) GetLastName() (string, error) {
 		return *new(string), err
 	}
 
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
 	if _err != nil {
 		return *new(string), _err
 	}
@@ -255,7 +261,7 @@ func (s user) GetEmail() (string, error) {
 		return *new(string), err
 	}
 
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
 	if _err != nil {
 		return *new(string), _err
 	}
@@ -287,7 +293,7 @@ func (s user) GetPassword() (string, error) {
 		return *new(string), err
 	}
 
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
 	if _err != nil {
 		return *new(string), _err
 	}
@@ -319,7 +325,7 @@ func (s user) GetAddress() (string, error) {
 		return *new(string), err
 	}
 
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
 	if _err != nil {
 		return *new(string), _err
 	}
@@ -378,7 +384,7 @@ func (s user) GetOrdersIds() ([]string, error) {
 		return nil, err
 	}
 
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
 	if _err != nil {
 		return nil, _err
 	}
@@ -410,7 +416,7 @@ func (s user) GetOrders() ([]order, error) {
 		return nil, err
 	}
 
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
 	if _err != nil {
 		return nil, _err
 	}

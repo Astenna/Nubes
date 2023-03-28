@@ -18,7 +18,7 @@ func TestClib(t *testing.T) {
 		FirstName: "Kinga",
 		LastName:  "Marek",
 		Password:  "password",
-		Orders:    clib.ReferenceList[clib.OrderStub]{existingOrderId},
+		Orders:    append(clib.OrderReferenceList(1), existingOrderId),
 	}
 	newOrdersSet := []string{"i'm invalid", existingOrderId}
 
@@ -56,7 +56,7 @@ func TestReferenceNavigationListOneToMany(t *testing.T) {
 	exportedShop, err := clib.ExportShop(newShop)
 	require.Equal(t, nil, err, "error occurred in ExportShop invocation", err)
 	// newProduct is sold by newShop
-	newProduct.SoldBy = *clib.NewReference[clib.ShopStub](exportedShop.GetId())
+	newProduct.SoldBy = exportedShop.Reference()
 	exportedProduct, err := clib.ExportProduct(newProduct)
 	require.Equal(t, nil, err, "error occurred in ExportProduct invocation", err)
 	// retrieve newProduct ID from newShop

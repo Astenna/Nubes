@@ -118,6 +118,12 @@ func (s product) GetId() string {
 	return s.id
 }
 
+// REFERENCE
+
+func (s product) Reference() Reference[product] {
+	return *NewReference[product](s.GetId())
+}
+
 // GETTERS AND SETTERS
 
 func (s product) GetName() (string, error) {
@@ -135,7 +141,7 @@ func (s product) GetName() (string, error) {
 		return *new(string), err
 	}
 
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
 	if _err != nil {
 		return *new(string), _err
 	}
@@ -193,7 +199,7 @@ func (s product) GetQuantityAvailable() (int, error) {
 		return *new(int), err
 	}
 
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
 	if _err != nil {
 		return *new(int), _err
 	}
@@ -251,7 +257,7 @@ func (s product) GetSoldBy() (shop, error) {
 		return *new(shop), err
 	}
 
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
 	if _err != nil {
 		return *new(shop), _err
 	}
@@ -284,7 +290,7 @@ func (s product) GetSoldById() (string, error) {
 		return "", err
 	}
 
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
 	if _err != nil {
 		return "", _err
 	}
@@ -343,7 +349,7 @@ func (s product) GetDiscountIds() ([]string, error) {
 		return nil, err
 	}
 
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
 	if _err != nil {
 		return nil, _err
 	}
@@ -375,7 +381,7 @@ func (s product) GetDiscount() ([]discount, error) {
 		return nil, err
 	}
 
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
 	if _err != nil {
 		return nil, _err
 	}
@@ -438,7 +444,7 @@ func (s product) GetPrice() (float64, error) {
 		return *new(float64), err
 	}
 
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
 	if _err != nil {
 		return *new(float64), _err
 	}

@@ -126,6 +126,12 @@ func (s shop) GetId() string {
 	return s.id
 }
 
+// REFERENCE
+
+func (s shop) Reference() Reference[shop] {
+	return *NewReference[shop](s.GetId())
+}
+
 // GETTERS AND SETTERS
 
 func (s shop) GetName() (string, error) {
@@ -143,7 +149,7 @@ func (s shop) GetName() (string, error) {
 		return *new(string), err
 	}
 
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
 	if _err != nil {
 		return *new(string), _err
 	}

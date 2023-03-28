@@ -1,13 +1,11 @@
 package {{.PackageName}}
 
-import lib "github.com/Astenna/Nubes/lib"
-
 {{range .Types}}
 {{if .NobjectImplementation}}
 type {{.TypeNameOrginalCase}}Stub struct {
     {{range .FieldDefinitions}}
-    {{if .IsReference}} {{.FieldNameUpper}} Reference[{{.FieldTypeUpper}}Stub] {{.Tags}}
-    {{else if .IsReferenceList}} {{.FieldNameUpper}} ReferenceList[{{.FieldTypeUpper}}Stub] {{.Tags}}
+    {{if .IsReference}} {{.FieldNameUpper}} Reference[{{.FieldType}}] {{.Tags}}
+    {{else if .IsReferenceList}} {{.FieldNameUpper}} ReferenceList[{{.FieldType}}] {{.Tags}}
     {{else}} {{.FieldNameUpper}} {{.FieldType}} {{.Tags}} {{end}} 
     {{end}}
 }

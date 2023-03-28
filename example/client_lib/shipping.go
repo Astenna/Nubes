@@ -118,6 +118,12 @@ func (s shipping) GetId() string {
 	return s.id
 }
 
+// REFERENCE
+
+func (s shipping) Reference() Reference[shipping] {
+	return *NewReference[shipping](s.GetId())
+}
+
 // GETTERS AND SETTERS
 
 func (s shipping) GetAddress() (string, error) {
@@ -135,7 +141,7 @@ func (s shipping) GetAddress() (string, error) {
 		return *new(string), err
 	}
 
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
 	if _err != nil {
 		return *new(string), _err
 	}
@@ -193,7 +199,7 @@ func (s shipping) GetState() (ShippingState, error) {
 		return *new(ShippingState), err
 	}
 
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
 	if _err != nil {
 		return *new(ShippingState), _err
 	}

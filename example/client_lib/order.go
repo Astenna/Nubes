@@ -118,6 +118,12 @@ func (s order) GetId() string {
 	return s.id
 }
 
+// REFERENCE
+
+func (s order) Reference() Reference[order] {
+	return *NewReference[order](s.GetId())
+}
+
 // GETTERS AND SETTERS
 
 func (s order) GetProducts() ([]OrderedProduct, error) {
@@ -135,7 +141,7 @@ func (s order) GetProducts() ([]OrderedProduct, error) {
 		return *new([]OrderedProduct), err
 	}
 
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
 	if _err != nil {
 		return *new([]OrderedProduct), _err
 	}
@@ -193,7 +199,7 @@ func (s order) GetBuyer() (user, error) {
 		return *new(user), err
 	}
 
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
 	if _err != nil {
 		return *new(user), _err
 	}
@@ -226,7 +232,7 @@ func (s order) GetBuyerId() (string, error) {
 		return "", err
 	}
 
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
 	if _err != nil {
 		return "", _err
 	}
@@ -284,7 +290,7 @@ func (s order) GetShipping() (shipping, error) {
 		return *new(shipping), err
 	}
 
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
 	if _err != nil {
 		return *new(shipping), _err
 	}
@@ -317,7 +323,7 @@ func (s order) GetShippingId() (string, error) {
 		return "", err
 	}
 
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
 	if _err != nil {
 		return "", _err
 	}

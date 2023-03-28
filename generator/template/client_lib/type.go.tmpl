@@ -136,6 +136,12 @@ func (s {{$.TypeNameLower}})GetId() string {
 	return s.id
 }
 
+// REFERENCE
+
+func (s {{$.TypeNameLower}}) Reference() Reference[{{$.TypeNameLower}}] {
+	return *NewReference[{{$.TypeNameLower}}](s.GetId())
+}
+
 // GETTERS AND SETTERS
 
 {{range .FieldDefinitions}}
@@ -156,7 +162,7 @@ func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}() ({{.FieldType}}, error) {
 		return *new({{.FieldType}}), err
 	}
 
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
 	if _err != nil {
 		return *new({{.FieldType}}), _err
 	}
@@ -197,7 +203,7 @@ func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}Ids() ([]string, error) {
 		return nil, err
 	}
 
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
 	if _err != nil {
 		return nil, _err
 	}
@@ -228,7 +234,7 @@ func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}() ([]{{.FieldType}}, error) 
 		return nil, err
 	}
 
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
 	if _err != nil {
 		return nil, _err
 	}
@@ -292,7 +298,7 @@ func (s {{$.TypeNameLower}}) Get{{.FieldNameUpper}}Id() (string, error) {
 		return "", err
 	}
 
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetField"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
 	if _err != nil {
 		return "", _err
 	}
