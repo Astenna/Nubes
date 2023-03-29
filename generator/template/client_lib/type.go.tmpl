@@ -36,10 +36,10 @@ func ({{$.TypeNameLower}})GetTypeName() string {{.NobjectImplementation}}
 
 func Load{{.TypeNameOrginalCase}}(id string) (*{{.TypeNameLower}}, error) {	
 	newInstance := new({{.TypeNameLower}})
-
-	params := lib.HandlerParameters{
-		Id:  id,
-		TypeName:  newInstance.GetTypeName(),
+	
+	params := lib.LoadBatchParam{
+		Ids:      []string{id},
+		TypeName: newInstance.GetTypeName(),
 	}
 	jsonParam, err := json.Marshal(params)
 	if err != nil {

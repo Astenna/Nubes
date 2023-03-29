@@ -25,8 +25,8 @@ func (order) GetTypeName() string {
 func LoadOrder(id string) (*order, error) {
 	newInstance := new(order)
 
-	params := lib.HandlerParameters{
-		Id:       id,
+	params := lib.LoadBatchParam{
+		Ids:      []string{id},
 		TypeName: newInstance.GetTypeName(),
 	}
 	jsonParam, err := json.Marshal(params)

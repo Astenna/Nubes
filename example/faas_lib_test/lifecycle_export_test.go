@@ -6,7 +6,7 @@ import (
 	"github.com/Astenna/Nubes/example/faas/types"
 	"github.com/Astenna/Nubes/lib"
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // EXPORT
@@ -42,6 +42,6 @@ func TestExportCreatesNewInstance(t *testing.T) {
 	// Act
 	result, err := lib.Export[types.User](newUser)
 	// Assert
-	assert.Equal(t, err, nil, "error should be null")
-	assert.Equal(t, newUser.Email, result.Email, "IDs should match")
+	require.Equal(t, err, nil, "error should be null")
+	require.Equal(t, newUser.Email, result.Email, "IDs should match")
 }

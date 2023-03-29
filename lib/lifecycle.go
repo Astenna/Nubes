@@ -26,7 +26,7 @@ func Load[T Nobject](id string) (*T, error) {
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf(instanceTypeName+" with id "+id+" not found. Error %w", err)
+		return nil, err
 	}
 
 	if item.Item != nil {
@@ -35,7 +35,47 @@ func Load[T Nobject](id string) (*T, error) {
 		return instance, err
 	}
 
-	return nil, fmt.Errorf(instanceTypeName + " with id " + id + " not found.")
+	return nil, NotFoundError{TypeName: instanceTypeName, Ids: []string{id}}
+}
+
+func LoadBatch[T Nobject](ids []string) ([]*T, error) {
+	if ids == nil {
+		return nil, fmt.Errorf("missing ids of objects to get")
+	}
+
+	keysToRetrieve := make([]map[string]*dynamodb.AttributeValue, len(ids))
+	for i, id := range ids {
+		keysToRetrieve[i] = map[string]*dynamodb.AttributeValue{"Id": {
+			S: aws.String(id),
+		}}
+	}
+
+	tableName := (*new(T)).GetTypeName()
+	input := &dynamodb.BatchGetItemInput{
+		RequestItems: map[string]*dynamodb.KeysAndAttributes{
+			tableName: {
+				Keys:                 keysToRetrieve,
+				ProjectionExpression: aws.String("Id"),
+			},
+		},
+	}
+
+	items, err := DBClient.BatchGetItem(input)
+	if err != nil {
+		return nil, err
+	}
+
+	var parsedItem = new([]*T)
+	if items.Responses[tableName] != nil {
+		err = dynamodbattribute.UnmarshalListOfMaps(items.Responses[tableName], parsedItem)
+
+		for _, item := range *parsedItem {
+			invokeInitOnNobjectType(item)
+		}
+		return *parsedItem, err
+	}
+
+	return nil, err
 }
 
 func Export[T Nobject](objToInsert Nobject) (*T, error) {

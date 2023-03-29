@@ -69,6 +69,17 @@ func (p Product) GetQuantityAvailable() (int, error) {
 	return p.QuantityAvailable, nil
 }
 
+func (p Product) GetName() (string, error) {
+	if p.isInitialized {
+		fieldValue, _libError := lib.GetFieldOfType[string](lib.GetStateParam{Id: p.Id, TypeName: "Product", FieldName: "Name"})
+		if _libError != nil {
+			return *new(string), _libError
+		}
+		p.Name = fieldValue
+	}
+	return p.Name, nil
+}
+
 func (p Product) GetSoldBy() (lib.Reference[Shop], error) {
 	if p.isInitialized {
 		fieldValue, _libError := lib.GetFieldOfType[lib.Reference[Shop]](lib.GetStateParam{Id: p.Id, TypeName: "Product", FieldName: "SoldBy"})

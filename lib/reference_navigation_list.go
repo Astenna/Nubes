@@ -51,36 +51,20 @@ func (r ReferenceNavigationList[T]) GetIds() ([]string, error) {
 	return nil, fmt.Errorf("invalid initialization of ReferenceNavigationList")
 }
 
-func (r ReferenceNavigationList[T]) GetLoaded() ([]T, error) {
-	var ids []string
-	var err error
-	if r.usesIndex {
-		ids, err = GetByIndex(r.queryByIndexParam)
-		if err != nil {
-			return nil, err
-		}
-	} else if r.isManyToMany && !r.usesIndex {
-		ids, err = GetSortKeysByPartitionKey(r.queryByPartitionKeyParam)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		return nil, fmt.Errorf("invalid initialization of ReferenceNavigationList")
+func (r ReferenceNavigationList[T]) GetLoaded() ([]*T, error) {
+	ids, err := r.GetIds()
+	if err != nil {
+		return nil, err
+	}
+	if len(ids) == 0 {
+		return []*T{}, nil
 	}
 
-	result := make([]T, len(ids))
-	for i, id := range ids {
-		initialisedObj, err := Load[T](id)
-		if err != nil {
-			return nil, err
-		}
-		result[i] = *initialisedObj
-	}
-
-	return result, err
+	res, err := LoadBatch[T](ids)
+	return res, err
 }
 
-func (r ReferenceNavigationList[T]) GetWithoutLoading() ([]T, error) {
+func (r ReferenceNavigationList[T]) GetStubs() ([]T, error) {
 	var ids []string
 	var err error
 	if r.usesIndex {

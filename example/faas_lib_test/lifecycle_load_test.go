@@ -17,12 +17,14 @@ import (
 
 func TestLoadFailsIfIdDoesNotExist(t *testing.T) {
 	// Arrange
+	notExistingId := uuid.New().String()
 	// Act
-	result, err := lib.Load[types.User](uuid.New().String())
+	result, err := lib.Load[types.User](notExistingId)
 	// Assert
 	if err == nil || result != nil {
 		t.Error("export should fail, but no error found")
 	}
+	require.Error(t, err, lib.NotFoundError{TypeName: (*new(types.User)).GetTypeName(), Ids: []string{notExistingId}})
 }
 
 func TestLoadReturnsInitializedInstance(t *testing.T) {

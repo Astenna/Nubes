@@ -29,8 +29,8 @@ func (shop) GetTypeName() string {
 func LoadShop(id string) (*shop, error) {
 	newInstance := new(shop)
 
-	params := lib.HandlerParameters{
-		Id:       id,
+	params := lib.LoadBatchParam{
+		Ids:      []string{id},
 		TypeName: newInstance.GetTypeName(),
 	}
 	jsonParam, err := json.Marshal(params)

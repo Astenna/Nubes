@@ -410,13 +410,63 @@ func IsInstanceAlreadyCreated(param IsInstanceAlreadyCreatedParam) (bool, error)
 	return false, nil
 }
 
-func isInstanceWithDefaultIdAlreadyCreated(instance Nobject) (bool, error) {
-	var attributeVals, err = dynamodbattribute.MarshalMap(instance)
-	if err != nil {
-		return false, err
+func AreInstancesAlreadyCreated(param LoadBatchParam) error {
+	if err := param.Verify(); err != nil {
+		return err
 	}
 
-	return *(attributeVals["Id"].S) == "", nil
+	keysToRetrieve := make([]map[string]*dynamodb.AttributeValue, len(param.Ids))
+	for i, id := range param.Ids {
+		keysToRetrieve[i] = map[string]*dynamodb.AttributeValue{"Id": {
+			S: aws.String(id),
+		}}
+	}
+
+	tableName := param.TypeName
+	input := &dynamodb.BatchGetItemInput{
+		RequestItems: map[string]*dynamodb.KeysAndAttributes{
+			tableName: {
+				Keys:                 keysToRetrieve,
+				ProjectionExpression: aws.String("Id"),
+			},
+		},
+	}
+
+	items, err := DBClient.BatchGetItem(input)
+	if err != nil {
+		return err
+	}
+
+	if items.Responses[tableName] != nil && len(items.Responses[tableName]) > 0 {
+		var parsedItem = make([]string, 0, len(items.Responses[tableName]))
+		for _, attr := range items.Responses[tableName] {
+			parsedItem = append(parsedItem, *attr["Id"].S)
+		}
+
+		// if not all Ids were found
+		if len(param.Ids)-len(parsedItem) > 0 {
+			return NotFoundError{TypeName: param.TypeName, Ids: difference(param.Ids, parsedItem)}
+		}
+
+		return err
+	}
+
+	return NotFoundError{TypeName: param.TypeName, Ids: param.Ids}
+}
+
+func difference(a, b []string) []string {
+	set_b := make(map[string]struct{}, len(b))
+	for _, x := range b {
+		set_b[x] = struct{}{}
+	}
+
+	var diff []string
+	for _, x := range a {
+		if _, found := set_b[x]; !found {
+			diff = append(diff, x)
+		}
+	}
+	return diff
 }
 
 func getProjection(names []string) expression.ProjectionBuilder {

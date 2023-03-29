@@ -13,18 +13,9 @@ func (r ReferenceList[T]) GetIds() []string {
 	return []string(r)
 }
 
-func (r ReferenceList[T]) GetLoaded() ([]T, error) {
-	result := make([]T, len(r))
-
-	for index, id := range r {
-		instance, err := Load[T](id)
-		if err != nil {
-			return nil, fmt.Errorf("could not retrieve object with id: %s. Error: %w", id, err)
-		}
-		result[index] = *instance
-	}
-
-	return result, nil
+func (r ReferenceList[T]) GetLoaded() ([]*T, error) {
+	res, err := LoadBatch[T](r)
+	return res, err
 }
 
 func (r ReferenceList[T]) GetLoadedAt(index int) (*T, error) {

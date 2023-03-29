@@ -25,8 +25,8 @@ func (product) GetTypeName() string {
 func LoadProduct(id string) (*product, error) {
 	newInstance := new(product)
 
-	params := lib.HandlerParameters{
-		Id:       id,
+	params := lib.LoadBatchParam{
+		Ids:      []string{id},
 		TypeName: newInstance.GetTypeName(),
 	}
 	jsonParam, err := json.Marshal(params)

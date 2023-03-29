@@ -27,8 +27,8 @@ func (user) GetTypeName() string {
 func LoadUser(id string) (*user, error) {
 	newInstance := new(user)
 
-	params := lib.HandlerParameters{
-		Id:       id,
+	params := lib.LoadBatchParam{
+		Ids:      []string{id},
 		TypeName: newInstance.GetTypeName(),
 	}
 	jsonParam, err := json.Marshal(params)

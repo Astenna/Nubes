@@ -25,8 +25,8 @@ func (discount) GetTypeName() string {
 func LoadDiscount(id string) (*discount, error) {
 	newInstance := new(discount)
 
-	params := lib.HandlerParameters{
-		Id:       id,
+	params := lib.LoadBatchParam{
+		Ids:      []string{id},
 		TypeName: newInstance.GetTypeName(),
 	}
 	jsonParam, err := json.Marshal(params)
