@@ -6,7 +6,7 @@ import (
 )
 
 func GetBatchHandler(input lib.GetBatchParam) (interface{}, error) {
-	return lib.GetBatchWithTypeNameAsArg(input)
+	return lib.GetStubsInBatchWithTypeNameAsArg(input)
 }
 
 func main() {

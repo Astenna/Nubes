@@ -1,5 +1,33 @@
 package client_lib
 
+type UserStub struct {
+	FirstName string
+
+	LastName string
+
+	Email string `nubes:"id,readonly" dynamodbav:"Id"`
+
+	Password string `nubes:"readonly"`
+
+	Address string
+
+	Orders ReferenceList[order]
+}
+
+func (UserStub) GetTypeName() string {
+	return "User"
+}
+
+type DiscountStub struct {
+	Id string
+
+	Percentage string
+}
+
+func (DiscountStub) GetTypeName() string {
+	return "Discount"
+}
+
 type OrderStub struct {
 	Id string
 
@@ -52,32 +80,4 @@ type ShopStub struct {
 
 func (ShopStub) GetTypeName() string {
 	return "Shop"
-}
-
-type UserStub struct {
-	FirstName string
-
-	LastName string
-
-	Email string `nubes:"id,readonly" dynamodbav:"Id"`
-
-	Password string `nubes:"readonly"`
-
-	Address string
-
-	Orders ReferenceList[order]
-}
-
-func (UserStub) GetTypeName() string {
-	return "User"
-}
-
-type DiscountStub struct {
-	Id string
-
-	Percentage string
-}
-
-func (DiscountStub) GetTypeName() string {
-	return "Discount"
 }

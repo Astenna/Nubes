@@ -15,7 +15,7 @@ func Load[T Nobject](id string) (*T, error) {
 	instanceTypeName := (*instance).GetTypeName()
 	dbIdAttributeName := "Id"
 
-	item, err := DBClient.GetItem(&dynamodb.GetItemInput{
+	item, err := dbClient.GetItem(&dynamodb.GetItemInput{
 		TableName: aws.String(instanceTypeName),
 		Key: map[string]*dynamodb.AttributeValue{
 			"Id": {
@@ -60,7 +60,7 @@ func LoadBatch[T Nobject](ids []string) ([]*T, error) {
 		},
 	}
 
-	items, err := DBClient.BatchGetItem(input)
+	items, err := dbClient.BatchGetItem(input)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func Export[T Nobject](objToInsert Nobject) (*T, error) {
 		ConditionExpression: conditionExpression,
 	}
 
-	_, err = DBClient.PutItem(input)
+	_, err = dbClient.PutItem(input)
 	if err != nil {
 		if _, ok := err.(*dynamodb.ConditionalCheckFailedException); ok {
 			return nil, fmt.Errorf("instance of %s with id: %s already exists. Use lib.Load(id) to work on existing instances", objToInsert.GetTypeName(), newId)
@@ -161,7 +161,7 @@ func DeleteWithTypeNameAsArg(id, typeName string) error {
 		ConditionExpression: aws.String("attribute_exists(Id)"),
 	}
 
-	_, err := DBClient.DeleteItem(input)
+	_, err := dbClient.DeleteItem(input)
 	if _, ok := err.(*dynamodb.ConditionalCheckFailedException); ok {
 		return fmt.Errorf("delete failed. Instance of %s with id: %s not found", typeName, id)
 	}

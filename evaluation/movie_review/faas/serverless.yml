@@ -84,15 +84,6 @@ functions:
     maximumEventAge: 60
   
 
-  AccountVerifyPassword:
-    name:  AccountVerifyPassword
-    handler: bin/AccountVerifyPassword
-    package:
-      include:
-        - bin/AccountVerifyPassword
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
   ReviewDownvote:
     name:  ReviewDownvote
     handler: bin/ReviewDownvote
@@ -108,6 +99,15 @@ functions:
     package:
       include:
         - bin/ReviewUpvote
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
+  AccountVerifyPassword:
+    name:  AccountVerifyPassword
+    handler: bin/AccountVerifyPassword
+    package:
+      include:
+        - bin/AccountVerifyPassword
     maximumRetryAttempts: 0
     maximumEventAge: 60
 

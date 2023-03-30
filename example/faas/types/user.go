@@ -73,6 +73,7 @@ func (u User) VerifyPassword(password string) (bool, error) {
 			return *new(bool), _libError
 		}
 	}
+
 	if u.Password == password {
 		_libUpsertError := u.saveChangesIfInitialized()
 		u.invocationDepth--

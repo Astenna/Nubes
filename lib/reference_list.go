@@ -31,7 +31,7 @@ func (r ReferenceList[T]) GetAt(index int) (*T, error) {
 }
 
 func (r ReferenceList[T]) GetStubs() ([]T, error) {
-	batch, err := GetBatch[T](r.GetIds())
+	batch, err := GetStubsInBatch[T](r.GetIds())
 
 	if err != nil {
 		return nil, fmt.Errorf("error occurred while retriving the objects from DB: %w", err)

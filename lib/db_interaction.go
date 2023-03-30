@@ -35,7 +35,7 @@ func Insert(objToInsert Nobject) (string, error) {
 		TableName: aws.String(objToInsert.GetTypeName()),
 	}
 
-	_, err = DBClient.PutItem(input)
+	_, err = dbClient.PutItem(input)
 	if err != nil {
 		return "", err
 	}
@@ -59,7 +59,7 @@ func Upsert(objToInsert Nobject, id string) error {
 		TableName: aws.String(objToInsert.GetTypeName()),
 	}
 
-	_, err = DBClient.PutItem(input)
+	_, err = dbClient.PutItem(input)
 	if err != nil {
 		return err
 	}
@@ -82,7 +82,7 @@ func GetStub[T Nobject](id string, object *T) error {
 		},
 	}
 
-	item, err := DBClient.GetItem(input)
+	item, err := dbClient.GetItem(input)
 	if err != nil {
 		return err
 	}
@@ -95,7 +95,7 @@ func GetStub[T Nobject](id string, object *T) error {
 	return fmt.Errorf("%s with id: %s not found", (*object).GetTypeName(), id)
 }
 
-func GetObjectStateWithTypeNameAsArg(id, typeName string) (interface{}, error) {
+func GetStubWithTypeNameAsArg(id, typeName string) (interface{}, error) {
 	if id == "" {
 		return nil, fmt.Errorf("missing id of object to get")
 	}
@@ -112,7 +112,7 @@ func GetObjectStateWithTypeNameAsArg(id, typeName string) (interface{}, error) {
 		},
 	}
 
-	item, err := DBClient.GetItem(input)
+	item, err := dbClient.GetItem(input)
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +150,7 @@ func GetByIndex(param QueryByIndexParam) ([]string, error) {
 		ExpressionAttributeValues: expr.Values(),
 	}
 
-	items, err := DBClient.Query(queryInput)
+	items, err := dbClient.Query(queryInput)
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +184,7 @@ func GetSortKeysByPartitionKey(q QueryByPartitionKeyParam) ([]string, error) {
 		ExpressionAttributeValues: expr.Values(),
 	}
 
-	items, err := DBClient.Query(input)
+	items, err := dbClient.Query(input)
 	if err != nil {
 		return nil, err
 	}
@@ -197,7 +197,7 @@ func GetSortKeysByPartitionKey(q QueryByPartitionKeyParam) ([]string, error) {
 	return outputIds, err
 }
 
-func GetBatch[T Nobject](ids []string) (*[]T, error) {
+func GetStubsInBatch[T Nobject](ids []string) (*[]T, error) {
 	if ids == nil {
 		return nil, fmt.Errorf("missing id of object to get")
 	}
@@ -218,7 +218,7 @@ func GetBatch[T Nobject](ids []string) (*[]T, error) {
 		},
 	}
 
-	items, err := DBClient.BatchGetItem(input)
+	items, err := dbClient.BatchGetItem(input)
 	if err != nil {
 		return nil, err
 	}
@@ -233,7 +233,7 @@ func GetBatch[T Nobject](ids []string) (*[]T, error) {
 	return nil, err
 }
 
-func GetBatchWithTypeNameAsArg(param GetBatchParam) ([]interface{}, error) {
+func GetStubsInBatchWithTypeNameAsArg(param GetBatchParam) ([]interface{}, error) {
 	if err := param.Validate(); err != nil {
 		return nil, err
 	}
@@ -253,7 +253,7 @@ func GetBatchWithTypeNameAsArg(param GetBatchParam) ([]interface{}, error) {
 		},
 	}
 
-	items, err := DBClient.BatchGetItem(input)
+	items, err := dbClient.BatchGetItem(input)
 	if err != nil {
 		return nil, err
 	}
@@ -266,38 +266,6 @@ func GetBatchWithTypeNameAsArg(param GetBatchParam) ([]interface{}, error) {
 	}
 
 	return nil, err
-}
-
-func Update[T Nobject](values aws.JSONValue) error {
-	if len(values) == 0 {
-		return fmt.Errorf("no values specified for update")
-	}
-	if values["id"] == "" {
-		return fmt.Errorf("missing id of object to update")
-	}
-
-	update := expression.UpdateBuilder{}
-	for k, v := range values {
-		update = update.Set(expression.Name(k), expression.Value(v))
-	}
-	expr, err := expression.NewBuilder().WithUpdate(update).Build()
-	if err != nil {
-		return fmt.Errorf("error occurred when building dynamodb update expression %w", err)
-	}
-
-	_, err = DBClient.UpdateItem(&dynamodb.UpdateItemInput{
-		TableName: aws.String((*new(T)).GetTypeName()),
-		Key: map[string]*dynamodb.AttributeValue{
-			"Id": {
-				S: aws.String(values["Id"].(string)),
-			},
-		},
-		UpdateExpression:          expr.Update(),
-		ExpressionAttributeNames:  expr.Names(),
-		ExpressionAttributeValues: expr.Values(),
-	})
-
-	return err
 }
 
 func GetField(param GetStateParam) (interface{}, error) {
@@ -318,7 +286,7 @@ func GetField(param GetStateParam) (interface{}, error) {
 		ProjectionExpression: &param.FieldName,
 	}
 
-	item, err := DBClient.GetItem(input)
+	item, err := dbClient.GetItem(input)
 	if err != nil {
 		return *new(interface{}), err
 	}
@@ -347,7 +315,7 @@ func GetFieldOfType[N any](param GetStateParam) (N, error) {
 		ProjectionExpression: &param.FieldName,
 	}
 
-	item, err := DBClient.GetItem(input)
+	item, err := dbClient.GetItem(input)
 	if err != nil {
 		return *new(N), err
 	}
@@ -373,7 +341,7 @@ func SetField(param SetFieldParam) error {
 		return fmt.Errorf("error occurred when building dynamodb update expression %w", err)
 	}
 
-	_, err = DBClient.UpdateItem(&dynamodb.UpdateItemInput{
+	_, err = dbClient.UpdateItem(&dynamodb.UpdateItemInput{
 		TableName: aws.String(param.TypeName),
 		Key: map[string]*dynamodb.AttributeValue{
 			"Id": {
@@ -389,7 +357,8 @@ func SetField(param SetFieldParam) error {
 }
 
 func IsInstanceAlreadyCreated(param IsInstanceAlreadyCreatedParam) (bool, error) {
-	item, err := DBClient.GetItem(&dynamodb.GetItemInput{
+
+	item, err := dbClient.GetItem(&dynamodb.GetItemInput{
 		TableName: aws.String(param.TypeName),
 		Key: map[string]*dynamodb.AttributeValue{
 			"Id": {
@@ -432,7 +401,7 @@ func AreInstancesAlreadyCreated(param LoadBatchParam) error {
 		},
 	}
 
-	items, err := DBClient.BatchGetItem(input)
+	items, err := dbClient.BatchGetItem(input)
 	if err != nil {
 		return err
 	}

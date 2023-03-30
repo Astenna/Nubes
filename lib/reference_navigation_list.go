@@ -81,7 +81,7 @@ func (r ReferenceNavigationList[T]) GetStubs() ([]T, error) {
 		return nil, fmt.Errorf("invalid initialization of ReferenceNavigationList")
 	}
 
-	batch, err := GetBatch[T](ids)
+	batch, err := GetStubsInBatch[T](ids)
 
 	if err != nil {
 		return nil, fmt.Errorf("error occurred while retriving the objects from DB: %w", err)
@@ -112,7 +112,8 @@ func (r ReferenceNavigationList[T]) AddToManyToMany(newId string) error {
 		return InsertToManyToManyTable(r.ownerTypeName, typeName, r.ownerId, newId)
 	}
 
-	return fmt.Errorf("can not add elements to ReferenceNavigationList of OneToMany relationship")
+	return fmt.Errorf(`can not add elements to ReferenceNavigationList used as OneToMany relationship. 
+						To do it, export or just set the Reference field of the instance with the correct Id`)
 }
 
 func (r *ReferenceNavigationList[T]) setupOneToManyRelationship(referringFieldName string) {
@@ -176,6 +177,6 @@ func InsertToManyToManyTable(partitionKeyName, sortKeyName, partitonKey, sortKey
 		},
 	}
 
-	_, err := DBClient.PutItem(input)
+	_, err := dbClient.PutItem(input)
 	return err
 }

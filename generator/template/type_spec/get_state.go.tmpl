@@ -10,7 +10,7 @@ func GetStateHandler(input lib.GetStateParam) (interface{}, error) {
 	var err error
 
 	if input.GetStub {
-		output, err = lib.GetObjectStateWithTypeNameAsArg(input.Id, input.TypeName)
+		output, err = lib.GetStubWithTypeNameAsArg(input.Id, input.TypeName)
 	} else {
 		output, err = lib.GetField(input)
 	}
