@@ -120,7 +120,7 @@ func (s shipping) GetId() string {
 
 // REFERENCE
 
-func (s shipping) Reference() Reference[shipping] {
+func (s shipping) AsReference() Reference[shipping] {
 	return *NewReference[shipping](s.GetId())
 }
 

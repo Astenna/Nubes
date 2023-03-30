@@ -7,14 +7,14 @@ import (
 )
 
 type Product struct {
-	Id			string
-	Name			string
-	QuantityAvailable	int
-	SoldBy			lib.Reference[Shop]	`dynamodbav:",omitempty"`
-	Discount		lib.ReferenceList[Discount]
-	Price			float64
-	isInitialized		bool
-	invocationDepth		int
+	Id                string
+	Name              string
+	QuantityAvailable int
+	SoldBy            lib.Reference[Shop] `dynamodbav:",omitempty"`
+	Discount          lib.ReferenceList[Discount]
+	Price             float64
+	isInitialized     bool
+	invocationDepth   int
 }
 
 func (Product) GetTypeName() string {
@@ -24,7 +24,7 @@ func (Product) GetTypeName() string {
 func (p *Product) DecreaseAvailabilityBy(decreaseNum int) error {
 	p.invocationDepth++
 	if p.isInitialized && p.invocationDepth == 1 {
-		_libError := lib.GetObjectState(p.Id, p)
+		_libError := lib.GetStub(p.Id, p)
 		if _libError != nil {
 			p.invocationDepth--
 			return _libError

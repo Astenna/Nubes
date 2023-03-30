@@ -3,11 +3,11 @@ package types
 import "github.com/Astenna/Nubes/lib"
 
 type Account struct {
-	Nickname	string
-	Email		string	`nubes:"id,readonly" dynamodbav:"Id"`
-	Password	string	`nubes:"readonly"`
-	isInitialized	bool
-	invocationDepth	int
+	Nickname        string
+	Email           string `nubes:"id,readonly" dynamodbav:"Id"`
+	Password        string `nubes:"readonly"`
+	isInitialized   bool
+	invocationDepth int
 }
 
 func (Account) GetTypeName() string {
@@ -21,7 +21,7 @@ func (u Account) GetId() string {
 func (u Account) VerifyPassword(password string) (bool, error) {
 	u.invocationDepth++
 	if u.isInitialized && u.invocationDepth == 1 {
-		_libError := lib.GetObjectState(u.Email, &u)
+		_libError := lib.GetStub(u.Email, &u)
 		if _libError != nil {
 			u.invocationDepth--
 			return *new(bool), _libError

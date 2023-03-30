@@ -67,7 +67,7 @@ func Upsert(objToInsert Nobject, id string) error {
 	return nil
 }
 
-func GetObjectState[T Nobject](id string, object *T) error {
+func GetStub[T Nobject](id string, object *T) error {
 
 	if object == nil {
 		return fmt.Errorf("object whose state is to be retrieved is nil")

@@ -24,7 +24,7 @@ func TestReferenceNavigationListOneToMany(t *testing.T) {
 	exportedShop, err := clib.ExportShop(newShop)
 	require.Equal(t, nil, err, "error occurred in ExportShop invocation", err)
 	// newProduct is sold by newShop
-	newProduct.SoldBy = exportedShop.Reference()
+	newProduct.SoldBy = exportedShop.AsReference()
 	exportedProduct, err := clib.ExportProduct(newProduct)
 	require.Equal(t, nil, err, "error occurred in ExportProduct invocation", err)
 	// retrieve newProduct ID from newShop

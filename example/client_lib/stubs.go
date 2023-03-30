@@ -1,5 +1,19 @@
 package client_lib
 
+type OrderStub struct {
+	Id string
+
+	Products []OrderedProduct
+
+	Buyer Reference[user]
+
+	Shipping Reference[shipping]
+}
+
+func (OrderStub) GetTypeName() string {
+	return "Order"
+}
+
 type ProductStub struct {
 	Id string
 
@@ -66,18 +80,4 @@ type DiscountStub struct {
 
 func (DiscountStub) GetTypeName() string {
 	return "Discount"
-}
-
-type OrderStub struct {
-	Id string
-
-	Products []OrderedProduct
-
-	Buyer Reference[user]
-
-	Shipping Reference[shipping]
-}
-
-func (OrderStub) GetTypeName() string {
-	return "Order"
 }

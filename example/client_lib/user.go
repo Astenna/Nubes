@@ -124,7 +124,7 @@ func (s user) GetId() string {
 
 // REFERENCE
 
-func (s user) Reference() Reference[user] {
+func (s user) AsReference() Reference[user] {
 	return *NewReference[user](s.GetId())
 }
 

@@ -7,16 +7,16 @@ import (
 )
 
 type Review struct {
-	Id		string
-	Rating		int
-	Movie		lib.Reference[Movie]	`dynamodbav:",omitempty"`
-	Reviewer	lib.Reference[Account]
-	Text		string
-	DownvotedBy	map[string]struct{}	`nubes:"readonly"`
-	UpvotedBy	map[string]struct{}	`nubes:"readonly"`
-	MapField	map[string]string
-	isInitialized	bool
-	invocationDepth	int
+	Id              string
+	Rating          int
+	Movie           lib.Reference[Movie] `dynamodbav:",omitempty"`
+	Reviewer        lib.Reference[Account]
+	Text            string
+	DownvotedBy     map[string]struct{} `nubes:"readonly"`
+	UpvotedBy       map[string]struct{} `nubes:"readonly"`
+	MapField        map[string]string
+	isInitialized   bool
+	invocationDepth int
 }
 
 func (Review) GetTypeName() string {
@@ -26,7 +26,7 @@ func (Review) GetTypeName() string {
 func (m *Review) Downvote(account Account) (int, error) {
 	m.invocationDepth++
 	if m.isInitialized && m.invocationDepth == 1 {
-		_libError := lib.GetObjectState(m.Id, m)
+		_libError := lib.GetStub(m.Id, m)
 		if _libError != nil {
 			m.invocationDepth--
 			return *new(int), _libError
@@ -55,7 +55,7 @@ func (m *Review) Downvote(account Account) (int, error) {
 func (m *Review) Upvote(account Account) (int, error) {
 	m.invocationDepth++
 	if m.isInitialized && m.invocationDepth == 1 {
-		_libError := lib.GetObjectState(m.Id, m)
+		_libError := lib.GetStub(m.Id, m)
 		if _libError != nil {
 			m.invocationDepth--
 			return *new(int), _libError

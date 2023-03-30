@@ -63,64 +63,18 @@ func (r referenceNavigationList[T, Stub]) Get() ([]T, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(ids) == 0 {
-		return []T{}, nil
-	}
 
-	params := lib.LoadBatchParam{
-		Ids:      ids,
-		TypeName: (*new(T)).GetTypeName(),
-	}
-	jsonParam, err := json.Marshal(params)
+	return loadBatch[T](ids)
+}
+
+func (r referenceNavigationList[T, Stub]) GetStubs() ([]Stub, error) {
+	ids, err := r.GetIds()
 	if err != nil {
 		return nil, err
 	}
 
-	out, err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("Load"), Payload: jsonParam})
-	if out.FunctionError != nil {
-		return nil, fmt.Errorf("lambda function designed to verify if instance exists failed. Error: %s", string(out.Payload))
-	}
-	foundIds := ids
-	if err != nil {
-		if notFound, casted := err.(lib.NotFoundError); casted {
-			foundIds = difference(ids, notFound.Ids)
-		} else {
-			return nil, err
-		}
-	}
-
-	result := make([]T, len(foundIds))
-	for i, id := range foundIds {
-		newInstance := new(T)
-		casted := any(newInstance)
-		setIdInterf, _ := casted.(setId)
-		setIdInterf.setId(id)
-		setIdInterf.init()
-		result[i] = *newInstance
-	}
-	return result, err
-}
-
-func (r referenceNavigationList[T, Stub]) GetStubs() ([]Stub, error) {
-	var ids []string
-	var err error
-	if r.usesIndex {
-		ids, err = r.getByIndex()
-		if err != nil {
-			return nil, err
-		}
-	} else if r.isManyToMany && !r.usesIndex {
-		ids, err = r.getSortKeysByPartitionKey()
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		fmt.Println("")
-		return nil, fmt.Errorf("invalid initialization of ReferenceNavigationList")
-	}
-
 	if len(ids) < 1 {
-		return *(new([]Stub)), nil
+		return nil, nil
 	}
 
 	params := lib.GetBatchParam{
@@ -292,3 +246,4 @@ func difference(a, b []string) []string {
 	}
 	return diff
 }
+

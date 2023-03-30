@@ -7,15 +7,15 @@ import (
 )
 
 type User struct {
-	FirstName	string
-	LastName	string
-	Email		string	`nubes:"id,readonly" dynamodbav:"Id"`
-	Password	string	`nubes:"readonly"`
-	Address		string
-	Shops		lib.ReferenceNavigationList[Shop]	`nubes:"hasMany-Owners" dynamodbav:"-"`
-	Orders		lib.ReferenceList[Order]
-	isInitialized	bool
-	invocationDepth	int
+	FirstName       string
+	LastName        string
+	Email           string `nubes:"id,readonly" dynamodbav:"Id"`
+	Password        string `nubes:"readonly"`
+	Address         string
+	Shops           lib.ReferenceNavigationList[Shop] `nubes:"hasMany-Owners" dynamodbav:"-"`
+	Orders          lib.ReferenceList[Order]
+	isInitialized   bool
+	invocationDepth int
 }
 
 func DeleteUser(id string) error {
@@ -67,7 +67,7 @@ func (u User) GetShops() ([]string, error) {
 func (u User) VerifyPassword(password string) (bool, error) {
 	u.invocationDepth++
 	if u.isInitialized && u.invocationDepth == 1 {
-		_libError := lib.GetObjectState(u.Email, &u)
+		_libError := lib.GetStub(u.Email, &u)
 		if _libError != nil {
 			u.invocationDepth--
 			return *new(bool), _libError

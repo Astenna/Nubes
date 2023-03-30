@@ -120,7 +120,7 @@ func (s order) GetId() string {
 
 // REFERENCE
 
-func (s order) Reference() Reference[order] {
+func (s order) AsReference() Reference[order] {
 	return *NewReference[order](s.GetId())
 }
 

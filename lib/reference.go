@@ -11,12 +11,12 @@ func (r Reference[T]) Id() string {
 	return string(r)
 }
 
-func (r Reference[T]) GetLoaded() (*T, error) {
+func (r Reference[T]) Get() (*T, error) {
 	return Load[T](string(r))
 }
 
-func (r Reference[T]) GetWithoutLoading() (*T, error) {
+func (r Reference[T]) GetStub() (*T, error) {
 	object := new(T)
-	err := GetObjectState(string(r), object)
+	err := GetStub(string(r), object)
 	return object, err
 }

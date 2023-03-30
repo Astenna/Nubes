@@ -71,6 +71,9 @@ var clientCmd = &cobra.Command{
 		filePath = filepath.Join(outputDirectoryPath, "reference_navigation_list.go")
 		templ.CreateFile("template/client_lib/reference_navigation_list.go.tmpl", referenceTmplInput, filePath)
 
+		filePath = filepath.Join(outputDirectoryPath, "reference_list.go")
+		templ.CreateFile("template/client_lib/reference_list.go.tmpl", referenceTmplInput, filePath)
+
 		filePath = filepath.Join(outputDirectoryPath, "reference_ctors.go")
 		templ.CreateFile("template/client_lib/reference_ctors.go.tmpl", struct {
 			PackageName string

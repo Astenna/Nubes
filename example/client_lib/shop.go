@@ -128,7 +128,7 @@ func (s shop) GetId() string {
 
 // REFERENCE
 
-func (s shop) Reference() Reference[shop] {
+func (s shop) AsReference() Reference[shop] {
 	return *NewReference[shop](s.GetId())
 }
 

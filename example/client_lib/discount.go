@@ -120,7 +120,7 @@ func (s discount) GetId() string {
 
 // REFERENCE
 
-func (s discount) Reference() Reference[discount] {
+func (s discount) AsReference() Reference[discount] {
 	return *NewReference[discount](s.GetId())
 }
 

@@ -51,7 +51,7 @@ func (r ReferenceNavigationList[T]) GetIds() ([]string, error) {
 	return nil, fmt.Errorf("invalid initialization of ReferenceNavigationList")
 }
 
-func (r ReferenceNavigationList[T]) GetLoaded() ([]*T, error) {
+func (r ReferenceNavigationList[T]) Get() ([]*T, error) {
 	ids, err := r.GetIds()
 	if err != nil {
 		return nil, err

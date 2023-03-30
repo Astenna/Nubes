@@ -97,7 +97,7 @@ func TestGetLoaded(t *testing.T) {
 	exportedProduct2, err := lib.Export[types.Product](newProduct2)
 	require.Equal(t, nil, err, "error occurred in Export[types.Product]", err)
 
-	productsList, err := exportedShop.Products.GetLoaded()
+	productsList, err := exportedShop.Products.Get()
 	require.Equal(t, nil, err, "error occurred in exportedShop.Products.GetLoaded()", err)
 
 	// Assert
