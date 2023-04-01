@@ -13,11 +13,9 @@ type HandlerParameters struct {
 }
 
 type AddToManyToManyParam struct {
-	TypeName      string
-	NewId         string
-	OwnerTypeName string
-	OwnerId       string
-	UsesIndex     bool
+	TypeName                     string
+	NewId                        string
+	InsertToManyToManyTableParam InsertToManyToManyTableParam
 }
 
 func (a AddToManyToManyParam) Verify() error {
@@ -27,13 +25,7 @@ func (a AddToManyToManyParam) Verify() error {
 	if a.NewId == "" {
 		return fmt.Errorf("missing NewId")
 	}
-	if a.OwnerTypeName == "" {
-		return fmt.Errorf("missing OwnerTypeName")
-	}
-	if a.OwnerId == "" {
-		return fmt.Errorf("missing OwnerId")
-	}
-	return nil
+	return a.InsertToManyToManyTableParam.Verify()
 }
 
 type LoadBatchParam struct {

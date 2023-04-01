@@ -21,10 +21,7 @@ func AddToManyToManyHandler(input lib.AddToManyToManyParam) error {
 		return fmt.Errorf("only existing instances can be added to many to many relationships. Typename %s with id %s not found", input.TypeName, input.NewId)
 	}
 
-	if input.UsesIndex {
-		return lib.InsertToManyToManyTable(input.TypeName, input.OwnerTypeName, input.NewId, input.OwnerId)
-	}
-	return lib.InsertToManyToManyTable(input.OwnerTypeName, input.TypeName, input.OwnerId, input.NewId)
+	return lib.InsertToManyToManyTable(input.InsertToManyToManyTableParam)
 }
 
 func main() {

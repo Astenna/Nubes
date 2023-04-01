@@ -1,5 +1,27 @@
 package client_lib
 
+type ShippingStub struct {
+	Id string
+
+	Address string
+
+	State ShippingState
+}
+
+func (ShippingStub) GetTypeName() string {
+	return "Shipping"
+}
+
+type ShopStub struct {
+	Id string
+
+	Name string
+}
+
+func (ShopStub) GetTypeName() string {
+	return "Shop"
+}
+
 type UserStub struct {
 	FirstName string
 
@@ -58,26 +80,4 @@ type ProductStub struct {
 
 func (ProductStub) GetTypeName() string {
 	return "Product"
-}
-
-type ShippingStub struct {
-	Id string
-
-	Address string
-
-	State ShippingState
-}
-
-func (ShippingStub) GetTypeName() string {
-	return "Shipping"
-}
-
-type ShopStub struct {
-	Id string
-
-	Name string
-}
-
-func (ShopStub) GetTypeName() string {
-	return "Shop"
 }

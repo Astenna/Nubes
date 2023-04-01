@@ -62,3 +62,18 @@ func loadBatch[T lib.Nobject](ids []string) ([]T, error) {
 	}
 	return result, err
 }
+
+func difference(a, b []string) []string {
+	set_b := make(map[string]struct{}, len(b))
+	for _, x := range b {
+		set_b[x] = struct{}{}
+	}
+
+	var diff []string
+	for _, x := range a {
+		if _, found := set_b[x]; !found {
+			diff = append(diff, x)
+		}
+	}
+	return diff
+}

@@ -8,43 +8,29 @@ import (
 )
 
 type ReferenceNavigationList[T Nobject] struct {
-	ownerId       string
-	ownerTypeName string
-
-	isManyToMany             bool
-	usesIndex                bool
-	queryByIndexParam        QueryByIndexParam
-	queryByPartitionKeyParam QueryByPartitionKeyParam
+	setup ReferenceNavigationListSetup[T]
 }
 
 func NewReferenceNavigationList[T Nobject](ownerId, ownerTypeName, referringFieldName string, isManyToMany bool) *ReferenceNavigationList[T] {
 	r := new(ReferenceNavigationList[T])
-	r.ownerId = ownerId
-	r.ownerTypeName = ownerTypeName
-	r.isManyToMany = isManyToMany
-
-	if isManyToMany {
-		r.setupManyToManyRelationship()
-	} else {
-		r.setupOneToManyRelationship(referringFieldName)
-	}
-
-	if r.usesIndex {
-		r.queryByIndexParam.KeyAttributeValue = r.ownerId
-	}
-
+	r.setup = NewReferenceNavigationListSetup[T](ownerId, ownerTypeName, referringFieldName, isManyToMany)
+	r.setup.build()
 	return r
 }
 
 func (r ReferenceNavigationList[T]) GetIds() ([]string, error) {
 
-	if r.usesIndex {
-		out, err := GetByIndex(r.queryByIndexParam)
+	if r.setup.UsesIndex {
+		out, err := GetByIndex(r.setup.GetQueryByIndexParam())
 		return out, err
 	}
 
-	if r.isManyToMany && !r.usesIndex {
-		out, err := GetSortKeysByPartitionKey(r.queryByPartitionKeyParam)
+	if r.setup.IsManyToMany && !r.setup.UsesIndex {
+		input, err := r.setup.GetQueryByPartitionKeyParam()
+		if err != nil {
+			return nil, err
+		}
+		out, err := GetSortKeysByPartitionKey(input)
 		return out, err
 	}
 
@@ -67,13 +53,17 @@ func (r ReferenceNavigationList[T]) Get() ([]*T, error) {
 func (r ReferenceNavigationList[T]) GetStubs() ([]T, error) {
 	var ids []string
 	var err error
-	if r.usesIndex {
-		ids, err = GetByIndex(r.queryByIndexParam)
+	if r.setup.UsesIndex {
+		ids, err = GetByIndex(r.setup.GetQueryByIndexParam())
 		if err != nil {
 			return nil, err
 		}
-	} else if r.isManyToMany && !r.usesIndex {
-		ids, err = GetSortKeysByPartitionKey(r.queryByPartitionKeyParam)
+	} else if r.setup.IsManyToMany && !r.setup.UsesIndex {
+		input, err := r.setup.GetQueryByPartitionKeyParam()
+		if err != nil {
+			return nil, err
+		}
+		ids, err = GetSortKeysByPartitionKey(input)
 		if err != nil {
 			return nil, err
 		}
@@ -95,7 +85,7 @@ func (r ReferenceNavigationList[T]) AddToManyToMany(newId string) error {
 		return fmt.Errorf("missing id")
 	}
 
-	if r.isManyToMany {
+	if r.setup.IsManyToMany {
 
 		typeName := (*new(T)).GetTypeName()
 		exists, err := IsInstanceAlreadyCreated(IsInstanceAlreadyCreatedParam{Id: newId, TypeName: typeName})
@@ -106,73 +96,102 @@ func (r ReferenceNavigationList[T]) AddToManyToMany(newId string) error {
 			return fmt.Errorf("only existing instances can be added to many to many relationships. Typename %s with id %s not found", typeName, newId)
 		}
 
-		if r.usesIndex {
-			return InsertToManyToManyTable(typeName, r.ownerTypeName, newId, r.ownerId)
-		}
-		return InsertToManyToManyTable(r.ownerTypeName, typeName, r.ownerId, newId)
+		return InsertToManyToManyTable(r.setup.GetInsertToManyToManyTableParam(newId))
 	}
 
 	return fmt.Errorf(`can not add elements to ReferenceNavigationList used as OneToMany relationship. 
 						To do it, export or just set the Reference field of the instance with the correct Id`)
 }
 
-func (r *ReferenceNavigationList[T]) setupOneToManyRelationship(referringFieldName string) {
-	otherTypeName := (*(new(T))).GetTypeName()
-	r.queryByIndexParam.KeyAttributeName = referringFieldName
-	r.queryByIndexParam.OutputAttributeName = "Id"
-	r.usesIndex = true
-	r.queryByIndexParam.TableName = otherTypeName
-	r.queryByIndexParam.IndexName = otherTypeName + referringFieldName
-}
-
-func (r *ReferenceNavigationList[T]) setupManyToManyRelationship() {
-	otherTypeName := (*(new(T))).GetTypeName()
-
-	for index := 0; ; index++ {
-
-		if index >= len(r.ownerTypeName) {
-			r.queryByPartitionKeyParam.TableName = r.ownerTypeName + otherTypeName
-			r.usesIndex = false
-			break
-		}
-		if index >= len(otherTypeName) {
-			r.queryByIndexParam.TableName = otherTypeName + r.ownerTypeName
-			r.queryByIndexParam.IndexName = r.queryByIndexParam.TableName + "Reversed"
-			r.usesIndex = true
-			break
-		}
-
-		if r.ownerTypeName[index] < otherTypeName[index] {
-			r.queryByPartitionKeyParam.TableName = r.ownerTypeName + otherTypeName
-			r.usesIndex = false
-			break
-		} else if r.ownerTypeName[index] > otherTypeName[index] {
-			r.queryByIndexParam.TableName = otherTypeName + r.ownerTypeName
-			r.queryByIndexParam.IndexName = r.queryByIndexParam.TableName + "Reversed"
-			r.usesIndex = true
-			break
-		}
+func (r ReferenceNavigationList[T]) DeleteBatchFromManyToMany(ids []string) error {
+	if len(ids) == 0 {
+		return fmt.Errorf("missing ids of objects to delete")
 	}
 
-	if r.usesIndex {
-		r.queryByIndexParam.KeyAttributeName = r.ownerTypeName
-		r.queryByIndexParam.OutputAttributeName = otherTypeName
+	param := r.setup.GetDeleteFromManyToManyParam(ids)
+
+	input := dynamodb.BatchWriteItemInput{
+		RequestItems: map[string][]*dynamodb.WriteRequest{
+			param.TableName: {},
+		},
+	}
+	if param.AreIdsToDeletePartitionKeys {
+		for _, id := range ids {
+			input.RequestItems[param.TableName] = append(input.RequestItems[param.TableName],
+				&dynamodb.WriteRequest{
+					DeleteRequest: &dynamodb.DeleteRequest{
+						Key: map[string]*dynamodb.AttributeValue{
+							param.PartitionKeyName: {
+								S: aws.String(id),
+							},
+							param.SortKeyName: {
+								S: aws.String(param.SortKeyValue),
+							},
+						},
+					},
+				})
+		}
+
 	} else {
-		r.queryByPartitionKeyParam.PartitionAttributeName = r.ownerTypeName
-		r.queryByPartitionKeyParam.PatritionAttributeValue = r.ownerId
-		r.queryByPartitionKeyParam.OutputAttributeName = otherTypeName
+		for _, id := range ids {
+			input.RequestItems[param.TableName] = append(input.RequestItems[param.TableName],
+				&dynamodb.WriteRequest{
+					DeleteRequest: &dynamodb.DeleteRequest{
+						Key: map[string]*dynamodb.AttributeValue{
+							param.PartitionKeyName: {
+								S: aws.String(param.PartitionKeyValue),
+							},
+							param.SortKeyName: {
+								S: aws.String(id),
+							},
+						},
+					},
+				})
+		}
 	}
+
+	res, err := dbClient.BatchWriteItem(&input)
+	_ = res
+	return err
 }
 
-func InsertToManyToManyTable(partitionKeyName, sortKeyName, partitonKey, sortKey string) error {
+type InsertToManyToManyTableParam struct {
+	PartitionKeyName  string
+	SortKeyName       string
+	PartitionKeyValue string
+	SortKeyValue      string
+}
+
+func (i InsertToManyToManyTableParam) Verify() error {
+	if i.PartitionKeyName == "" {
+		return fmt.Errorf("missing PartitionKeyName")
+	}
+	if i.SortKeyName == "" {
+		return fmt.Errorf("missing SortKeyName")
+	}
+	if i.PartitionKeyValue == "" {
+		return fmt.Errorf("missing PartitionKeyValue")
+	}
+	if i.SortKeyValue == "" {
+		return fmt.Errorf("missing SortKeyValue")
+	}
+
+	return nil
+}
+
+func InsertToManyToManyTable(param InsertToManyToManyTableParam) error {
+	if err := param.Verify(); err != nil {
+		return err
+	}
+
 	input := &dynamodb.PutItemInput{
-		TableName: aws.String(partitionKeyName + sortKeyName),
+		TableName: aws.String(param.PartitionKeyName + param.SortKeyName),
 		Item: map[string]*dynamodb.AttributeValue{
-			partitionKeyName: {
-				S: aws.String(partitonKey),
+			param.PartitionKeyName: {
+				S: aws.String(param.PartitionKeyValue),
 			},
-			sortKeyName: {
-				S: aws.String(sortKey),
+			param.SortKeyName: {
+				S: aws.String(param.SortKeyValue),
 			},
 		},
 	}

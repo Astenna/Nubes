@@ -1,5 +1,6 @@
 package client_lib
 
+
 import (
 	"encoding/json"
 	"fmt"
@@ -15,42 +16,23 @@ type setId interface {
 }
 
 type referenceNavigationList[T lib.Nobject, Stub any] struct {
-	ownerId       string
-	ownerTypeName string
-
-	isManyToMany             bool
-	usesIndex                bool
-	queryByIndexParam        lib.QueryByIndexParam
-	queryByPartitionKeyParam lib.QueryByPartitionKeyParam
+	setup lib.ReferenceNavigationListSetup[T]
 }
 
 func newReferenceNavigationList[T lib.Nobject, Stub any](ownerId, ownerTypeName, referringFieldName string, isManyToMany bool) *referenceNavigationList[T, Stub] {
 	r := new(referenceNavigationList[T, Stub])
-	r.ownerId = ownerId
-	r.ownerTypeName = ownerTypeName
-	r.isManyToMany = isManyToMany
-
-	if isManyToMany {
-		r.setupManyToManyRelationship()
-	} else {
-		r.setupOneToManyRelationship(referringFieldName)
-	}
-
-	if r.usesIndex {
-		r.queryByIndexParam.KeyAttributeValue = r.ownerId
-	}
-
+	r.setup = lib.NewReferenceNavigationListSetup[T](ownerId, ownerTypeName, referringFieldName, isManyToMany)
 	return r
 }
 
 func (r referenceNavigationList[T, Stub]) GetIds() ([]string, error) {
 
-	if r.usesIndex {
+	if r.setup.UsesIndex {
 		out, err := r.getByIndex()
 		return out, err
 	}
 
-	if r.isManyToMany && !r.usesIndex {
+	if r.setup.IsManyToMany && !r.setup.UsesIndex {
 		out, err := r.getSortKeysByPartitionKey()
 		return out, err
 	}
@@ -107,14 +89,12 @@ func (r referenceNavigationList[T, Stub]) AddToManyToMany(newId string) error {
 		return fmt.Errorf("missing id")
 	}
 
-	if r.isManyToMany {
+	if r.setup.IsManyToMany {
 		typeName := (*new(T)).GetTypeName()
 		params := lib.AddToManyToManyParam{
-			TypeName:      typeName,
-			NewId:         newId,
-			OwnerTypeName: r.ownerTypeName,
-			OwnerId:       r.ownerId,
-			UsesIndex:     r.usesIndex,
+			TypeName:                     typeName,
+			NewId:                        newId,
+			InsertToManyToManyTableParam: r.setup.GetInsertToManyToManyTableParam(newId),
 		}
 
 		jsonParam, err := json.Marshal(params)
@@ -138,7 +118,7 @@ func (r referenceNavigationList[T, Stub]) AddToManyToMany(newId string) error {
 
 func (r referenceNavigationList[T, Stub]) getByIndex() ([]string, error) {
 
-	jsonParam, err := json.Marshal(r.queryByIndexParam)
+	jsonParam, err := json.Marshal(r.setup.GetQueryByIndexParam())
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +142,11 @@ func (r referenceNavigationList[T, Stub]) getByIndex() ([]string, error) {
 
 func (r referenceNavigationList[T, Stub]) getSortKeysByPartitionKey() ([]string, error) {
 
-	jsonParam, err := json.Marshal(r.queryByPartitionKeyParam)
+	param, err := r.setup.GetQueryByPartitionKeyParam()
+	if err != nil {
+		return nil, err
+	}
+	jsonParam, err := json.Marshal(param)
 	if err != nil {
 		return nil, err
 	}
@@ -183,67 +167,3 @@ func (r referenceNavigationList[T, Stub]) getSortKeysByPartitionKey() ([]string,
 
 	return result, nil
 }
-
-func (r *referenceNavigationList[T, Stub]) setupOneToManyRelationship(referringFieldName string) {
-	otherTypeName := (*(new(T))).GetTypeName()
-	r.queryByIndexParam.KeyAttributeName = referringFieldName
-	r.queryByIndexParam.OutputAttributeName = "Id"
-	r.usesIndex = true
-	r.queryByIndexParam.TableName = otherTypeName
-	r.queryByIndexParam.IndexName = otherTypeName + referringFieldName
-}
-
-func (r *referenceNavigationList[T, Stub]) setupManyToManyRelationship() {
-	otherTypeName := (*(new(T))).GetTypeName()
-
-	for index := 0; ; index++ {
-
-		if index >= len(r.ownerTypeName) {
-			r.queryByPartitionKeyParam.TableName = r.ownerTypeName + otherTypeName
-			r.usesIndex = false
-			break
-		}
-		if index >= len(otherTypeName) {
-			r.queryByIndexParam.TableName = otherTypeName + r.ownerTypeName
-			r.queryByIndexParam.IndexName = r.queryByIndexParam.TableName + "Reversed"
-			r.usesIndex = true
-			break
-		}
-
-		if r.ownerTypeName[index] < otherTypeName[index] {
-			r.queryByPartitionKeyParam.TableName = r.ownerTypeName + otherTypeName
-			r.usesIndex = false
-			break
-		} else if r.ownerTypeName[index] > otherTypeName[index] {
-			r.queryByIndexParam.TableName = otherTypeName + r.ownerTypeName
-			r.queryByIndexParam.IndexName = r.queryByIndexParam.TableName + "Reversed"
-			r.usesIndex = true
-			break
-		}
-	}
-
-	if r.usesIndex {
-		r.queryByIndexParam.KeyAttributeName = r.ownerTypeName
-		r.queryByIndexParam.OutputAttributeName = otherTypeName
-	} else {
-		r.queryByPartitionKeyParam.PartitionAttributeName = r.ownerTypeName
-		r.queryByPartitionKeyParam.PatritionAttributeValue = r.ownerId
-		r.queryByPartitionKeyParam.OutputAttributeName = otherTypeName
-	}
-}
-
-func difference(a, b []string) []string {
-	set_b := make(map[string]struct{}, len(b))
-	for _, x := range b {
-		set_b[x] = struct{}{}
-	}
-
-	var diff []string
-	for _, x := range a {
-		if _, found := set_b[x]; !found {
-			diff = append(diff, x)
-		}
-	}
-	return diff
-}
-

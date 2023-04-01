@@ -124,6 +124,37 @@ func TestGetLoaded(t *testing.T) {
 	}
 }
 
+func TestDeleteFromManyToManyRelationshipRetrieveByIndex(t *testing.T) {
+	// Arrange
+	newUserId := uuid.New().String()
+	newUser := types.User{
+		Email:     newUserId,
+		FirstName: "TestReferenceNavigationList",
+		LastName:  "TestManyToMany",
+	}
+	newShop := types.Shop{
+		Name: "ShopTestManyToManyRelationship",
+	}
+
+	// Act
+	exportedShop, err := lib.Export[types.Shop](newShop)
+	require.Equal(t, nil, err, "error occurred in Export[types.Shop] invocation", err)
+
+	exportedUser, err := lib.Export[types.User](newUser)
+	require.Equal(t, nil, err, "error occurred in Export[types.User]", err)
+
+	err = exportedUser.Shops.AddToManyToMany(exportedShop.Id)
+	require.Equal(t, nil, err, "error occurred in exportedShop.Owners.Add", err)
+
+	err = exportedUser.Shops.DeleteBatchFromManyToMany([]string{exportedShop.Id})
+	require.Equal(t, nil, err, "error occurred in exportedUser.Shops.DeleteBatchFromManyToMany", err)
+	owners, err := exportedShop.GetOwners()
+
+	// Assert
+	require.Equal(t, nil, err, "error occurred in  exportedShop.GetOwners()", err)
+	require.Zero(t, len(owners))
+}
+
 func TestGetIds(t *testing.T) {
 	// Arrange
 	newProduct1 := types.Product{
