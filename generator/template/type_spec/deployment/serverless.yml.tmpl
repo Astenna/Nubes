@@ -91,6 +91,12 @@ functions:
         - bin/ReferenceAddToManyToMany
     maximumRetryAttempts: 0
     maximumEventAge: 60
+  ReferenceDeleteFromManyToMany:
+    name: ReferenceDeleteFromManyToMany
+    handler: bin/ReferenceDeleteFromManyToMany
+    package:
+      include:
+        - bin/ReferenceDeleteFromManyToMany
   ReferenceGetSortKeysByPartitionKey:
     name: ReferenceGetSortKeysByPartitionKey
     handler: bin/ReferenceGetSortKeysByPartitionKey

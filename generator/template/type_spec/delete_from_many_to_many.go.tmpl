@@ -1,0 +1,19 @@
+package main
+
+import (
+	lib "github.com/Astenna/Nubes/lib"
+	"github.com/aws/aws-lambda-go/lambda"
+)
+
+func DeleteFromManyToManyHandler(input lib.DeleteFromManyToManyParam) error {
+
+	if err := input.Verify(); err != nil {
+		return err
+	}
+
+	return lib.DeleteFromManyToManyTable(input)
+}
+
+func main() {
+	lambda.Start(DeleteFromManyToManyHandler)
+}

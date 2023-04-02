@@ -109,50 +109,7 @@ func (r ReferenceNavigationList[T]) DeleteBatchFromManyToMany(ids []string) erro
 	}
 
 	param := r.setup.GetDeleteFromManyToManyParam(ids)
-
-	input := dynamodb.BatchWriteItemInput{
-		RequestItems: map[string][]*dynamodb.WriteRequest{
-			param.TableName: {},
-		},
-	}
-	if param.AreIdsToDeletePartitionKeys {
-		for _, id := range ids {
-			input.RequestItems[param.TableName] = append(input.RequestItems[param.TableName],
-				&dynamodb.WriteRequest{
-					DeleteRequest: &dynamodb.DeleteRequest{
-						Key: map[string]*dynamodb.AttributeValue{
-							param.PartitionKeyName: {
-								S: aws.String(id),
-							},
-							param.SortKeyName: {
-								S: aws.String(param.SortKeyValue),
-							},
-						},
-					},
-				})
-		}
-
-	} else {
-		for _, id := range ids {
-			input.RequestItems[param.TableName] = append(input.RequestItems[param.TableName],
-				&dynamodb.WriteRequest{
-					DeleteRequest: &dynamodb.DeleteRequest{
-						Key: map[string]*dynamodb.AttributeValue{
-							param.PartitionKeyName: {
-								S: aws.String(param.PartitionKeyValue),
-							},
-							param.SortKeyName: {
-								S: aws.String(id),
-							},
-						},
-					},
-				})
-		}
-	}
-
-	res, err := dbClient.BatchWriteItem(&input)
-	_ = res
-	return err
+	return DeleteFromManyToManyTable(param)
 }
 
 type InsertToManyToManyTableParam struct {
@@ -197,5 +154,54 @@ func InsertToManyToManyTable(param InsertToManyToManyTableParam) error {
 	}
 
 	_, err := dbClient.PutItem(input)
+	return err
+}
+
+func DeleteFromManyToManyTable(param DeleteFromManyToManyParam) error {
+	if err := param.Verify(); err != nil {
+		return err
+	}
+
+	input := dynamodb.BatchWriteItemInput{
+		RequestItems: map[string][]*dynamodb.WriteRequest{
+			param.TableName: {},
+		},
+	}
+	if param.AreIdsToDeletePartitionKeys {
+		for _, id := range param.IdsToDelete {
+			input.RequestItems[param.TableName] = append(input.RequestItems[param.TableName],
+				&dynamodb.WriteRequest{
+					DeleteRequest: &dynamodb.DeleteRequest{
+						Key: map[string]*dynamodb.AttributeValue{
+							param.PartitionKeyName: {
+								S: aws.String(id),
+							},
+							param.SortKeyName: {
+								S: aws.String(param.SortKeyValue),
+							},
+						},
+					},
+				})
+		}
+
+	} else {
+		for _, id := range param.IdsToDelete {
+			input.RequestItems[param.TableName] = append(input.RequestItems[param.TableName],
+				&dynamodb.WriteRequest{
+					DeleteRequest: &dynamodb.DeleteRequest{
+						Key: map[string]*dynamodb.AttributeValue{
+							param.PartitionKeyName: {
+								S: aws.String(param.PartitionKeyValue),
+							},
+							param.SortKeyName: {
+								S: aws.String(id),
+							},
+						},
+					},
+				})
+		}
+	}
+
+	_, err := dbClient.BatchWriteItem(&input)
 	return err
 }

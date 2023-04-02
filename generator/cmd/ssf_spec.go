@@ -149,7 +149,12 @@ func generateGenericHandlers(path string, parsedPkg parser.ParsedPackage) {
 		generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "reference", "AddToManyToMany"))
 		os.MkdirAll(generationDestPath, 0777)
 		addManyToManyPath := filepath.Join(generationDestPath, "ReferenceAddToManyToMany.go")
-		tp.CreateFile("template/type_spec/add_many_to_many.template.go.tmpl", nil, addManyToManyPath)
+		tp.CreateFile("template/type_spec/add_many_to_many.go.tmpl", nil, addManyToManyPath)
+
+		generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "reference", "DeleteFromManyToMany"))
+		os.MkdirAll(generationDestPath, 0777)
+		deleteFromManyPath := filepath.Join(generationDestPath, "ReferenceDeleteFromManyToMany.go")
+		tp.CreateFile("template/type_spec/delete_from_many_to_many.go.tmpl", nil, deleteFromManyPath)
 	}
 }
 
@@ -163,7 +168,7 @@ func generateCustomConstructorsHandlers(path string, customCtor []parser.CustomC
 		handlerDir = filepath.Join(generationDestPath, customCtorFileName)
 		os.MkdirAll(handlerDir, 0777)
 		path = filepath.Join(handlerDir, customCtorFileName+".go")
-		tp.CreateFile("template/type_spec/custom_constructor_template.go.tmpl", c, path)
+		tp.CreateFile("template/type_spec/custom_constructor.go.tmpl", c, path)
 		tp.RunGoimportsOnFile(path)
 	}
 }

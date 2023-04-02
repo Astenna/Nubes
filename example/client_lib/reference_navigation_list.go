@@ -116,6 +116,33 @@ func (r referenceNavigationList[T, Stub]) AddToManyToMany(newId string) error {
 	return fmt.Errorf("can not add elements to ReferenceNavigationList of OneToMany relationship")
 }
 
+func (r referenceNavigationList[T, Stub]) DeleteFromManyToMany(ids []string) error {
+	if len(ids) == 0 {
+		return fmt.Errorf("missing ids to delete")
+	}
+
+	if r.setup.IsManyToMany {
+		params := r.setup.GetDeleteFromManyToManyParam(ids)
+
+		jsonParam, err := json.Marshal(params)
+		if err != nil {
+			return err
+		}
+
+		out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("ReferenceDelteFromManyToMany"), Payload: jsonParam})
+		if _err != nil {
+			return _err
+		}
+		if out.FunctionError != nil {
+			return fmt.Errorf(string(out.Payload[:]))
+		}
+
+		return nil
+	}
+
+	return fmt.Errorf("can not delete elements in ReferenceNavigationList of OneToMany relationship")
+}
+
 func (r referenceNavigationList[T, Stub]) getByIndex() ([]string, error) {
 
 	jsonParam, err := json.Marshal(r.setup.GetQueryByIndexParam())

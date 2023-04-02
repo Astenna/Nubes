@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	clib "github.com/Astenna/Nubes/example/client_lib"
+	"github.com/Astenna/Nubes/example/faas/types"
+	"github.com/Astenna/Nubes/lib"
 	"github.com/stretchr/testify/require"
 
 	"github.com/google/uuid"
@@ -97,4 +99,35 @@ func TestReferenceNavigationListManyToManyByWithIndex(t *testing.T) {
 	// Assert
 	require.Equal(t, 1, len(shopOwners), "expected number of ownedShops is 1, found %d", len(shopOwners))
 	require.Equal(t, newUserId, shopOwners[0], "expected id of ownedShop to be equal to previously aded one, but found %s", shopOwners[0])
+}
+
+func TestDeleteFromManyToManyRelationship(t *testing.T) {
+	// Arrange
+	newUserId := uuid.New().String()
+	newUser := clib.UserStub{
+		Email:     newUserId,
+		FirstName: "TestReferenceNavigationList",
+		LastName:  "TestManyToMany",
+	}
+	newShop := types.Shop{
+		Name: "ShopTestManyToManyRelationship",
+	}
+
+	// Act
+	exportedShop, err := lib.Export[types.Shop](newShop)
+	require.Equal(t, nil, err, "error occurred in Export[types.Shop] invocation", err)
+
+	exportedUser, err := lib.Export[types.User](newUser)
+	require.Equal(t, nil, err, "error occurred in Export[types.User]", err)
+
+	err = exportedUser.Shops.AddToManyToMany(exportedShop.Id)
+	require.Equal(t, nil, err, "error occurred in exportedShop.Owners.Add", err)
+
+	err = exportedUser.Shops.DeleteBatchFromManyToMany([]string{exportedShop.Id})
+	require.Equal(t, nil, err, "error occurred in exportedUser.Shops.DeleteBatchFromManyToMany", err)
+	owners, err := exportedShop.GetOwners()
+
+	// Assert
+	require.Equal(t, nil, err, "error occurred in  exportedShop.GetOwners()", err)
+	require.Zero(t, len(owners))
 }
