@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/Astenna/Nubes/lib"
 	"github.com/aws/aws-sdk-go/aws"
@@ -167,6 +168,122 @@ func (s discount) SetPercentage(newValue string) error {
 		Id:        s.GetId(),
 		TypeName:  s.GetTypeName(),
 		FieldName: "Percentage",
+		Value:     newValue,
+	}
+	jsonParam, err := json.Marshal(params)
+	if err != nil {
+		return err
+	}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("SetField"), Payload: jsonParam})
+	if _err != nil {
+		return _err
+	}
+	if out.FunctionError != nil {
+		return fmt.Errorf(string(out.Payload[:]))
+	}
+	return nil
+}
+
+func (s discount) GetValidFrom() (time.Time, error) {
+	if s.id == "" {
+		return *new(time.Time), errors.New("id of the type not set, use  LoadDiscount or ExportDiscount to create new instance of the type")
+	}
+
+	params := lib.GetStateParam{
+		Id:        s.GetId(),
+		TypeName:  s.GetTypeName(),
+		FieldName: "ValidFrom",
+	}
+	jsonParam, err := json.Marshal(params)
+	if err != nil {
+		return *new(time.Time), err
+	}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
+	if _err != nil {
+		return *new(time.Time), _err
+	}
+	if out.FunctionError != nil {
+		return *new(time.Time), fmt.Errorf(string(out.Payload[:]))
+	}
+
+	result := new(time.Time)
+	err = json.Unmarshal(out.Payload, result)
+	if err != nil {
+		return *new(time.Time), err
+	}
+	return *result, err
+
+}
+
+func (s discount) SetValidFrom(newValue time.Time) error {
+	if s.id == "" {
+		return errors.New("id of the type not set, use LoadDiscount or ExportDiscount to create new instance of the type")
+	}
+
+	params := lib.SetFieldParam{
+		Id:        s.GetId(),
+		TypeName:  s.GetTypeName(),
+		FieldName: "ValidFrom",
+		Value:     newValue,
+	}
+	jsonParam, err := json.Marshal(params)
+	if err != nil {
+		return err
+	}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("SetField"), Payload: jsonParam})
+	if _err != nil {
+		return _err
+	}
+	if out.FunctionError != nil {
+		return fmt.Errorf(string(out.Payload[:]))
+	}
+	return nil
+}
+
+func (s discount) GetValidUntil() (time.Time, error) {
+	if s.id == "" {
+		return *new(time.Time), errors.New("id of the type not set, use  LoadDiscount or ExportDiscount to create new instance of the type")
+	}
+
+	params := lib.GetStateParam{
+		Id:        s.GetId(),
+		TypeName:  s.GetTypeName(),
+		FieldName: "ValidUntil",
+	}
+	jsonParam, err := json.Marshal(params)
+	if err != nil {
+		return *new(time.Time), err
+	}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
+	if _err != nil {
+		return *new(time.Time), _err
+	}
+	if out.FunctionError != nil {
+		return *new(time.Time), fmt.Errorf(string(out.Payload[:]))
+	}
+
+	result := new(time.Time)
+	err = json.Unmarshal(out.Payload, result)
+	if err != nil {
+		return *new(time.Time), err
+	}
+	return *result, err
+
+}
+
+func (s discount) SetValidUntil(newValue time.Time) error {
+	if s.id == "" {
+		return errors.New("id of the type not set, use LoadDiscount or ExportDiscount to create new instance of the type")
+	}
+
+	params := lib.SetFieldParam{
+		Id:        s.GetId(),
+		TypeName:  s.GetTypeName(),
+		FieldName: "ValidUntil",
 		Value:     newValue,
 	}
 	jsonParam, err := json.Marshal(params)

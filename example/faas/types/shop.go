@@ -2,8 +2,10 @@ package types
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/Astenna/Nubes/lib"
+	"github.com/jftuga/geodist"
 )
 
 type Shop struct {
@@ -25,6 +27,84 @@ func (s Shop) GetOwners() ([]string, error) {
 			Use lib.Load or lib.Export from the Nubes library to create initialized instances`)
 	}
 	return s.Owners.GetIds()
+}
+
+// Example of a method returning a Nobject
+func (s Shop) GetNearestOwnerCopy(point Coordinates) (User, error) {
+	s.invocationDepth++
+	if s.isInitialized && s.invocationDepth == 1 {
+		_libError := lib.GetStub(s.Id, &s)
+		if _libError != nil {
+			s.invocationDepth--
+			return *new(User), _libError
+		}
+	}
+	owners, err := s.Owners.GetStubs()
+	if err != nil {
+		s.invocationDepth--
+		return *new(User), err
+	}
+
+	var closestOwner User
+	from := geodist.Coord{Lat: point.Latitude, Lon: point.Longitude}
+	min := math.MaxFloat32
+	for _, owner := range owners {
+
+		to := geodist.Coord{
+			Lat: owner.AddressCoordinates.Latitude,
+			Lon: owner.AddressCoordinates.Longitude,
+		}
+
+		_, km := geodist.HaversineDistance(from, to)
+
+		if km < min {
+			min = km
+			closestOwner = owner
+		}
+	}
+	_libUpsertError := s.saveChangesIfInitialized()
+	s.invocationDepth--
+
+	return closestOwner, _libUpsertError
+}
+
+// Example of a method returning a Nobject's reference
+func (s Shop) GetNearestOwnerReference(point Coordinates) (lib.Reference[User], error) {
+	s.invocationDepth++
+	if s.isInitialized && s.invocationDepth == 1 {
+		_libError := lib.GetStub(s.Id, &s)
+		if _libError != nil {
+			s.invocationDepth--
+			return *new(lib.Reference[User]), _libError
+		}
+	}
+	owners, err := s.Owners.GetStubs()
+	if err != nil {
+		s.invocationDepth--
+		return *new(lib.Reference[User]), err
+	}
+
+	var closestOwner User
+	from := geodist.Coord{Lat: point.Latitude, Lon: point.Longitude}
+	min := math.MaxFloat32
+	for _, owner := range owners {
+
+		to := geodist.Coord{
+			Lat: owner.AddressCoordinates.Latitude,
+			Lon: owner.AddressCoordinates.Longitude,
+		}
+
+		_, km := geodist.HaversineDistance(from, to)
+
+		if km < min {
+			min = km
+			closestOwner = owner
+		}
+	}
+	_libUpsertError := s.saveChangesIfInitialized()
+	s.invocationDepth--
+
+	return *lib.NewReference[User](closestOwner.Email), _libUpsertError
 }
 
 func (receiver *Shop) Init() {

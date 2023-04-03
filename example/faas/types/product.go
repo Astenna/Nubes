@@ -2,6 +2,7 @@ package types
 
 import (
 	"errors"
+	"time"
 
 	"github.com/Astenna/Nubes/lib"
 )
@@ -43,19 +44,6 @@ func (p *Product) DecreaseAvailabilityBy(decreaseNum int) error {
 	p.invocationDepth--
 
 	return _libUpsertError
-}
-
-func (p *Product) privateDecreaseAvailabilityBy(decreaseNum int) error {
-	for index, discount := range p.Discount {
-		_, _ = index, discount
-	}
-
-	if p.QuantityAvailable-decreaseNum < 0 {
-		p.invocationDepth--
-		return errors.New("not enough quantity available")
-	}
-	p.QuantityAvailable = p.QuantityAvailable - decreaseNum
-	return nil
 }
 
 func (p Product) GetQuantityAvailable() (int, error) {
@@ -100,6 +88,79 @@ func (p *Product) SetSoldBy(id string) error {
 		}
 	}
 	return nil
+}
+
+// Example of a method accepting an Nobject as an input parameter.
+// In such case, the invocations from client projects provide
+// objects in an uninitialized state, thus the passed discount
+// is exported with lib.Export[Discount](discount)
+func (p *Product) AddNewDiscountByCopy(discount Discount) error {
+	p.invocationDepth++
+	if p.isInitialized && p.invocationDepth == 1 {
+		_libError := lib.GetStub(p.Id, p)
+		if _libError != nil {
+			p.invocationDepth--
+			return _libError
+		}
+	}
+
+	timeFrom, err := discount.GetValidFrom()
+	if err != nil {
+		p.invocationDepth--
+		return err
+	}
+	if timeFrom.IsZero() {
+		if err := discount.SetValidFrom(time.Now()); err != nil {
+			p.invocationDepth--
+			return err
+		}
+	}
+
+	exportedDiscount, err := lib.Export[Discount](discount)
+	if err != nil {
+		p.invocationDepth--
+		return err
+	}
+
+	p.Discount = append(p.Discount, exportedDiscount.Id)
+	_libUpsertError := p.saveChangesIfInitialized()
+	p.invocationDepth--
+	return _libUpsertError
+}
+
+// Example of a method accepting a reference to a Nobject as an input parameter.
+// References always refer to initialized objects, hence there is no need
+// to export the passed object as in the method 'AddNewDiscountByCopy'
+func (p *Product) AddNewDiscountByReference(discount lib.Reference[Discount]) error {
+	p.invocationDepth++
+	if p.isInitialized && p.invocationDepth == 1 {
+		_libError := lib.GetStub(p.Id, p)
+		if _libError != nil {
+			p.invocationDepth--
+			return _libError
+		}
+	}
+	discountInitialized, err := discount.Get()
+	if err != nil {
+		p.invocationDepth--
+		return err
+	}
+	timeFrom, err := discountInitialized.GetValidFrom()
+	if err != nil {
+		p.invocationDepth--
+		return err
+	}
+	if timeFrom.IsZero() {
+		if err := discountInitialized.SetValidFrom(time.Now()); err != nil {
+			p.invocationDepth--
+			return err
+		}
+	}
+
+	p.Discount = append(p.Discount, discountInitialized.Id)
+	_libUpsertError := p.saveChangesIfInitialized()
+	p.invocationDepth--
+	return _libUpsertError
 }
 
 func (receiver *Product) Init() {

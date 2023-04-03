@@ -33,13 +33,9 @@ func (t *TypeSpecParser) prepareDataForHandlers() {
 		for _, detectedFunction := range functions {
 			f := detectedFunction.Function
 
-			if strings.HasPrefix(f.Name.Name, SetPrefix) || strings.HasPrefix(f.Name.Name, GetPrefix) {
-				// TODO FIX SET/GET prefix is not enough - the following string sequence
-				// must refer to existing type's field name
-				continue
-			} else if f.Recv == nil {
+			if f.Recv == nil {
 
-				param, err := getHandlerFunctionParam(f.Type.Params, t.Output.IsNobjectInOrginalPackage)
+				param, err := getHandlerFunctionParam(f.Type.Params, t.Output.TypeFields)
 				if err != nil {
 					fmt.Println("Maximum allowed number of parameters is 1. Handler generation for " + f.Name.Name + "skipped")
 					continue
@@ -56,6 +52,19 @@ func (t *TypeSpecParser) prepareDataForHandlers() {
 
 			} else {
 				receiverTypeName := getFunctionReceiverTypeAsString(f.Recv)
+
+				if strings.HasPrefix(f.Name.Name, SetPrefix) {
+					withoutPrefix := strings.TrimPrefix(f.Name.Name, SetPrefix)
+					if _, exists := t.Output.TypeFields[receiverTypeName][withoutPrefix]; exists {
+						continue
+					}
+				} else if strings.HasPrefix(f.Name.Name, GetPrefix) {
+					withoutPrefix := strings.TrimPrefix(f.Name.Name, GetPrefix)
+					if _, exists := t.Output.TypeFields[receiverTypeName][withoutPrefix]; exists {
+						continue
+					}
+				}
+
 				if isNobject := t.Output.IsNobjectInOrginalPackage[receiverTypeName]; !isNobject {
 					fmt.Println("Member type does not implement Nobject interface. Handler generation for " + f.Name.Name + "skipped")
 					continue
@@ -79,11 +88,19 @@ func (t *TypeSpecParser) prepareDataForHandlers() {
 						newHandler.OptionalReturnType = types.ExprString(f.Type.Results.List[0].Type)
 						if _, isPresent := t.Output.IsNobjectInOrginalPackage[newHandler.OptionalReturnType]; isPresent {
 							newHandler.OptionalReturnType = newHandler.OrginalPackageAlias + "." + newHandler.OptionalReturnType
+						} else if strings.Contains(newHandler.OptionalReturnType, ReferenceListType) {
+							newHandler.OptionalReturnType = strings.TrimPrefix(newHandler.OptionalReturnType, ReferenceListType)
+							newHandler.OptionalReturnType = strings.Trim(newHandler.OptionalReturnType, "[]")
+							newHandler.OptionalReturnType = ReferenceListType + "[" + OrginalPackageAlias + "." + newHandler.OptionalReturnType + "]"
+						} else if strings.Contains(newHandler.OptionalReturnType, ReferenceType) {
+							newHandler.OptionalReturnType = strings.TrimPrefix(newHandler.OptionalReturnType, ReferenceType)
+							newHandler.OptionalReturnType = strings.Trim(newHandler.OptionalReturnType, "[]")
+							newHandler.OptionalReturnType = ReferenceType + "[" + OrginalPackageAlias + "." + newHandler.OptionalReturnType + "]"
 						}
 					}
 				}
 
-				parameters, err := getHandlerFunctionParam(f.Type.Params, t.Output.IsNobjectInOrginalPackage)
+				parameters, err := getHandlerFunctionParam(f.Type.Params, t.Output.TypeFields)
 				if err != nil {
 					fmt.Println("Maximum allowed number of parameters is 1. Handler generation for " + f.Name.Name + "skipped")
 					continue
@@ -113,7 +130,7 @@ func getImportsAsString(fset *token.FileSet, imports []*ast.ImportSpec) string {
 	return buf.String()
 }
 
-func getHandlerFunctionParam(params *ast.FieldList, isNobjectInOrgPkg map[string]bool) (string, error) {
+func getHandlerFunctionParam(params *ast.FieldList, typeFieldsInPkg map[string]map[string]string) (string, error) {
 	if params.List == nil || len(params.List) == 0 {
 		return "", nil
 	} else if len(params.List) > 1 {
@@ -121,8 +138,17 @@ func getHandlerFunctionParam(params *ast.FieldList, isNobjectInOrgPkg map[string
 	}
 
 	inputParamType := types.ExprString(params.List[0].Type)
-	if _, isPresent := isNobjectInOrgPkg[inputParamType]; isPresent {
+	if _, isPresent := typeFieldsInPkg[inputParamType]; isPresent {
 		inputParamType = OrginalPackageAlias + "." + inputParamType
+	} else if strings.Contains(inputParamType, ReferenceListType) {
+		inputParamType = strings.TrimPrefix(inputParamType, ReferenceListType)
+		inputParamType = strings.Trim(inputParamType, "[]")
+		inputParamType = ReferenceListType + "[" + OrginalPackageAlias + "." + inputParamType + "]"
+	} else if strings.Contains(inputParamType, ReferenceType) {
+		inputParamType = strings.TrimPrefix(inputParamType, ReferenceType)
+		inputParamType = strings.Trim(inputParamType, "[]")
+		inputParamType = ReferenceType + "[" + OrginalPackageAlias + "." + inputParamType + "]"
 	}
+
 	return inputParamType, nil
 }

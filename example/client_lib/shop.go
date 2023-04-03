@@ -194,6 +194,70 @@ func (s shop) SetName(newValue string) error {
 
 // (STATE-CHANGING) METHODS
 
+func (s shop) GetNearestOwnerCopy(input Coordinates) (UserStub, error) {
+	if s.id == "" {
+		return *new(UserStub), errors.New("id of the type not set, use  LoadShop or ExportShop to create new instance of the type")
+	}
+
+	params := new(lib.HandlerParameters)
+	params.Id = s.id
+	params.Parameter = input
+
+	jsonParam, err := json.Marshal(params)
+	if err != nil {
+		return *new(UserStub), err
+	}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("ShopGetNearestOwnerCopy"), Payload: jsonParam})
+	if _err != nil {
+		return *new(UserStub), _err
+	}
+	if out.FunctionError != nil {
+		return *new(UserStub), fmt.Errorf(string(out.Payload[:]))
+	}
+
+	result := new(UserStub)
+
+	_err = json.Unmarshal(out.Payload, result)
+	if _err != nil {
+		return *new(UserStub), err
+	}
+
+	return *result, _err
+}
+
+func (s shop) GetNearestOwnerReference(input Coordinates) (lib.Reference[user], error) {
+	if s.id == "" {
+		return *new(lib.Reference[user]), errors.New("id of the type not set, use  LoadShop or ExportShop to create new instance of the type")
+	}
+
+	params := new(lib.HandlerParameters)
+	params.Id = s.id
+	params.Parameter = input
+
+	jsonParam, err := json.Marshal(params)
+	if err != nil {
+		return *new(lib.Reference[user]), err
+	}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("ShopGetNearestOwnerReference"), Payload: jsonParam})
+	if _err != nil {
+		return *new(lib.Reference[user]), _err
+	}
+	if out.FunctionError != nil {
+		return *new(lib.Reference[user]), fmt.Errorf(string(out.Payload[:]))
+	}
+
+	result := new(lib.Reference[user])
+
+	_err = json.Unmarshal(out.Payload, result)
+	if _err != nil {
+		return *new(lib.Reference[user]), err
+	}
+
+	return *result, _err
+}
+
 func (r shop) GetStub() (ShopStub, error) {
 	if r.id == "" {
 		return *new(ShopStub), errors.New("id of the type not set, use  LoadShop or ExportShop to create new instance of the type")

@@ -310,7 +310,7 @@ func (s user) GetPassword() (string, error) {
 
 }
 
-func (s user) GetAddress() (string, error) {
+func (s user) GetAddressText() (string, error) {
 	if s.id == "" {
 		return *new(string), errors.New("id of the type not set, use  LoadUser or ExportUser to create new instance of the type")
 	}
@@ -318,7 +318,7 @@ func (s user) GetAddress() (string, error) {
 	params := lib.GetStateParam{
 		Id:        s.GetId(),
 		TypeName:  s.GetTypeName(),
-		FieldName: "Address",
+		FieldName: "AddressText",
 	}
 	jsonParam, err := json.Marshal(params)
 	if err != nil {
@@ -342,7 +342,7 @@ func (s user) GetAddress() (string, error) {
 
 }
 
-func (s user) SetAddress(newValue string) error {
+func (s user) SetAddressText(newValue string) error {
 	if s.id == "" {
 		return errors.New("id of the type not set, use LoadUser or ExportUser to create new instance of the type")
 	}
@@ -350,7 +350,65 @@ func (s user) SetAddress(newValue string) error {
 	params := lib.SetFieldParam{
 		Id:        s.GetId(),
 		TypeName:  s.GetTypeName(),
-		FieldName: "Address",
+		FieldName: "AddressText",
+		Value:     newValue,
+	}
+	jsonParam, err := json.Marshal(params)
+	if err != nil {
+		return err
+	}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("SetField"), Payload: jsonParam})
+	if _err != nil {
+		return _err
+	}
+	if out.FunctionError != nil {
+		return fmt.Errorf(string(out.Payload[:]))
+	}
+	return nil
+}
+
+func (s user) GetAddressCoordinates() (Coordinates, error) {
+	if s.id == "" {
+		return *new(Coordinates), errors.New("id of the type not set, use  LoadUser or ExportUser to create new instance of the type")
+	}
+
+	params := lib.GetStateParam{
+		Id:        s.GetId(),
+		TypeName:  s.GetTypeName(),
+		FieldName: "AddressCoordinates",
+	}
+	jsonParam, err := json.Marshal(params)
+	if err != nil {
+		return *new(Coordinates), err
+	}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
+	if _err != nil {
+		return *new(Coordinates), _err
+	}
+	if out.FunctionError != nil {
+		return *new(Coordinates), fmt.Errorf(string(out.Payload[:]))
+	}
+
+	result := new(Coordinates)
+	err = json.Unmarshal(out.Payload, result)
+	if err != nil {
+		return *new(Coordinates), err
+	}
+	return *result, err
+
+}
+
+func (s user) SetAddressCoordinates(newValue Coordinates) error {
+	if s.id == "" {
+		return errors.New("id of the type not set, use LoadUser or ExportUser to create new instance of the type")
+	}
+
+	params := lib.SetFieldParam{
+		Id:        s.GetId(),
+		TypeName:  s.GetTypeName(),
+		FieldName: "AddressCoordinates",
 		Value:     newValue,
 	}
 	jsonParam, err := json.Marshal(params)

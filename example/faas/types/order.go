@@ -36,7 +36,7 @@ func NewOrder(order Order) (Order, error) {
 	}
 	shipping, err := lib.Export[Shipping](Shipping{
 		State:   InPreparation,
-		Address: buyer.Address,
+		Address: buyer.AddressText,
 	})
 	if err != nil {
 		return *new(Order), errors.New("failed to create shipping for the order: " + err.Error())

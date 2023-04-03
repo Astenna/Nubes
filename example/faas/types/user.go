@@ -6,16 +6,22 @@ import (
 	"github.com/Astenna/Nubes/lib"
 )
 
+type Coordinates struct {
+	Longitude float64
+	Latitude  float64
+}
+
 type User struct {
-	FirstName       string
-	LastName        string
-	Email           string `nubes:"id,readonly" dynamodbav:"Id"`
-	Password        string `nubes:"readonly"`
-	Address         string
-	Shops           lib.ReferenceNavigationList[Shop] `nubes:"hasMany-Owners" dynamodbav:"-"`
-	Orders          lib.ReferenceList[Order]
-	isInitialized   bool
-	invocationDepth int
+	FirstName          string
+	LastName           string
+	Email              string `nubes:"id,readonly" dynamodbav:"Id"`
+	Password           string `nubes:"readonly"`
+	AddressText        string
+	AddressCoordinates Coordinates
+	Shops              lib.ReferenceNavigationList[Shop] `nubes:"hasMany-Owners" dynamodbav:"-"`
+	Orders             lib.ReferenceList[Order]
+	isInitialized      bool
+	invocationDepth    int
 }
 
 func DeleteUser(id string) error {

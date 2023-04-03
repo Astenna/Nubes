@@ -514,6 +514,56 @@ func (p product) DecreaseAvailabilityBy(input int) error {
 	return _err
 }
 
+func (p product) AddNewDiscountByCopy(input DiscountStub) error {
+	if p.id == "" {
+		return errors.New("id of the type not set, use  LoadProduct or ExportProduct to create new instance of the type")
+	}
+
+	params := new(lib.HandlerParameters)
+	params.Id = p.id
+	params.Parameter = input
+
+	jsonParam, err := json.Marshal(params)
+	if err != nil {
+		return err
+	}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("ProductAddNewDiscountByCopy"), Payload: jsonParam})
+	if _err != nil {
+		return _err
+	}
+	if out.FunctionError != nil {
+		return fmt.Errorf(string(out.Payload[:]))
+	}
+
+	return _err
+}
+
+func (p product) AddNewDiscountByReference(input lib.Reference[discount]) error {
+	if p.id == "" {
+		return errors.New("id of the type not set, use  LoadProduct or ExportProduct to create new instance of the type")
+	}
+
+	params := new(lib.HandlerParameters)
+	params.Id = p.id
+	params.Parameter = input
+
+	jsonParam, err := json.Marshal(params)
+	if err != nil {
+		return err
+	}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("ProductAddNewDiscountByReference"), Payload: jsonParam})
+	if _err != nil {
+		return _err
+	}
+	if out.FunctionError != nil {
+		return fmt.Errorf(string(out.Payload[:]))
+	}
+
+	return _err
+}
+
 func (r product) GetStub() (ProductStub, error) {
 	if r.id == "" {
 		return *new(ProductStub), errors.New("id of the type not set, use  LoadProduct or ExportProduct to create new instance of the type")

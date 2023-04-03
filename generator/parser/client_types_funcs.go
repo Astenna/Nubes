@@ -120,7 +120,35 @@ func parseMethod(fn *ast.FuncDecl) (*MethodDefinition, error) {
 		memberFunction.InputParamType = types.ExprString(fn.Type.Params.List[0].Type)
 	}
 
+	adjustSubtypesIfInputOrOuputParamsAreReferences(&memberFunction)
 	return &memberFunction, nil
+}
+
+// adjustSubtypesIfInputOrOuputParamsAreReferences changes type specification
+// of generics reference types in input and output parameters so that
+// initialized subtypes are used e.g. Reference<User> -> Reference<user>
+// or ReferenceList<User> -> ReferenceList<user>
+
+func adjustSubtypesIfInputOrOuputParamsAreReferences(methodDefinition *MethodDefinition) {
+	if strings.Contains(methodDefinition.InputParamType, ReferenceListType) {
+		methodDefinition.InputParamType = strings.TrimPrefix(methodDefinition.InputParamType, ReferenceListType)
+		methodDefinition.InputParamType = strings.Trim(methodDefinition.InputParamType, "[]")
+		methodDefinition.InputParamType = ReferenceListType + "[" + lowerCasedFirstChar(methodDefinition.InputParamType) + "]"
+	} else if strings.Contains(methodDefinition.InputParamType, ReferenceType) {
+		methodDefinition.InputParamType = strings.TrimPrefix(methodDefinition.InputParamType, ReferenceType)
+		methodDefinition.InputParamType = strings.Trim(methodDefinition.InputParamType, "[]")
+		methodDefinition.InputParamType = ReferenceType + "[" + lowerCasedFirstChar(methodDefinition.InputParamType) + "]"
+	}
+
+	if strings.Contains(methodDefinition.OptionalReturnType, ReferenceListType) {
+		methodDefinition.OptionalReturnType = strings.TrimPrefix(methodDefinition.OptionalReturnType, ReferenceListType)
+		methodDefinition.OptionalReturnType = strings.Trim(methodDefinition.OptionalReturnType, "[]")
+		methodDefinition.OptionalReturnType = ReferenceListType + "[" + lowerCasedFirstChar(methodDefinition.OptionalReturnType) + "]"
+	} else if strings.Contains(methodDefinition.OptionalReturnType, ReferenceType) {
+		methodDefinition.OptionalReturnType = strings.TrimPrefix(methodDefinition.OptionalReturnType, ReferenceType)
+		methodDefinition.OptionalReturnType = strings.Trim(methodDefinition.OptionalReturnType, "[]")
+		methodDefinition.OptionalReturnType = ReferenceType + "[" + lowerCasedFirstChar(methodDefinition.OptionalReturnType) + "]"
+	}
 }
 
 func getIdFieldNameFromCustomIdImpl(fn *ast.FuncDecl) (string, error) {

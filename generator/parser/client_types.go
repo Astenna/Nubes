@@ -35,6 +35,7 @@ type MethodDefinition struct {
 	OptionalReturnType      string
 	OptionalReturnTypeUpper string
 	IsReturnTypeNobject     bool
+	IsInputParamNobject     bool
 }
 
 type FieldDefinition struct {
@@ -82,7 +83,8 @@ func (t *ClientTypesParser) detectAndSetNobjectsReturnTypes() {
 				typeDefinition.MemberFunctions[i].OptionalReturnType = lowerCasedFirstChar(function.OptionalReturnType)
 			}
 			if isOptionalParamNobject(function, t.DefinedTypes) {
-				typeDefinition.MemberFunctions[i].InputParamType = lowerCasedFirstChar(function.InputParamType)
+				typeDefinition.MemberFunctions[i].IsInputParamNobject = true
+				typeDefinition.MemberFunctions[i].InputParamType = function.InputParamType
 			}
 		}
 	}

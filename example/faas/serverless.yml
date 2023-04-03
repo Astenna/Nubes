@@ -116,6 +116,42 @@ functions:
     maximumRetryAttempts: 0
     maximumEventAge: 60
 
+  ProductAddNewDiscountByCopy:
+    name:  ProductAddNewDiscountByCopy
+    handler: bin/ProductAddNewDiscountByCopy
+    package:
+      include:
+        - bin/ProductAddNewDiscountByCopy
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
+  ProductAddNewDiscountByReference:
+    name:  ProductAddNewDiscountByReference
+    handler: bin/ProductAddNewDiscountByReference
+    package:
+      include:
+        - bin/ProductAddNewDiscountByReference
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
+  ShopGetNearestOwnerCopy:
+    name:  ShopGetNearestOwnerCopy
+    handler: bin/ShopGetNearestOwnerCopy
+    package:
+      include:
+        - bin/ShopGetNearestOwnerCopy
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
+  ShopGetNearestOwnerReference:
+    name:  ShopGetNearestOwnerReference
+    handler: bin/ShopGetNearestOwnerReference
+    package:
+      include:
+        - bin/ShopGetNearestOwnerReference
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
   UserVerifyPassword:
     name:  UserVerifyPassword
     handler: bin/UserVerifyPassword
