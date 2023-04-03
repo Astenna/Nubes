@@ -18,7 +18,7 @@ type StateChangingHandler struct {
 	ReceiverType        string
 	ReceiverIdFieldName string
 	OptionalReturnType  string
-	Invocation          string
+	OptionalInputType   string
 }
 
 type detectedFunction struct {
@@ -35,7 +35,7 @@ func (t *TypeSpecParser) prepareDataForHandlers() {
 
 			if f.Recv == nil {
 
-				param, err := getHandlerFunctionParam(f.Type.Params, t.Output.TypeFields)
+				param, err := getHandlerInputParam(f.Type.Params, t.Output.TypeFields)
 				if err != nil {
 					fmt.Println("Maximum allowed number of parameters is 1. Handler generation for " + f.Name.Name + "skipped")
 					continue
@@ -100,17 +100,12 @@ func (t *TypeSpecParser) prepareDataForHandlers() {
 					}
 				}
 
-				parameters, err := getHandlerFunctionParam(f.Type.Params, t.Output.TypeFields)
+				param, err := getHandlerInputParam(f.Type.Params, t.Output.TypeFields)
 				if err != nil {
 					fmt.Println("Maximum allowed number of parameters is 1. Handler generation for " + f.Name.Name + "skipped")
 					continue
 				}
-				if parameters == "" {
-					newHandler.Invocation = f.Name.Name + "()"
-				} else {
-
-					newHandler.Invocation = f.Name.Name + "(" + HandlerInputParameterName + "." + HandlerInputParameterFieldName + ".(" + parameters + "))"
-				}
+				newHandler.OptionalInputType = param
 				t.Handlers = append(t.Handlers, newHandler)
 			}
 		}
@@ -130,7 +125,7 @@ func getImportsAsString(fset *token.FileSet, imports []*ast.ImportSpec) string {
 	return buf.String()
 }
 
-func getHandlerFunctionParam(params *ast.FieldList, typeFieldsInPkg map[string]map[string]string) (string, error) {
+func getHandlerInputParam(params *ast.FieldList, typeFieldsInPkg map[string]map[string]string) (string, error) {
 	if params.List == nil || len(params.List) == 0 {
 		return "", nil
 	} else if len(params.List) > 1 {

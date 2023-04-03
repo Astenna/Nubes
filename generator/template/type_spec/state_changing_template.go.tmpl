@@ -4,14 +4,18 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	{{.OrginalPackageAlias}} "{{.OrginalPackage}}"
 	{{.Imports}}
+	"github.com/mitchellh/mapstructure"
 )
 
-func {{.MethodName}}Handler(input lib.HandlerParameters) {{if .OptionalReturnType}} ({{.OptionalReturnType}}, error) {{else}} error {{end}} {
+func {{.MethodName}}Handler(input aws.JSONValue) {{if .OptionalReturnType}} ({{.OptionalReturnType}}, error) {{else}} error {{end}} {
 	instance := new({{.OrginalPackageAlias}}.{{.ReceiverType}})
-	instance.{{.ReceiverIdFieldName}} = input.Id 
+	instance.{{.ReceiverIdFieldName}} = input["Id"].(string) 
 	instance.Init()
 
-	{{if .OptionalReturnType}} result, {{end}}_err := instance.{{.Invocation}} 
+	{{if .OptionalInputType}} 
+	var param {{.OptionalInputType}}
+	mapstructure.Decode(input["Parameter"], param) {{end}}
+	{{if .OptionalReturnType}} result, {{end}} _err := instance.{{.MethodName}}({{if .OptionalInputType}}param{{end}}) 
 	if _err != nil {
 		return {{if .OptionalReturnType}} result, {{end}} _err
 	}
