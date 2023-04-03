@@ -45,7 +45,7 @@ type CustomCtorDefinition struct {
 func NewTypeSpecParser(path string) (*TypeSpecParser, error) {
 	typeSpecParser := new(TypeSpecParser)
 	typeSpecParser.tokenSet = token.NewFileSet()
-	packg, err := parser.ParseDir(typeSpecParser.tokenSet, path, nil, 0)
+	packg, err := parser.ParseDir(typeSpecParser.tokenSet, path, nil, parser.Mode(parser.ParseComments))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse package in path %s. Error: %w", path, err)
 	}
