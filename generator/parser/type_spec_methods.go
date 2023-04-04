@@ -26,7 +26,7 @@ func (t TypeSpecParser) modifyAstMethods() {
 				if !isGetter {
 					isSetter := t.addDBOperationsIfSetter(fn, path)
 					if !isSetter {
-						if !isFunctionStateless(fn.Recv) && retParamsVerifier.Check(fn) {
+						if !isFunctionStateless(fn.Recv) {
 							// add retrieve from DB if it doesn't exist
 							if !isInvocationDepthIncrementedInFirstStmt(fn.Body) {
 								functionProlog := getNobjectFunctionProlog(fn, t.Output)

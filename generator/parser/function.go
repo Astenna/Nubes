@@ -31,17 +31,24 @@ func getFunctionBodyAsString(fset *token.FileSet, body *ast.BlockStmt) (string, 
 	return buf.String(), nil
 }
 
-type returnParamsVerifier struct {
+type returnParamsValidator struct {
 	errorsPrinted bool
 }
 
-var retParamsVerifier returnParamsVerifier
+var retParamsValidator returnParamsValidator
 
 func init() {
-	retParamsVerifier = *new(returnParamsVerifier)
+	retParamsValidator = *new(returnParamsValidator)
 }
 
-func (v *returnParamsVerifier) Check(f *ast.FuncDecl) bool {
+// Valid returns true if the number of parameters is rqual to two or one,
+// If exactly two return parameters are defined, then the second paramater
+// must be an error type.
+// If exactky one return parameter is defined, then the parameter must be
+// an error type.
+// If the above conditions do not hold, it prints relevant error message
+// and returns false.
+func (v *returnParamsValidator) Valid(f *ast.FuncDecl) bool {
 
 	if v.errorsPrinted {
 		return f.Type.Results != nil && f.Type.Results.List != nil && isErrorTypeReturned(f) && len(f.Type.Results.List) <= 2

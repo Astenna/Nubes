@@ -130,10 +130,12 @@ func (t *TypeSpecParser) detectNobjectTypesAndFunctions(moduleName string) {
 							}
 						}
 
-						t.detectedFunctions[path] = append(t.detectedFunctions[path], detectedFunction{
-							Function: fn,
-							Imports:  f.Imports,
-						})
+						if retParamsValidator.Valid(fn) {
+							t.detectedFunctions[path] = append(t.detectedFunctions[path], detectedFunction{
+								Function: fn,
+								Imports:  f.Imports,
+							})
+						}
 					}
 				}
 			}
