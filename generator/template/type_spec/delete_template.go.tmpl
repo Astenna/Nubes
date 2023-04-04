@@ -3,22 +3,35 @@ package main
 import (
 	"fmt"
 
+	{{.OrginalPackageAlias}} "{{.OrginalPackage}}"
+
 	lib "github.com/Astenna/Nubes/lib"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/mitchellh/mapstructure"
 )
 
-func DeleteHandler(input lib.HandlerParameters) error {
-	if input.Id == "" {
-		return fmt.Errorf("missing Id in HandlerParameters")
-	}
-	if input.TypeName == "" {
+func DeleteHandler(input aws.JSONValue) error {
+	if input["TypeName"] == "" {
 		return fmt.Errorf("missing TypeName in HandlerParameters")
 	}
 
-	err := lib.DeleteWithTypeNameAsArg(input.Id, input.TypeName)
+	switch input["TypeName"] {
+	{{range $key,$value := .TypesWithCustomDelete}}
+	{{if $value}} case "{{$key}}":
+		new{{$key}} := new({{$value.InputParameterType}})
+		mapstructure.Decode(input["Parameter"], new{{$key}})
+		return {{$.OrginalPackageAlias}}.Delete{{$key}}(*new{{$key}})
+	{{end}} {{end}}
+	default:
+		if input["Id"] == "" {
+			return fmt.Errorf("missing Id in HandlerParameters")
+		}
+		err := lib.DeleteWithTypeNameAsArg(input["Id"].(string), input["TypeName"].(string))
 
-	if err != nil {
-		return fmt.Errorf("failed to delete type %s with id: %s. Error %w", input.TypeName, input.Id, err)
+		if err != nil {
+			return fmt.Errorf("failed to delete type %s with id: %s. Error %w", input["TypeName"], input["Id"], err)
+		}
 	}
 
 	return nil

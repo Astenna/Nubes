@@ -2,6 +2,20 @@ package client_lib
 
 import "time"
 
+type DiscountStub struct {
+	Id string
+
+	Percentage string
+
+	ValidFrom time.Time
+
+	ValidUntil time.Time
+}
+
+func (DiscountStub) GetTypeName() string {
+	return "Discount"
+}
+
 type OrderStub struct {
 	Id string
 
@@ -34,28 +48,6 @@ func (ProductStub) GetTypeName() string {
 	return "Product"
 }
 
-type ShippingStub struct {
-	Id string
-
-	Address string
-
-	State ShippingState
-}
-
-func (ShippingStub) GetTypeName() string {
-	return "Shipping"
-}
-
-type ShopStub struct {
-	Id string
-
-	Name string
-}
-
-func (ShopStub) GetTypeName() string {
-	return "Shop"
-}
-
 type UserStub struct {
 	FirstName string
 
@@ -76,16 +68,26 @@ func (UserStub) GetTypeName() string {
 	return "User"
 }
 
-type DiscountStub struct {
+type ShippingStub struct {
 	Id string
 
-	Percentage string
+	Address string
 
-	ValidFrom time.Time
+	State ShippingState
 
-	ValidUntil time.Time
+	CreationDate time.Time
 }
 
-func (DiscountStub) GetTypeName() string {
-	return "Discount"
+func (ShippingStub) GetTypeName() string {
+	return "Shipping"
+}
+
+type ShopStub struct {
+	Id string
+
+	Name string
+}
+
+func (ShopStub) GetTypeName() string {
+	return "Shop"
 }

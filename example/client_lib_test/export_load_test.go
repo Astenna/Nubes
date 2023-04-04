@@ -40,3 +40,14 @@ func TestLoadAndExport(t *testing.T) {
 	require.Equal(t, newOrdersSet[0], retrievedOrders[0], "expected the same orders id, found diffrent")
 	require.Equal(t, newOrdersSet[1], retrievedOrders[1], "expected the same orders id, found diffrent")
 }
+
+func TestCustomExport(t *testing.T) {
+	// Arrange
+	addr := "Address for TestCustomExportDefinition"
+	// Act
+	shipping, err := clib.ExportShipping(addr)
+	require.Equal(t, err, nil, "error should be null")
+	_, err = clib.LoadShipping(shipping.GetId())
+	// Assert
+	require.Equal(t, err, nil, "error should be null")
+}

@@ -80,7 +80,7 @@ func (r *{{.TypeNameLower}}) init() {
 }
 
 
-func Export{{.TypeNameOrginalCase}}(input {{.TypeNameOrginalCase}}Stub) (*{{.TypeNameLower}}, error) {	
+func Export{{.TypeNameOrginalCase}}(input {{if .CustomExportInputType}}{{.CustomExportInputType}}{{else}}{{.TypeNameOrginalCase}}Stub{{end}}) (*{{.TypeNameLower}}, error) {	
 	newInstance := new({{.TypeNameLower}})
 
 	params := lib.HandlerParameters{
@@ -97,7 +97,7 @@ func Export{{.TypeNameOrginalCase}}(input {{.TypeNameOrginalCase}}Stub) (*{{.Typ
 		return nil, _err
 	}
 	if out.FunctionError != nil {
-		return nil, fmt.Errorf("lambda function designed to verify if instance exists failed. Error: %s", string(out.Payload[:]))
+		return nil, fmt.Errorf("lambda function designed to export an object failed. Error: %s", string(out.Payload[:]))
 	}
 
 	newInstance.id, err = strconv.Unquote(string(out.Payload[:]))
@@ -107,12 +107,13 @@ func Export{{.TypeNameOrginalCase}}(input {{.TypeNameOrginalCase}}Stub) (*{{.Typ
  
 // DELETE
 
-func Delete{{.TypeNameOrginalCase}}(id string) error {	
+func Delete{{.TypeNameOrginalCase}}(id {{if .CustomDeleteInputType}}{{.CustomDeleteInputType}}{{else}}string{{end}}) error {	
 	newInstance := new({{.TypeNameLower}})
 
 	params := lib.HandlerParameters{
-		Id:  id,
 		TypeName:  newInstance.GetTypeName(),
+		{{if .CustomDeleteInputType}}Parameter: id, {{else}}
+		Id:  id,{{end}}
 	}
 	jsonParam, err := json.Marshal(params)
 	if err != nil {
@@ -124,7 +125,7 @@ func Delete{{.TypeNameOrginalCase}}(id string) error {
 		return  _err
 	}
 	if out.FunctionError != nil {
-		return fmt.Errorf("lambda function failed. Error: %s", string(out.Payload))
+		return fmt.Errorf("lambda function designed to delete an object failed. Error: %s", string(out.Payload))
 	}
 
 	return nil

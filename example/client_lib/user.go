@@ -83,7 +83,7 @@ func ExportUser(input UserStub) (*user, error) {
 		return nil, _err
 	}
 	if out.FunctionError != nil {
-		return nil, fmt.Errorf("lambda function designed to verify if instance exists failed. Error: %s", string(out.Payload[:]))
+		return nil, fmt.Errorf("lambda function designed to export an object failed. Error: %s", string(out.Payload[:]))
 	}
 
 	newInstance.id, err = strconv.Unquote(string(out.Payload[:]))
@@ -93,12 +93,12 @@ func ExportUser(input UserStub) (*user, error) {
 
 // DELETE
 
-func DeleteUser(id string) error {
+func DeleteUser(id DeleteParam) error {
 	newInstance := new(user)
 
 	params := lib.HandlerParameters{
-		Id:       id,
-		TypeName: newInstance.GetTypeName(),
+		TypeName:  newInstance.GetTypeName(),
+		Parameter: id,
 	}
 	jsonParam, err := json.Marshal(params)
 	if err != nil {
@@ -110,7 +110,7 @@ func DeleteUser(id string) error {
 		return _err
 	}
 	if out.FunctionError != nil {
-		return fmt.Errorf("lambda function failed. Error: %s", string(out.Payload))
+		return fmt.Errorf("lambda function designed to delete an object failed. Error: %s", string(out.Payload))
 	}
 
 	return nil

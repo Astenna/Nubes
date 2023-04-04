@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/Astenna/Nubes/lib"
 	"github.com/aws/aws-sdk-go/aws"
@@ -62,7 +63,7 @@ func (r *shipping) init() {
 
 }
 
-func ExportShipping(input ShippingStub) (*shipping, error) {
+func ExportShipping(input string) (*shipping, error) {
 	newInstance := new(shipping)
 
 	params := lib.HandlerParameters{
@@ -79,7 +80,7 @@ func ExportShipping(input ShippingStub) (*shipping, error) {
 		return nil, _err
 	}
 	if out.FunctionError != nil {
-		return nil, fmt.Errorf("lambda function designed to verify if instance exists failed. Error: %s", string(out.Payload[:]))
+		return nil, fmt.Errorf("lambda function designed to export an object failed. Error: %s", string(out.Payload[:]))
 	}
 
 	newInstance.id, err = strconv.Unquote(string(out.Payload[:]))
@@ -93,8 +94,9 @@ func DeleteShipping(id string) error {
 	newInstance := new(shipping)
 
 	params := lib.HandlerParameters{
-		Id:       id,
 		TypeName: newInstance.GetTypeName(),
+
+		Id: id,
 	}
 	jsonParam, err := json.Marshal(params)
 	if err != nil {
@@ -106,7 +108,7 @@ func DeleteShipping(id string) error {
 		return _err
 	}
 	if out.FunctionError != nil {
-		return fmt.Errorf("lambda function failed. Error: %s", string(out.Payload))
+		return fmt.Errorf("lambda function designed to delete an object failed. Error: %s", string(out.Payload))
 	}
 
 	return nil
@@ -225,6 +227,64 @@ func (s shipping) SetState(newValue ShippingState) error {
 		Id:        s.GetId(),
 		TypeName:  s.GetTypeName(),
 		FieldName: "State",
+		Value:     newValue,
+	}
+	jsonParam, err := json.Marshal(params)
+	if err != nil {
+		return err
+	}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("SetField"), Payload: jsonParam})
+	if _err != nil {
+		return _err
+	}
+	if out.FunctionError != nil {
+		return fmt.Errorf(string(out.Payload[:]))
+	}
+	return nil
+}
+
+func (s shipping) GetCreationDate() (time.Time, error) {
+	if s.id == "" {
+		return *new(time.Time), errors.New("id of the type not set, use  LoadShipping or ExportShipping to create new instance of the type")
+	}
+
+	params := lib.GetStateParam{
+		Id:        s.GetId(),
+		TypeName:  s.GetTypeName(),
+		FieldName: "CreationDate",
+	}
+	jsonParam, err := json.Marshal(params)
+	if err != nil {
+		return *new(time.Time), err
+	}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetState"), Payload: jsonParam})
+	if _err != nil {
+		return *new(time.Time), _err
+	}
+	if out.FunctionError != nil {
+		return *new(time.Time), fmt.Errorf(string(out.Payload[:]))
+	}
+
+	result := new(time.Time)
+	err = json.Unmarshal(out.Payload, result)
+	if err != nil {
+		return *new(time.Time), err
+	}
+	return *result, err
+
+}
+
+func (s shipping) SetCreationDate(newValue time.Time) error {
+	if s.id == "" {
+		return errors.New("id of the type not set, use LoadShipping or ExportShipping to create new instance of the type")
+	}
+
+	params := lib.SetFieldParam{
+		Id:        s.GetId(),
+		TypeName:  s.GetTypeName(),
+		FieldName: "CreationDate",
 		Value:     newValue,
 	}
 	jsonParam, err := json.Marshal(params)

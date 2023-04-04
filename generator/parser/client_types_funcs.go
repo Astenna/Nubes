@@ -20,22 +20,8 @@ func (t *ClientTypesParser) detectFuncs() {
 							continue
 						}
 
-						if fn.Recv == nil && strings.HasPrefix(fn.Name.Name, ConstructorPrefix) {
-							typeName := strings.TrimPrefix(fn.Name.Name, ConstructorPrefix)
-							param, isOptitionalParamNobject, err := getFunctionParm(fn.Type.Params, t.DefinedTypes)
-							if err != nil {
-								fmt.Println("Maximum allowed number of parameters is 1. Handler generation for " + f.Name.Name + "skipped")
-								continue
-							}
-							t.CustomCtorDefinitions = append(t.CustomCtorDefinitions, CustomCtorDefinition{
-								TypeName:               typeName,
-								OptionalParamType:      param,
-								IsOptionalParamNobject: isOptitionalParamNobject,
-							})
-							continue
-						}
-
 						if fn.Recv == nil {
+							t.functions = append(t.functions, fn)
 							continue
 						}
 
@@ -75,6 +61,8 @@ func (t *ClientTypesParser) detectFuncs() {
 							continue
 						}
 
+						// at this point, the method is recognized as a general,
+						// state-changing method
 						memberFunction, err := parseMethod(fn)
 						if err != nil {
 							fmt.Println("Function "+fn.Name.Name+"not generated in client lib", err)
@@ -208,18 +196,4 @@ func isGetterOrSetterMethod(fn *ast.FuncDecl, typeName string, definedTypes map[
 	}
 
 	return false
-}
-
-func getFunctionParm(params *ast.FieldList, definedStructs map[string]*StructTypeDefinition) (string, bool, error) {
-	if params.List == nil || len(params.List) == 0 {
-		return "", false, nil
-	} else if len(params.List) > 1 {
-		return "", false, fmt.Errorf("maximum allowed number of parameters is 1")
-	}
-
-	inputParamType := types.ExprString(params.List[0].Type)
-	if definedStructs[inputParamType] != nil && definedStructs[inputParamType].NobjectImplementation == "" {
-		return inputParamType, true, nil
-	}
-	return inputParamType, false, nil
 }

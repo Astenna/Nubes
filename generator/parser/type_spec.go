@@ -32,6 +32,8 @@ type ParsedPackage struct {
 	BidrectionalOneToManyRel  map[string][]OneToManyRelationshipField
 	ManyToManyRelationships   map[string][]ManyToManyRelationshipField
 	TypesWithCustomId         map[string]string
+	TypesWithCustomExport     map[string]CustomExportDefinition
+	TypesWithCustomDelete     map[string]CustomDeleteDefinition
 }
 
 type CustomCtorDefinition struct {
@@ -40,6 +42,14 @@ type CustomCtorDefinition struct {
 	TypeName               string
 	OptionalParamType      string
 	IsOptionalParamNobject bool
+}
+
+type CustomExportDefinition struct {
+	InputParameterType string
+}
+
+type CustomDeleteDefinition struct {
+	InputParameterType string
 }
 
 func NewTypeSpecParser(path string) (*TypeSpecParser, error) {
@@ -54,6 +64,8 @@ func NewTypeSpecParser(path string) (*TypeSpecParser, error) {
 	typeSpecParser.Output = ParsedPackage{
 		IsNobjectInOrginalPackage: make(map[string]bool),
 		TypesWithCustomId:         map[string]string{},
+		TypesWithCustomExport:     map[string]CustomExportDefinition{},
+		TypesWithCustomDelete:     map[string]CustomDeleteDefinition{},
 		TypeAttributesIndexes:     map[string][]string{},
 		BidrectionalOneToManyRel:  map[string][]OneToManyRelationshipField{},
 		ManyToManyRelationships:   map[string][]ManyToManyRelationshipField{},

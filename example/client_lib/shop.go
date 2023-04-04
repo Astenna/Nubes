@@ -87,7 +87,7 @@ func ExportShop(input ShopStub) (*shop, error) {
 		return nil, _err
 	}
 	if out.FunctionError != nil {
-		return nil, fmt.Errorf("lambda function designed to verify if instance exists failed. Error: %s", string(out.Payload[:]))
+		return nil, fmt.Errorf("lambda function designed to export an object failed. Error: %s", string(out.Payload[:]))
 	}
 
 	newInstance.id, err = strconv.Unquote(string(out.Payload[:]))
@@ -101,8 +101,8 @@ func DeleteShop(id string) error {
 	newInstance := new(shop)
 
 	params := lib.HandlerParameters{
-		Id:       id,
-		TypeName: newInstance.GetTypeName(),
+		TypeName:  newInstance.GetTypeName(),
+		Parameter: id,
 	}
 	jsonParam, err := json.Marshal(params)
 	if err != nil {
@@ -114,7 +114,7 @@ func DeleteShop(id string) error {
 		return _err
 	}
 	if out.FunctionError != nil {
-		return fmt.Errorf("lambda function failed. Error: %s", string(out.Payload))
+		return fmt.Errorf("lambda function designed to delete an object failed. Error: %s", string(out.Payload))
 	}
 
 	return nil

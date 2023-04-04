@@ -3,6 +3,16 @@ package client_lib
 
 
 
+func DiscountReferenceList(capacity ...int) ReferenceList[discount] {
+	if capacity != nil {
+		return make(ReferenceList[discount], 0, capacity[0])
+	}
+	return *new(ReferenceList[discount])
+}
+ 
+
+
+
 func OrderReferenceList(capacity ...int) ReferenceList[order] {
 	if capacity != nil {
 		return make(ReferenceList[order], 0, capacity[0])
@@ -23,6 +33,20 @@ func ProductReferenceList(capacity ...int) ReferenceList[product] {
 }
  
 
+ 
+
+
+
+func UserReferenceList(capacity ...int) ReferenceList[user] {
+	if capacity != nil {
+		return make(ReferenceList[user], 0, capacity[0])
+	}
+	return *new(ReferenceList[user])
+}
+ 
+
+ 
+
 
 
 func ShippingReferenceList(capacity ...int) ReferenceList[shipping] {
@@ -40,27 +64,5 @@ func ShopReferenceList(capacity ...int) ReferenceList[shop] {
 		return make(ReferenceList[shop], 0, capacity[0])
 	}
 	return *new(ReferenceList[shop])
-}
- 
-
- 
-
-
-
-func UserReferenceList(capacity ...int) ReferenceList[user] {
-	if capacity != nil {
-		return make(ReferenceList[user], 0, capacity[0])
-	}
-	return *new(ReferenceList[user])
-}
- 
-
-
-
-func DiscountReferenceList(capacity ...int) ReferenceList[discount] {
-	if capacity != nil {
-		return make(ReferenceList[discount], 0, capacity[0])
-	}
-	return *new(ReferenceList[discount])
 }
  

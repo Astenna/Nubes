@@ -42,7 +42,6 @@ const Id = "Id"
 const TypeName = "TypeName"
 const FieldName = "FieldName"
 const HandlerInputParameterName = "input"
-const HandlerParameters = "(" + HandlerInputParameterName + " " + HandlerInputParameterType + ")"
 const HandlerInputParameterFieldName = "Parameter"
 const LibErrorVariableName = "_libError"
 const UpsertLibErrorVariableName = "_libUpsertError"
@@ -52,8 +51,9 @@ const TemporaryReceiverName = "tempReceiverName"
 const LibImportPath = "\"github.com/Astenna/Nubes/lib\""
 const OrginalPackageAlias = "org"
 
-// Prefixes of repository operations
 const (
-	GetPrefix = "Get"
-	SetPrefix = "Set"
+	CustomExportPrefix = "Export"
+	CustomDeletePrefix = "Delete"
+	GetPrefix          = "Get"
+	SetPrefix          = "Set"
 )

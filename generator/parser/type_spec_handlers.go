@@ -48,6 +48,29 @@ func (t *TypeSpecParser) prepareDataForHandlers() {
 						TypeName:            typeName,
 						OptionalParamType:   param,
 					})
+				} else if strings.Contains(f.Name.Name, CustomExportPrefix) {
+					typeName := strings.TrimPrefix(f.Name.Name, CustomExportPrefix)
+					if isNobject, isPresent := t.Output.IsNobjectInOrginalPackage[typeName]; !isPresent || !isNobject {
+						fmt.Println(`Custom exports must be a concatenation of the 'Export' and valid Nobject type name! " + typeName + " is not a valid nobject, 
+						custom export definition in funcition " + f.Name.Name + " skipped`)
+						continue
+					}
+
+					t.Output.TypesWithCustomExport[typeName] = CustomExportDefinition{
+						InputParameterType: param,
+					}
+
+				} else if strings.Contains(f.Name.Name, CustomDeletePrefix) {
+					typeName := strings.TrimPrefix(f.Name.Name, CustomDeletePrefix)
+					if isNobject, isPresent := t.Output.IsNobjectInOrginalPackage[typeName]; !isPresent || !isNobject {
+						fmt.Println(`Custom exports must be a concatenation of the 'Export' and valid Nobject type name! " + typeName + " is not a valid nobject, 
+						custom export definition in funcition " + f.Name.Name + " skipped`)
+						continue
+					}
+
+					t.Output.TypesWithCustomDelete[typeName] = CustomDeleteDefinition{
+						InputParameterType: param,
+					}
 				}
 
 			} else {
@@ -65,7 +88,7 @@ func (t *TypeSpecParser) prepareDataForHandlers() {
 					}
 				}
 
-				if isNobject := t.Output.IsNobjectInOrginalPackage[receiverTypeName]; !isNobject {
+				if isNobject, isPresent := t.Output.IsNobjectInOrginalPackage[receiverTypeName]; !isPresent || !isNobject {
 					fmt.Println("Member type does not implement Nobject interface. Handler generation for " + f.Name.Name + "skipped")
 					continue
 				}
@@ -86,7 +109,7 @@ func (t *TypeSpecParser) prepareDataForHandlers() {
 				if retParamsVerifier.Check(f) {
 					if len(f.Type.Results.List) > 1 {
 						newHandler.OptionalReturnType = types.ExprString(f.Type.Results.List[0].Type)
-						if _, isPresent := t.Output.IsNobjectInOrginalPackage[newHandler.OptionalReturnType]; isPresent {
+						if isNobject, isPresent := t.Output.IsNobjectInOrginalPackage[newHandler.OptionalReturnType]; isNobject && isPresent {
 							newHandler.OptionalReturnType = newHandler.OrginalPackageAlias + "." + newHandler.OptionalReturnType
 						} else if strings.Contains(newHandler.OptionalReturnType, ReferenceListType) {
 							newHandler.OptionalReturnType = strings.TrimPrefix(newHandler.OptionalReturnType, ReferenceListType)

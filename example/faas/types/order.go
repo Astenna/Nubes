@@ -46,6 +46,33 @@ func NewOrder(order Order) (Order, error) {
 	return order, nil
 }
 
+func ExportOrder(order Order) (string, error) {
+
+	for _, orderedProduct := range order.Products {
+		product, err := orderedProduct.Product.Get()
+		if err != nil {
+			return "", errors.New("item " + orderedProduct.Product.Id() + " not available")
+		}
+		product.DecreaseAvailabilityBy(orderedProduct.Quantity)
+	}
+
+	buyer, err := order.Buyer.Get()
+	if err != nil {
+		return "", errors.New("unable to retrieve user's address for shipping")
+	}
+	shipping, err := lib.Export[Shipping](Shipping{
+		State:   InPreparation,
+		Address: buyer.AddressText,
+	})
+	if err != nil {
+		return "", errors.New("failed to create shipping for the order: " + err.Error())
+	}
+
+	order.Shipping = lib.Reference[Shipping](shipping.Id)
+	exportedOrder, err := lib.Export[Order](order)
+	return exportedOrder.Id, err
+}
+
 func (o Order) GetTypeName() string {
 	return "Order"
 }

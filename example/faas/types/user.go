@@ -24,12 +24,29 @@ type User struct {
 	invocationDepth    int
 }
 
-func DeleteUser(id string) error {
-	_libError := lib.Delete[User](id)
-	if _libError != nil {
-		return _libError
+type DeleteParam struct {
+	Email    string
+	Password string
+}
+
+// DeleteUser is an example of custom delete implementation
+// that uses input parameter type different than in the default delete.
+// Note that, the invocation of lib.Delete must be added inside the function.
+func DeleteUser(param DeleteParam) error {
+	userToBeDeleted, err := lib.Load[User](param.Email)
+	if err != nil {
+		return err
 	}
-	return nil
+
+	passwordOk, err := userToBeDeleted.VerifyPassword(param.Password)
+	if err != nil {
+		return err
+	}
+	if passwordOk {
+		return lib.Delete[User](param.Email)
+	}
+
+	return fmt.Errorf("invalid password")
 }
 
 func (User) GetTypeName() string {

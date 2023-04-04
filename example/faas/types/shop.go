@@ -107,6 +107,29 @@ func (s Shop) GetNearestOwnerReference(point Coordinates) (lib.Reference[User], 
 	return *lib.NewReference[User](closestOwner.Email), _libUpsertError
 }
 
+// DeleteShop is an example of custom delete implementation
+// Note that, the invocation of lib.Delete must be added.
+func DeleteShop(id string) error {
+	shopToBeDeleted, err := lib.Load[Shop](id)
+	if err != nil {
+		return err
+	}
+
+	shopProducts, err := shopToBeDeleted.Products.GetIds()
+	if err != nil {
+		return err
+	}
+
+	for _, id := range shopProducts {
+		err = lib.Delete[Product](id)
+		if err != nil {
+			return err
+		}
+	}
+
+	return lib.Delete[Shop](id)
+}
+
 func (receiver *Shop) Init() {
 	receiver.isInitialized = true
 	receiver.Products = *lib.NewReferenceNavigationList[Product](receiver.Id, receiver.GetTypeName(), "SoldBy", false)

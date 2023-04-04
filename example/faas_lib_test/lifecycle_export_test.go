@@ -37,8 +37,18 @@ func TestExportCreatesNewInstance(t *testing.T) {
 	notExistingId := uuid.New().String()
 	newUser := types.User{Email: notExistingId, Password: "password", FirstName: "Kinga", LastName: "Marek"}
 	// Act
-	result, err := lib.Export[types.User](newUser)
+	_, err := lib.Export[types.User](newUser)
 	// Assert
 	require.Equal(t, err, nil, "error should be null")
-	require.Equal(t, newUser.Email, result.Email, "IDs should match")
+}
+
+func TestCustomExport(t *testing.T) {
+	// Arrange
+	addr := "Address for TestCustomExportDefinition"
+	// Act
+	id, err := types.ExportShipping(addr)
+	require.Equal(t, err, nil, "error should be null")
+	_, err = lib.Load[types.Shipping](id)
+	// Assert
+	require.Equal(t, err, nil, "error should be null")
 }

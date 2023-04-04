@@ -127,13 +127,20 @@ func generateGenericHandlers(path string, parsedPkg parser.ParsedPackage) {
 	generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "generics", "Export"))
 	os.MkdirAll(generationDestPath, 0777)
 	exportPath := filepath.Join(generationDestPath, "Export.go")
-	intput := tp.ExportTemplateInput{IsNobjectInOrginalPackage: parsedPkg.IsNobjectInOrginalPackage, OrginalPackageAlias: parser.OrginalPackageAlias, OrginalPackage: parsedPkg.ImportPath}
-	tp.CreateFile("template/type_spec/export_template.go.tmpl", intput, exportPath)
+	input := tp.ExportTemplateInput{IsNobjectInOrginalPackage: parsedPkg.IsNobjectInOrginalPackage,
+		OrginalPackageAlias: parser.OrginalPackageAlias, OrginalPackage: parsedPkg.ImportPath,
+		TypesWithCustomExport: parsedPkg.TypesWithCustomExport,
+	}
+	tp.CreateFile("template/type_spec/export_template.go.tmpl", input, exportPath)
 
 	generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "generics", "Delete"))
 	os.MkdirAll(generationDestPath, 0777)
 	deletePath := filepath.Join(generationDestPath, "Delete.go")
-	tp.CreateFile("template/type_spec/delete_template.go.tmpl", nil, deletePath)
+	deleteTemplInput := tp.DeleteTemplateInput{OrginalPackageAlias: parser.OrginalPackageAlias,
+		OrginalPackage:        parsedPkg.ImportPath,
+		TypesWithCustomDelete: parsedPkg.TypesWithCustomDelete,
+	}
+	tp.CreateFile("template/type_spec/delete_template.go.tmpl", deleteTemplInput, deletePath)
 
 	generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "reference", "GetByIndex"))
 	os.MkdirAll(generationDestPath, 0777)

@@ -19,9 +19,16 @@ func ExportHandler(input aws.JSONValue) (string, error) {
 	switch input["TypeName"] {
 	{{range $key,$value := .IsNobjectInOrginalPackage}}
 	{{if $value}} case "{{$key}}":
-			new{{$key}} := new({{$.OrginalPackageAlias}}.{{$key}})
-			mapstructure.Decode(input["Parameter"], new{{$key}})
-			return lib.Insert(new{{$key}})
+			{{$customDefinition := index $.TypesWithCustomExport $key}}
+			{{if $customDefinition.InputParameterType}}
+				new{{$key}} := new({{$customDefinition.InputParameterType}})
+				mapstructure.Decode(input["Parameter"], new{{$key}})
+				return {{$.OrginalPackageAlias}}.Export{{$key}}(*new{{$key}})
+			{{else}}
+				new{{$key}} := new({{$.OrginalPackageAlias}}.{{$key}})
+				mapstructure.Decode(input["Parameter"], new{{$key}})
+				return lib.Insert(new{{$key}})
+			{{end}}
 	{{end}} {{end}}
 
 	default:
