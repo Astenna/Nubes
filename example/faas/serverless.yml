@@ -107,33 +107,6 @@ functions:
     maximumEventAge: 60
 
 
-  ProductDecreaseAvailabilityBy:
-    name:  ProductDecreaseAvailabilityBy
-    handler: bin/ProductDecreaseAvailabilityBy
-    package:
-      include:
-        - bin/ProductDecreaseAvailabilityBy
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
-  ProductAddNewDiscountByCopy:
-    name:  ProductAddNewDiscountByCopy
-    handler: bin/ProductAddNewDiscountByCopy
-    package:
-      include:
-        - bin/ProductAddNewDiscountByCopy
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
-  ProductAddNewDiscountByReference:
-    name:  ProductAddNewDiscountByReference
-    handler: bin/ProductAddNewDiscountByReference
-    package:
-      include:
-        - bin/ProductAddNewDiscountByReference
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
   ShopGetNearestOwnerCopy:
     name:  ShopGetNearestOwnerCopy
     handler: bin/ShopGetNearestOwnerCopy
@@ -158,6 +131,33 @@ functions:
     package:
       include:
         - bin/UserVerifyPassword
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
+  ProductDecreaseAvailabilityBy:
+    name:  ProductDecreaseAvailabilityBy
+    handler: bin/ProductDecreaseAvailabilityBy
+    package:
+      include:
+        - bin/ProductDecreaseAvailabilityBy
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
+  ProductAddNewDiscountByCopy:
+    name:  ProductAddNewDiscountByCopy
+    handler: bin/ProductAddNewDiscountByCopy
+    package:
+      include:
+        - bin/ProductAddNewDiscountByCopy
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
+  ProductAddNewDiscountByReference:
+    name:  ProductAddNewDiscountByReference
+    handler: bin/ProductAddNewDiscountByReference
+    package:
+      include:
+        - bin/ProductAddNewDiscountByReference
     maximumRetryAttempts: 0
     maximumEventAge: 60
 

@@ -9,6 +9,7 @@ import (
 	"github.com/Astenna/Nubes/generator/database"
 	"github.com/Astenna/Nubes/generator/parser"
 	tp "github.com/Astenna/Nubes/generator/template"
+	typespec "github.com/Astenna/Nubes/generator/template/type_spec"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra-cli/cmd"
 )
@@ -127,7 +128,7 @@ func generateGenericHandlers(path string, parsedPkg parser.ParsedPackage) {
 	generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "generics", "Export"))
 	os.MkdirAll(generationDestPath, 0777)
 	exportPath := filepath.Join(generationDestPath, "Export.go")
-	input := tp.ExportTemplateInput{IsNobjectInOrginalPackage: parsedPkg.IsNobjectInOrginalPackage,
+	input := typespec.ExportTemplateInput{IsNobjectInOrginalPackage: parsedPkg.IsNobjectInOrginalPackage,
 		OrginalPackageAlias: parser.OrginalPackageAlias, OrginalPackage: parsedPkg.ImportPath,
 		TypesWithCustomExport: parsedPkg.TypesWithCustomExport,
 	}
@@ -136,7 +137,7 @@ func generateGenericHandlers(path string, parsedPkg parser.ParsedPackage) {
 	generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "generics", "Delete"))
 	os.MkdirAll(generationDestPath, 0777)
 	deletePath := filepath.Join(generationDestPath, "Delete.go")
-	deleteTemplInput := tp.DeleteTemplateInput{OrginalPackageAlias: parser.OrginalPackageAlias,
+	deleteTemplInput := typespec.DeleteTemplateInput{OrginalPackageAlias: parser.OrginalPackageAlias,
 		OrginalPackage:        parsedPkg.ImportPath,
 		TypesWithCustomDelete: parsedPkg.TypesWithCustomDelete,
 	}

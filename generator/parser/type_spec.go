@@ -9,6 +9,8 @@ import (
 	"go/token"
 	"os"
 	"strings"
+
+	tp "github.com/Astenna/Nubes/generator/template"
 )
 
 type TypeSpecParser struct {
@@ -185,6 +187,7 @@ func (t TypeSpecParser) saveChangesInAst() {
 				}
 				buf.WriteTo(nobjectTypeFile)
 				nobjectTypeFile.Close()
+				tp.RunGoimportsOnFile(path)
 			}
 		}
 	}

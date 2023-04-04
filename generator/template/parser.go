@@ -5,8 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"text/template"
-
-	"github.com/Astenna/Nubes/generator/parser"
 )
 
 func MakePathAbosoluteOrExitOnError(path string) string {
@@ -37,17 +35,4 @@ func CreateFile(relativeTemplPath string, data any, newFilePath string) {
 		fmt.Println("template did not executed successfully", err)
 	}
 	file.Close()
-}
-
-type ExportTemplateInput struct {
-	OrginalPackage            string
-	OrginalPackageAlias       string
-	IsNobjectInOrginalPackage map[string]bool
-	TypesWithCustomExport     map[string]parser.CustomExportDefinition
-}
-
-type DeleteTemplateInput struct {
-	OrginalPackage        string
-	OrginalPackageAlias   string
-	TypesWithCustomDelete map[string]parser.CustomDeleteDefinition
 }
