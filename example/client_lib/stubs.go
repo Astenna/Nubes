@@ -30,6 +30,16 @@ func (OrderStub) GetTypeName() string {
 	return "Order"
 }
 
+type ShopStub struct {
+	Id string
+
+	Name string
+}
+
+func (ShopStub) GetTypeName() string {
+	return "Shop"
+}
+
 type ProductStub struct {
 	Id string
 
@@ -46,6 +56,20 @@ type ProductStub struct {
 
 func (ProductStub) GetTypeName() string {
 	return "Product"
+}
+
+type ShippingStub struct {
+	Id string
+
+	Address string
+
+	State ShippingState
+
+	CreationDate time.Time
+}
+
+func (ShippingStub) GetTypeName() string {
+	return "Shipping"
 }
 
 type UserStub struct {
@@ -66,28 +90,4 @@ type UserStub struct {
 
 func (UserStub) GetTypeName() string {
 	return "User"
-}
-
-type ShippingStub struct {
-	Id string
-
-	Address string
-
-	State ShippingState
-
-	CreationDate time.Time
-}
-
-func (ShippingStub) GetTypeName() string {
-	return "Shipping"
-}
-
-type ShopStub struct {
-	Id string
-
-	Name string
-}
-
-func (ShopStub) GetTypeName() string {
-	return "Shop"
 }

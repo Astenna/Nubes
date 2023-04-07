@@ -72,7 +72,7 @@ func (r referenceNavigationList[T, Stub]) GetStubs() ([]Stub, error) {
 		return nil, _err
 	}
 	if out.FunctionError != nil {
-		return nil, fmt.Errorf("lambda function designed to verify if instance exists failed. Error: %s", string(out.Payload))
+		return nil, fmt.Errorf("lambda function designed to the objects' states failed. Error: %s", string(out.Payload))
 	}
 
 	stubs := make([]Stub, len(ids))
