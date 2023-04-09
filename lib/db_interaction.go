@@ -95,7 +95,7 @@ func GetStub[T Nobject](id string, object *T) error {
 	return fmt.Errorf("%s with id: %s not found", (*object).GetTypeName(), id)
 }
 
-func GetStubWithTypeNameAsArg(id, typeName string) (interface{}, error) {
+func GetStubWithTypeNameAsArg(id, typeName string) (map[string]interface{}, error) {
 	if id == "" {
 		return nil, fmt.Errorf("missing id of object to get")
 	}
@@ -117,7 +117,7 @@ func GetStubWithTypeNameAsArg(id, typeName string) (interface{}, error) {
 		return nil, err
 	}
 
-	parsedItem := new(interface{})
+	parsedItem := new(map[string]interface{})
 	if item.Item != nil {
 		err = dynamodbattribute.UnmarshalMap(item.Item, &parsedItem)
 		return *parsedItem, err

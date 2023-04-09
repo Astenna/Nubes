@@ -11,14 +11,37 @@ func GetStateHandler(input lib.GetStateParam) (interface{}, error) {
 
 	if input.GetStub {
 		output, err = lib.GetStubWithTypeNameAsArg(input.Id, input.TypeName)
-	} else {
-		output, err = lib.GetField(input)
-	}
+		if err != nil {
+			return *new(interface{}), err
+		}
+		outputMap := output.(map[string]interface{})
 
-	if err != nil {
-		return *new(interface{}), err
+		// workaround required because the lib.GetStubsInBatchWithTypeNameAsArg
+		// deserializes into interface{} (not concerete type),
+		// thereby ignoring the dynamodb serialization tags for the custom ID.
+		// As a result the 'Id'column was not deserialized into proper custom ID field.
+		{{if .}}
+		switch input.TypeName {
+		{{end}}
+		{{range $index, $element := .}}
+			case "{{$index}}":
+				outputMap["{{$element}}"] = outputMap["Id"]
+		{{end}}
+		{{if .}}
+			}
+		{{end}}
+
+		return outputMap, nil
 	}
-	return output, nil
+	// same as above
+	{{range $index, $element := .}}
+		if input.TypeName == "{{$index}}"  && input.FieldName == "{{$element}}" {
+			input.FieldName = "Id"
+			return lib.GetField(input)
+		}
+	{{end}}
+	
+	return lib.GetField(input)
 }
 
 func main() {

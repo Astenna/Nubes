@@ -41,19 +41,13 @@ func (t *ClientTypesParser) detectFuncs() {
 						}
 
 						if fn.Name.Name == CustomIdImplementationMethod {
-							funcString, err := getFunctionBodyAsString(t.tokenSet, fn.Body)
+
+							idFieldName, err := getIdFieldNameFromCustomIdImpl(fn)
 							if err != nil {
-								fmt.Println("error occurred when parsing GetTypeName of " + typeName)
+								fmt.Println(err)
 								continue
 							}
-
-							if _, ok := t.DefinedTypes[typeName]; !ok {
-								t.DefinedTypes[typeName] = &StructTypeDefinition{}
-							}
-							t.DefinedTypes[typeName].CustomIdImplementation = funcString
-							if len(fn.Recv.List[0].Names) > 0 {
-								t.DefinedTypes[typeName].CustomIdReceiverName = fn.Recv.List[0].Names[0].Name
-							}
+							t.DefinedTypes[typeName].CustomIdFieldName = idFieldName
 							continue
 						}
 

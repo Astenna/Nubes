@@ -24,8 +24,7 @@ type StructTypeDefinition struct {
 	PackageName             string
 	Imports                 string
 	NobjectImplementation   string
-	CustomIdImplementation  string
-	CustomIdReceiverName    string
+	CustomIdFieldName       string
 	TypeNameLower           string
 	TypeNameOrginalCase     string
 	MemberFunctions         []MethodDefinition

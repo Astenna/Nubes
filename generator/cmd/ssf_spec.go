@@ -108,12 +108,12 @@ func generateGenericHandlers(path string, parsedPkg parser.ParsedPackage) {
 	generationDestPath := tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "generics", "GetBatch"))
 	os.MkdirAll(generationDestPath, 0777)
 	getBatch := filepath.Join(generationDestPath, "GetBatch.go")
-	tp.CreateFile("template/type_spec/get_batch.go.tmpl", nil, getBatch)
+	tp.CreateFile("template/type_spec/get_batch.go.tmpl", parsedPkg.TypesWithCustomId, getBatch)
 
 	generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "generics", "GetState"))
 	os.MkdirAll(generationDestPath, 0777)
 	getPath := filepath.Join(generationDestPath, "GetState.go")
-	tp.CreateFile("template/type_spec/get_state.go.tmpl", nil, getPath)
+	tp.CreateFile("template/type_spec/get_state.go.tmpl", parsedPkg.TypesWithCustomId, getPath)
 
 	generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "generics", "SetField"))
 	os.MkdirAll(generationDestPath, 0777)
