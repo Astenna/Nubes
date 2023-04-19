@@ -85,6 +85,8 @@ func (t *ClientTypesParser) Run() {
 func (t *ClientTypesParser) detectAndSetNobjectsReturnTypes() {
 	for _, typeDefinition := range t.DefinedTypes {
 		for i, function := range typeDefinition.MemberFunctions {
+			adjustSubtypesIfInputOrOuputParamsAreReferences(&typeDefinition.MemberFunctions[i])
+
 			if isReturnTypeDefined(function) && isNobject(function.OptionalReturnType, t.DefinedTypes) {
 				typeDefinition.MemberFunctions[i].IsReturnTypeNobject = true
 				typeDefinition.MemberFunctions[i].OptionalReturnTypeUpper = function.OptionalReturnType

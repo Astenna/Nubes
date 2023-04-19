@@ -102,7 +102,6 @@ func parseMethod(fn *ast.FuncDecl) (*MethodDefinition, error) {
 		memberFunction.InputParamType = types.ExprString(fn.Type.Params.List[0].Type)
 	}
 
-	adjustSubtypesIfInputOrOuputParamsAreReferences(&memberFunction)
 	return &memberFunction, nil
 }
 

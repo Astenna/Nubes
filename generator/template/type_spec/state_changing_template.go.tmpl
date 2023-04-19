@@ -16,10 +16,6 @@ func {{.MethodName}}Handler(input aws.JSONValue) {{if .OptionalReturnType}} ({{.
 	var param {{.OptionalInputType}}
 	mapstructure.Decode(input["Parameter"], param) {{end}}
 	{{if .OptionalReturnType}} result, {{end}} _err := instance.{{.MethodName}}({{if .OptionalInputType}}param{{end}}) 
-	if _err != nil {
-		return {{if .OptionalReturnType}} result, {{end}} _err
-	}
-	
 	return {{if .OptionalReturnType}} result, {{end}} _err
 }
 

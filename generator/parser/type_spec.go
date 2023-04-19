@@ -103,33 +103,31 @@ func (t *TypeSpecParser) detectNobjectTypesAndFunctions(moduleName string) {
 			for _, d := range f.Decls {
 				if fn, isFn := d.(*ast.FuncDecl); isFn {
 
-					if fn.Name.Name == SaveChangesIfInitialized && fn.Recv != nil {
-						t.isSaveChangesAlreadyAdded[getFunctionReceiverTypeAsString(fn.Recv)] = true
+					if fn.Recv != nil {
+						ownerType := getFunctionReceiverTypeAsString(fn.Recv)
+						switch fn.Name.Name {
+						case SaveChangesIfInitialized:
+							t.isSaveChangesAlreadyAdded[ownerType] = true
+							continue
+						case NobjectImplementationMethod:
+							t.Output.IsNobjectInOrginalPackage[ownerType] = true
+							continue
+						case InitFunctionName:
+							t.isInitAlreadyAdded[ownerType] = true
+							continue
+						case CustomIdImplementationMethod:
+							idFieldName, err := getIdFieldNameFromCustomIdImpl(fn)
+							if err != nil {
+								fmt.Println(err)
+								continue
+							}
+							t.Output.TypesWithCustomId[ownerType] = idFieldName
+							continue
+						}
 					}
 
 					// ignore unexported functions (i.e. starting with lowercase letter)
 					if fn.Name.IsExported() {
-
-						if fn.Recv != nil {
-							ownerType := getFunctionReceiverTypeAsString(fn.Recv)
-							switch fn.Name.Name {
-							case NobjectImplementationMethod:
-								t.Output.IsNobjectInOrginalPackage[ownerType] = true
-								continue
-							case InitFunctionName:
-								t.isInitAlreadyAdded[ownerType] = true
-								continue
-							case CustomIdImplementationMethod:
-								idFieldName, err := getIdFieldNameFromCustomIdImpl(fn)
-								if err != nil {
-									fmt.Println(err)
-									continue
-								}
-								t.Output.TypesWithCustomId[ownerType] = idFieldName
-								continue
-							}
-						}
-
 						if retParamsValidator.Valid(fn) {
 							t.detectedFunctions[path] = append(t.detectedFunctions[path], detectedFunction{
 								Function: fn,
