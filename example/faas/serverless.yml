@@ -107,33 +107,6 @@ functions:
     maximumEventAge: 60
 
 
-  ShopGetNearestOwnerCopy:
-    name:  ShopGetNearestOwnerCopy
-    handler: bin/ShopGetNearestOwnerCopy
-    package:
-      include:
-        - bin/ShopGetNearestOwnerCopy
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
-  ShopGetNearestOwnerReference:
-    name:  ShopGetNearestOwnerReference
-    handler: bin/ShopGetNearestOwnerReference
-    package:
-      include:
-        - bin/ShopGetNearestOwnerReference
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
-  UserVerifyPassword:
-    name:  UserVerifyPassword
-    handler: bin/UserVerifyPassword
-    package:
-      include:
-        - bin/UserVerifyPassword
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
   ProductDecreaseAvailabilityBy:
     name:  ProductDecreaseAvailabilityBy
     handler: bin/ProductDecreaseAvailabilityBy
@@ -161,12 +134,39 @@ functions:
     maximumRetryAttempts: 0
     maximumEventAge: 60
 
-
-  NewOrder:
-    name:  NewOrder
-    handler: bin/NewOrder
+  ShopGetNearestOwnerCopy:
+    name:  ShopGetNearestOwnerCopy
+    handler: bin/ShopGetNearestOwnerCopy
     package:
       include:
-        - bin/NewOrder
+        - bin/ShopGetNearestOwnerCopy
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
+  ShopGetNearestOwnerReference:
+    name:  ShopGetNearestOwnerReference
+    handler: bin/ShopGetNearestOwnerReference
+    package:
+      include:
+        - bin/ShopGetNearestOwnerReference
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
+  UserVerifyPassword:
+    name:  UserVerifyPassword
+    handler: bin/UserVerifyPassword
+    package:
+      include:
+        - bin/UserVerifyPassword
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
+
+  NewDiscount:
+    name:  NewDiscount
+    handler: bin/NewDiscount
+    package:
+      include:
+        - bin/NewDiscount
     maximumRetryAttempts: 0
     maximumEventAge: 60

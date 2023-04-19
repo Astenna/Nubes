@@ -15,6 +15,13 @@ type Discount struct {
 	invocationDepth int
 }
 
+// NewDiscount is a very simple example of custom constructor definition
+func NewDiscount() (Discount, error) {
+	return Discount{
+		ValidFrom: time.Now(),
+	}, nil
+}
+
 func (d *Discount) SetValidFrom(date time.Time) error {
 	d.ValidFrom = date
 	if d.isInitialized {

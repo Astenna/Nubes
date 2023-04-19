@@ -8,13 +8,9 @@ import (
 	"github.com/aws/aws-sdk-go/service/lambda"
 )
 
-func NewOrder(input OrderStub) (*OrderStub, error) {
-	jsonParam, err := json.Marshal(input)
-	if err != nil {
-		return nil, err
-	}
+func NewDiscount() (*DiscountStub, error) {
 
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("NewOrder"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("NewDiscount")})
 	if _err != nil {
 		return nil, _err
 	}
@@ -22,7 +18,7 @@ func NewOrder(input OrderStub) (*OrderStub, error) {
 		return nil, fmt.Errorf("lambda function invocation failed. Error: %s", string(out.Payload))
 	}
 
-	result := new(OrderStub)
+	result := new(DiscountStub)
 	_err = json.Unmarshal(out.Payload, result)
 	if _err != nil {
 		return nil, _err
