@@ -1,0 +1,63 @@
+frameworkVersion: '>3.24.0'
+
+service: hotel-baseline
+provider:
+  name: aws
+  runtime: go1.x
+  # Default memory size for functions (default: 1024MB)
+  memorySize: 1024
+  # Default timeout for functions (default: 6 seconds)
+  # Note: API Gateway has a maximum timeout of 30 seconds
+  #timeout: 60
+  # Use function versioning (enabled by default)
+  versionFunctions: false
+  # By default, one IAM Role is shared by all the Lambda functions in your service
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "dynamodb:*"
+      Resource:
+        - "*"
+
+package:
+  individually: true
+  exclude:
+    - "bin/*"
+    - "**/**"
+
+functions:
+  login:
+    name:  login
+    handler: bin/login
+    package:
+      include:
+        - bin/login
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
+  getHotelsInCity:
+    name:  getHotelsInCity
+    handler: bin/getHotelsInCity
+    package:
+      include:
+        - bin/getHotelsInCity
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
+  recommendHotelsLocation:
+    name:  recommendHotelsLocation
+    handler: bin/recommendHotelsLocation
+    package:
+      include:
+        - bin/getCategoryMovieList
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
+  recommendHotelsPrice:
+    name:  recommendHotelsPrice
+    handler: bin/recommendHotelsPrice
+    package:
+      include:
+        - bin/recommendHotelsPrice
+    maximumRetryAttempts: 0
+    maximumEventAge: 60

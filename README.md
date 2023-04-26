@@ -1,6 +1,6 @@
 # Nubes
 
-A library providing an abstraction layer built for the stateful serverless functions, that hides the intricacies of state management. Specifically, Nubes is a **library** and **code generator** that allows to utilize object-oriented programming concepts while building stateful serverless applications. Developers are responsible only for the definitions of the object types representing the state, as well as methods designed for its state retrieval and modification. All of this is done without the need for explicit database interactions, as those are managed by Nubes. Moreover, based on the detected types, the corresponding serverless functions handlers with its necessary deployment files are automatically constructed.
+A library providing an abstraction layer built for the stateful serverless functions, that hides the intricacies of state management and serverless functions definitions and deployment. Specifically, Nubes is a **library** and **code generator** that allows to utilize object-oriented programming concepts while building stateful serverless applications. Developers are responsible only for the definitions of the object types representing the state, as well as methods designed for its state retrieval and modification. All of this is done without the need for explicit database interactions, as those are managed by Nubes. Moreover, based on the detected types, the corresponding serverless functions handlers with its necessary deployment files are automatically constructed.
 
 **Goals**:
 
