@@ -1,8 +1,9 @@
-package db
+package main
 
 import (
 	"fmt"
 
+	"github.com/Astenna/Nubes/evaluation/hotel_baseline/db"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 )
@@ -23,26 +24,26 @@ func InitializeTables() {
 
 	tableDefinitions := []TableDefinition{
 		{
-			TableName:    UserTable,
+			TableName:    db.UserTable,
 			PartitionKey: "Email",
 		},
 		{
-			TableName:    HotelTable, // shared with CityTable
+			TableName:    db.HotelTable, // shared with CityTable
 			PartitionKey: "CityName",
 			SortKey:      "HotelName",
 		},
 		{
-			TableName:    RoomTable,
+			TableName:    db.RoomTable,
 			PartitionKey: "HotelName",
 			SortKey:      "RoomId",
 		},
 		{
-			TableName:    ReservationTable,
+			TableName:    db.ReservationTable,
 			PartitionKey: "RoomId",
 			SortKey:      "DateIn",
 			Indexes: []IndexDefinition{
 				{
-					IndexName: UsersReservationsIndex,
+					IndexName: db.UsersReservationsIndex,
 					Column:    "UserId",
 				},
 			},
@@ -80,7 +81,7 @@ func InitializeTables() {
 			)
 			createTableInput.KeySchema = append(createTableInput.KeySchema,
 				&dynamodb.KeySchemaElement{
-					AttributeName: aws.String(tableDefinition.PartitionKey),
+					AttributeName: aws.String(tableDefinition.SortKey),
 					KeyType:       aws.String("RANGE"),
 				},
 			)
@@ -88,6 +89,12 @@ func InitializeTables() {
 
 		if len(tableDefinition.Indexes) != 0 {
 			for _, indexDefinition := range tableDefinition.Indexes {
+				createTableInput.AttributeDefinitions = append(createTableInput.AttributeDefinitions,
+					&dynamodb.AttributeDefinition{
+						AttributeName: aws.String(indexDefinition.Column),
+						AttributeType: aws.String("S"),
+					},
+				)
 				createTableInput.GlobalSecondaryIndexes = append(createTableInput.GlobalSecondaryIndexes,
 					&dynamodb.GlobalSecondaryIndex{
 						IndexName: aws.String(indexDefinition.IndexName),
@@ -108,7 +115,7 @@ func InitializeTables() {
 				)
 			}
 		}
-		_, err := dbClient.CreateTable(createTableInput)
+		_, err := db.DbClient.CreateTable(createTableInput)
 
 		if err != nil {
 			if _, ok := err.(*dynamodb.ResourceInUseException); ok {

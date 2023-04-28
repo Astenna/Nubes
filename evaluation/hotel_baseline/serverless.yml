@@ -25,6 +25,7 @@ package:
     - "bin/*"
     - "**/**"
 
+
 functions:
   login:
     name:  login
@@ -34,7 +35,6 @@ functions:
         - bin/login
     maximumRetryAttempts: 0
     maximumEventAge: 60
-
   getHotelsInCity:
     name:  getHotelsInCity
     handler: bin/getHotelsInCity
@@ -43,16 +43,14 @@ functions:
         - bin/getHotelsInCity
     maximumRetryAttempts: 0
     maximumEventAge: 60
-
   recommendHotelsLocation:
     name:  recommendHotelsLocation
     handler: bin/recommendHotelsLocation
     package:
       include:
-        - bin/getCategoryMovieList
+        - bin/recommendHotelsLocation
     maximumRetryAttempts: 0
     maximumEventAge: 60
-
   recommendHotelsPrice:
     name:  recommendHotelsPrice
     handler: bin/recommendHotelsPrice

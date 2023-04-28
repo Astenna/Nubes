@@ -10,7 +10,6 @@ type Hotel struct {
 	HotelName   string
 	Street      string
 	PostalCode  string
-	Country     string
 	Coordinates geodist.Coord `nubes:"readonly"`
 	Rate        float32
 }

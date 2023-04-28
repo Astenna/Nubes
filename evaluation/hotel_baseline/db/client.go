@@ -9,4 +9,4 @@ var _session = session.Must(session.NewSessionWithOptions(session.Options{
 	SharedConfigState: session.SharedConfigEnable,
 }))
 
-var dbClient = dynamodb.New(_session)
+var DbClient = dynamodb.New(_session)

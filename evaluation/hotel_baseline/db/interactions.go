@@ -30,7 +30,7 @@ func GetSingleItemByPartitonKey[T any](tableName, keyAttribute, keyValue string)
 		},
 	}
 
-	item, err := dbClient.GetItem(input)
+	item, err := DbClient.GetItem(input)
 	if err != nil {
 		return *result, err
 	}
@@ -69,7 +69,7 @@ func GetItemsByPartitonKey[T any](tableName, partitionAttribute, partitionValue 
 		ExpressionAttributeValues: expr.Values(),
 	}
 
-	items, err := dbClient.Query(input)
+	items, err := DbClient.Query(input)
 	if err != nil {
 		return nil, err
 	}
