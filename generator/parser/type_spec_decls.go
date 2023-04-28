@@ -143,13 +143,13 @@ func (t *TypeSpecParser) parseStructFields(f *ast.File, strctType *ast.StructTyp
 		strctType.Fields.List = append(strctType.Fields.List, &ast.Field{
 			Names: []*ast.Ident{{Name: IsInitializedFieldName}}, Type: &ast.Ident{Name: "bool"},
 		})
-		return true
+		structDefinitionModified = true
 	}
 	if _, exists := t.Output.TypeFields[typeName][InvocationDepthFieldName]; !exists && isNobject {
 		strctType.Fields.List = append(strctType.Fields.List, &ast.Field{
 			Names: []*ast.Ident{{Name: InvocationDepthFieldName}}, Type: &ast.Ident{Name: "int"},
 		})
-		return true
+		structDefinitionModified = true
 	}
 
 	return structDefinitionModified
