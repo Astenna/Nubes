@@ -1,0 +1,113 @@
+frameworkVersion: '>3.24.0'
+
+service: hotel
+provider:
+  name: aws
+  runtime: go1.x
+  # Default memory size for functions (default: 1024MB)
+  memorySize: 1024
+  # Default timeout for functions (default: 6 seconds)
+  # Note: API Gateway has a maximum timeout of 30 seconds
+  #timeout: 60
+  # Use function versioning (enabled by default)
+  versionFunctions: false
+  # By default, one IAM Role is shared by all the Lambda functions in your service
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "dynamodb:*"
+      Resource:
+        - "*"
+
+package:
+  individually: true
+  exclude:
+    - "bin/*"
+    - "**/**"
+
+functions:
+  Load:
+    name: Load
+    handler: bin/Load
+    package:
+      include:
+        - bin/Load
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+  Export:
+    name: Export
+    handler: bin/Export
+    package:
+      include:
+        - bin/Export
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+  Delete:
+    name: Delete
+    handler: bin/Delete
+    package:
+      include:
+        - bin/Delete
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+  GetState:
+    name: GetState
+    handler: bin/GetState
+    package:
+      include:
+        - bin/GetState
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+  GetBatch:
+    name: GetBatch
+    handler: bin/GetBatch
+    package:
+      include:
+        - bin/GetBatch
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+  SetField:
+    name: SetField
+    handler: bin/SetField
+    package:
+      include:
+        - bin/SetField
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+  ReferenceGetByIndex:
+    name: ReferenceGetByIndex
+    handler: bin/ReferenceGetByIndex
+    package:
+      include:
+        - bin/ReferenceGetByIndex
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+  
+
+  CityGetHotelsCloseTo:
+    name:  CityGetHotelsCloseTo
+    handler: bin/CityGetHotelsCloseTo
+    package:
+      include:
+        - bin/CityGetHotelsCloseTo
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
+  CityGetHotelsWithBestRates:
+    name:  CityGetHotelsWithBestRates
+    handler: bin/CityGetHotelsWithBestRates
+    package:
+      include:
+        - bin/CityGetHotelsWithBestRates
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
+  UserVerifyPassword:
+    name:  UserVerifyPassword
+    handler: bin/UserVerifyPassword
+    package:
+      include:
+        - bin/UserVerifyPassword
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+

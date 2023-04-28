@@ -6,10 +6,12 @@ import (
 )
 
 type City struct {
-	CName       string `nubes:"Id"`
-	Region      string
-	Description string
-	Hotels      lib.ReferenceNavigationList[Hotel] `nubes:"hasOne-City"`
+	CityName        string `nubes:"Id" dynamodbav:"Id"`
+	Region          string
+	Description     string
+	Hotels          lib.ReferenceNavigationList[Hotel] `nubes:"hasOne-City" dynamodbav:"-"`
+	isInitialized   bool
+	invocationDepth int
 }
 
 func (o City) GetTypeName() string {
@@ -23,14 +25,24 @@ type CloseToParams struct {
 }
 
 func (c City) GetHotelsCloseTo(param CloseToParams) ([]Hotel, error) {
+	c.invocationDepth++
+	if c.isInitialized && c.invocationDepth == 1 {
+		_libError := lib.GetStub(c.CityName, &c)
+		if _libError != nil {
+			c.invocationDepth--
+			return *new([]Hotel), _libError
+		}
+	}
 	hotels, err := c.Hotels.GetStubs()
 	result := make([]Hotel, 0, param.Count)
 
 	if err != nil {
+		c.invocationDepth--
 		return nil, err
 	}
 
 	if len(hotels) <= param.Count {
+		c.invocationDepth--
 		return hotels, err
 	}
 	hotelDists := make([]hotelDist, 0, len(hotels))
@@ -51,18 +63,30 @@ func (c City) GetHotelsCloseTo(param CloseToParams) ([]Hotel, error) {
 	for i := 0; i < param.Count; i++ {
 		result[i] = *hotelDists[i].hotel
 	}
-	return result, nil
+	_libUpsertError := c.saveChangesIfInitialized()
+	c.invocationDepth--
+	return result, _libUpsertError
 }
 
 func (c City) GetHotelsWithBestRates(count int) ([]Hotel, error) {
+	c.invocationDepth++
+	if c.isInitialized && c.invocationDepth == 1 {
+		_libError := lib.GetStub(c.CityName, &c)
+		if _libError != nil {
+			c.invocationDepth--
+			return *new([]Hotel), _libError
+		}
+	}
 	hotels, err := c.Hotels.GetStubs()
 	result := make([]Hotel, 0, count)
 
 	if err != nil {
+		c.invocationDepth--
 		return nil, err
 	}
 
 	if len(result) <= count {
+		c.invocationDepth--
 		return result, err
 	}
 
@@ -71,8 +95,10 @@ func (c City) GetHotelsWithBestRates(count int) ([]Hotel, error) {
 	for i := 0; i < count; i++ {
 		result[i] = hotels[len(hotels)-i-1]
 	}
+	_libUpsertError := c.saveChangesIfInitialized()
+	c.invocationDepth--
 
-	return result, nil
+	return result, _libUpsertError
 }
 
 type hotelDist struct {
@@ -141,4 +167,20 @@ func partitionRate(arr []Hotel, from int, to int) int {
 	arr[from] = arr[pivotPos]
 	arr[pivotPos] = pivot
 	return pivotPos
+}
+func (receiver City) GetId() string {
+	return receiver.CityName
+}
+func (receiver *City) Init() {
+	receiver.isInitialized = true
+	receiver.Hotels = *lib.NewReferenceNavigationList[Hotel](receiver.CityName, receiver.GetTypeName(), "City", false)
+}
+func (receiver *City) saveChangesIfInitialized() error {
+	if receiver.isInitialized && receiver.invocationDepth == 1 {
+		_libError := lib.Upsert(receiver, receiver.CityName)
+		if _libError != nil {
+			return _libError
+		}
+	}
+	return nil
 }
