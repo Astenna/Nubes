@@ -133,6 +133,7 @@ func generateGenericHandlers(path string, parsedPkg parser.ParsedPackage) {
 		TypesWithCustomExport: parsedPkg.TypesWithCustomExport,
 	}
 	tp.CreateFile("template/type_spec/export_template.go.tmpl", input, exportPath)
+	tp.RunGoimportsOnFile(generationDestPath)
 
 	generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "generics", "Delete"))
 	os.MkdirAll(generationDestPath, 0777)
@@ -142,6 +143,7 @@ func generateGenericHandlers(path string, parsedPkg parser.ParsedPackage) {
 		TypesWithCustomDelete: parsedPkg.TypesWithCustomDelete,
 	}
 	tp.CreateFile("template/type_spec/delete_template.go.tmpl", deleteTemplInput, deletePath)
+	tp.RunGoimportsOnFile(generationDestPath)
 
 	generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "reference", "GetByIndex"))
 	os.MkdirAll(generationDestPath, 0777)
