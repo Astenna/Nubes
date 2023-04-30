@@ -107,7 +107,13 @@ func (t *TypeSpecParser) prepareDataForHandlers() {
 
 				if len(f.Type.Results.List) > 1 {
 					newHandler.OptionalReturnType = types.ExprString(f.Type.Results.List[0].Type)
-					if isNobject, isPresent := t.Output.IsNobjectInOrginalPackage[newHandler.OptionalReturnType]; isNobject && isPresent {
+
+					if arrayType, ok := f.Type.Results.List[0].Type.(*ast.ArrayType); ok {
+						arrType := types.ExprString(arrayType.Elt)
+						if isNobject, isPresent := t.Output.IsNobjectInOrginalPackage[arrType]; isPresent && isNobject {
+							newHandler.OptionalReturnType = "[]" + newHandler.OrginalPackageAlias + "." + arrType
+						}
+					} else if isNobject, isPresent := t.Output.IsNobjectInOrginalPackage[newHandler.OptionalReturnType]; isNobject && isPresent {
 						newHandler.OptionalReturnType = newHandler.OrginalPackageAlias + "." + newHandler.OptionalReturnType
 					} else if strings.Contains(newHandler.OptionalReturnType, ReferenceListType) {
 						newHandler.OptionalReturnType = strings.TrimPrefix(newHandler.OptionalReturnType, ReferenceListType)
