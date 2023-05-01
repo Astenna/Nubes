@@ -8,6 +8,7 @@ import (
 	"github.com/Astenna/Nubes/evaluation/hotel_baseline/db"
 	"github.com/Astenna/Nubes/evaluation/hotel_baseline/models"
 	"github.com/Astenna/Nubes/lib"
+	"github.com/google/uuid"
 	"github.com/jftuga/geodist"
 )
 
@@ -117,16 +118,16 @@ func SeedRoomsAndReservations() {
 					RoomId:      "Room_" + roomSuffix,
 					Name:        "Room_" + roomSuffix,
 					Description: `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur mauris mi, consequat quis dapibus eu, ullamcorper non metus. Suspendisse sit amet faucibus nisi. Nullam pharetra libero ut dui facilisis semper.`,
-					Price:       float32(i),
+					Price:       float32(i) + 1,
 				}
 
 				for k := 0; k < ReservationsPerRoom; k++ {
-					reservationIn := time.Date(ReservationYear, 1, k*8, 0, 0, 0, 0, time.UTC)
+					dateIn := time.Date(ReservationYear, 1, k*8, 0, 0, 0, 0, time.UTC)
 
 					reservationb := models.Reservation{
 						RoomId:    "Room_" + roomSuffix,
-						DateIn:    reservationIn,
-						DateOut:   reservationIn.AddDate(0, 0, int(k%8)),
+						DateIn:    dateIn,
+						DateOut:   dateIn.AddDate(0, 0, int(k%8)),
 						UserId:    "Email_" + strconv.Itoa(int(k%UserCount)),
 						HotelName: HotelPrefix + hotelSuffix + "_" + CityPrefix,
 					}
@@ -136,34 +137,36 @@ func SeedRoomsAndReservations() {
 
 				// nubes
 				room := types.Room{
-					Id:          "Room_" + roomSuffix,
-					Name:        "Room_" + roomSuffix,
-					Description: `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur mauris mi, consequat quis dapibus eu, ullamcorper non metus. Suspendisse sit amet faucibus nisi. Nullam pharetra libero ut dui facilisis semper.`,
-					Hotel:       lib.Reference[types.Hotel](HotelPrefix + hotelSuffix),
-					// TODO: fill reservations
-					Reservations: []types.ReservationInOut{},
+					Id:           uuid.New().String(),
+					Name:         "Room_" + roomSuffix,
+					Description:  `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur mauris mi, consequat quis dapibus eu, ullamcorper non metus. Suspendisse sit amet faucibus nisi. Nullam pharetra libero ut dui facilisis semper.`,
+					Hotel:        lib.Reference[types.Hotel](HotelPrefix + hotelSuffix),
+					Reservations: map[string][]types.ReservationInOut{},
 					Price:        float32(i),
 				}
+
+				insert(room, room.GetTypeName())
 				for k := 0; k < ReservationsPerRoom; k++ {
-					reservationIn := time.Date(ReservationYear, 1, k*8, 0, 0, 0, 0, time.UTC)
+					dateIn := time.Date(ReservationYear, 1, k*8, 0, 0, 0, 0, time.UTC)
 					hotelId := HotelPrefix + hotelSuffix
 
-					reservation := types.Reservation{
-						Id:      hotelId + "_" + reservationIn.String(),
-						Room:    lib.Reference[types.Room]("Room_" + roomSuffix),
-						User:    lib.Reference[types.User]("Email_" + strconv.Itoa(int(k%UserCount))),
-						DateOut: reservationIn.AddDate(0, 0, int(k%8)),
+					param := types.ReserveParam{
+						DateIn:                dateIn,
+						DateOut:               dateIn.AddDate(0, 0, int(k%8)),
+						User:                  lib.Reference[types.User]("Email_" + strconv.Itoa(int(k%UserCount))),
+						HotelId:               hotelId,
+						RoomId:                room.Id,
+						SkipAvailabilityCheck: true,
 					}
-					insert(reservation, reservation.GetTypeName())
+					types.ExportReservation(param)
 				}
-				insert(room, room.GetTypeName())
 			}
 		}
 	}
 }
 
 func main() {
-	//SeedUsers()
+	SeedUsers()
 	SeedCities()
 	SeedHotels()
 	SeedRoomsAndReservations()

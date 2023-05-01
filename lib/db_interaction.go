@@ -300,7 +300,7 @@ func GetField(param GetStateParam) (interface{}, error) {
 	return nil, err
 }
 
-func GetFieldOfType[N any](param GetStateParam) (N, error) {
+func GetFieldOfType[N any](param GetStateParam, field *N) (N, error) {
 	if err := param.Validate(); err != nil {
 		return *new(N), err
 	}
@@ -320,13 +320,14 @@ func GetFieldOfType[N any](param GetStateParam) (N, error) {
 		return *new(N), err
 	}
 
-	if item.Item != nil {
-		parsedItem := new(N)
-		err = dynamodbattribute.Unmarshal(item.Item[param.FieldName], &parsedItem)
-		return *parsedItem, err
+	if item.Item != nil && item.Item[param.FieldName] != nil &&
+		(item.Item[param.FieldName].NULL == nil ||
+			(item.Item[param.FieldName].NULL != nil && !*item.Item[param.FieldName].NULL)) {
+		err = dynamodbattribute.Unmarshal(item.Item[param.FieldName], &field)
+		return *field, err
 	}
 
-	return *(new(N)), err
+	return *field, err
 }
 
 func SetField(param SetFieldParam) error {
