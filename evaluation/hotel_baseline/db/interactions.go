@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -77,4 +78,119 @@ func GetItemsByPartitonKey[T any](tableName, partitionAttribute, partitionValue 
 	parsedItems := make([]T, len(items.Items))
 	err = dynamodbattribute.UnmarshalListOfMaps(items.Items, parsedItems)
 	return parsedItems, err
+}
+
+type GetItemBySortKey struct {
+	PkName    string
+	PkValue   string
+	SkName    string
+	SkValue   time.Time
+	TableName string
+}
+
+func (g GetItemBySortKey) Verify() error {
+	if g.PkName == "" {
+		return fmt.Errorf("missing partition key name")
+	}
+	if g.PkValue == "" {
+		return fmt.Errorf("missing partition key value")
+	}
+	if g.SkName == "" {
+		return fmt.Errorf("missing sort key name")
+	}
+	if g.SkValue.IsZero() {
+		return fmt.Errorf("missing sort key value")
+	}
+	if g.TableName == "" {
+		return fmt.Errorf("missing table name value")
+	}
+	return nil
+}
+
+func GetItemBeforeSortKey[T any](param GetItemBySortKey) (T, error) {
+	if err := param.Verify(); err != nil {
+		return *new(T), err
+	}
+
+	pkKeyCondition := expression.Key(param.PkName).
+		Equal(expression.Value(param.PkValue))
+	skCondition := expression.KeyLessThanEqual(expression.Key(param.SkName), expression.Value(param.SkValue))
+	pkAndSkCondition := expression.KeyAnd(pkKeyCondition, skCondition)
+
+	expr, errExpression := expression.NewBuilder().
+		WithKeyCondition(pkAndSkCondition).
+		Build()
+	if errExpression != nil {
+		fmt.Println("error: creating dynamoDB expression ", errExpression)
+		return *new(T), errExpression
+	}
+
+	queryInput := &dynamodb.QueryInput{
+		TableName:                 aws.String(param.TableName),
+		ExpressionAttributeNames:  expr.Names(),
+		KeyConditionExpression:    expr.KeyCondition(),
+		ExpressionAttributeValues: expr.Values(),
+		Limit:                     aws.Int64(1),
+		ScanIndexForward:          aws.Bool(false),
+	}
+
+	items, err := DbClient.Query(queryInput)
+	if err != nil {
+		return *new(T), err
+	}
+
+	result := new(T)
+	err = dynamodbattribute.UnmarshalMap(items.Items[0], result)
+	return *result, err
+}
+
+func GetItemAfterSortKey[T any](param GetItemBySortKey) (T, error) {
+	if err := param.Verify(); err != nil {
+		return *new(T), err
+	}
+
+	pkKeyCondition := expression.Key(param.PkName).
+		Equal(expression.Value(param.PkValue))
+	skCondition := expression.KeyGreaterThanEqual(expression.Key(param.SkName), expression.Value(param.SkValue))
+	pkAndSkCondition := expression.KeyAnd(pkKeyCondition, skCondition)
+
+	expr, errExpression := expression.NewBuilder().
+		WithKeyCondition(pkAndSkCondition).
+		Build()
+	if errExpression != nil {
+		fmt.Println("error: creating dynamoDB expression ", errExpression)
+		return *new(T), errExpression
+	}
+
+	queryInput := &dynamodb.QueryInput{
+		TableName:                 aws.String(param.TableName),
+		ExpressionAttributeNames:  expr.Names(),
+		KeyConditionExpression:    expr.KeyCondition(),
+		ExpressionAttributeValues: expr.Values(),
+		Limit:                     aws.Int64(1),
+	}
+
+	items, err := DbClient.Query(queryInput)
+	if err != nil {
+		return *new(T), err
+	}
+
+	result := new(T)
+	err = dynamodbattribute.UnmarshalMap(items.Items[0], result)
+	return *result, err
+}
+
+func Insert(toInsert any, tableName string) error {
+	var attributeVals, err = dynamodbattribute.MarshalMap(toInsert)
+	if err != nil {
+		return err
+	}
+
+	input := &dynamodb.PutItemInput{
+		Item:      attributeVals,
+		TableName: aws.String(tableName),
+	}
+
+	_, err = DbClient.PutItem(input)
+	return err
 }

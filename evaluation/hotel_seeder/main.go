@@ -106,6 +106,7 @@ func SeedRoomsAndReservations() {
 	const ReservationsPerRoom = 40
 
 	for c := 0; c < CitiesCount; c++ {
+		citySuffix := strconv.Itoa(c)
 		for j := 0; j < HotelsPerCity; j++ {
 			hotelSuffix := strconv.Itoa(j)
 
@@ -114,22 +115,21 @@ func SeedRoomsAndReservations() {
 
 				// baseline
 				roomb := models.Room{
-					HotelName:   HotelPrefix + hotelSuffix + "_" + CityPrefix,
-					RoomId:      "Room_" + roomSuffix,
-					Name:        "Room_" + roomSuffix,
-					Description: `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur mauris mi, consequat quis dapibus eu, ullamcorper non metus. Suspendisse sit amet faucibus nisi. Nullam pharetra libero ut dui facilisis semper.`,
-					Price:       float32(i) + 1,
+					CityHotelName: CityPrefix + citySuffix + "_" + HotelPrefix + hotelSuffix,
+					RoomId:        "Room_" + roomSuffix,
+					Name:          "Room_" + roomSuffix,
+					Description:   `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur mauris mi, consequat quis dapibus eu, ullamcorper non metus. Suspendisse sit amet faucibus nisi. Nullam pharetra libero ut dui facilisis semper.`,
+					Price:         float32(i) + 1,
 				}
 
 				for k := 0; k < ReservationsPerRoom; k++ {
 					dateIn := time.Date(ReservationYear, 1, k*8, 0, 0, 0, 0, time.UTC)
 
 					reservationb := models.Reservation{
-						RoomId:    "Room_" + roomSuffix,
-						DateIn:    dateIn,
-						DateOut:   dateIn.AddDate(0, 0, int(k%8)),
-						UserId:    "Email_" + strconv.Itoa(int(k%UserCount)),
-						HotelName: HotelPrefix + hotelSuffix + "_" + CityPrefix,
+						CityHotelNameRoomId: models.GetReservationPK(CityPrefix+citySuffix, HotelPrefix+hotelSuffix, "Room_"+roomSuffix),
+						DateIn:              dateIn,
+						DateOut:             dateIn.AddDate(0, 0, int(k%8)),
+						UserEmail:           "Email_" + strconv.Itoa(int(k%UserCount)),
 					}
 					insert(reservationb, db.ReservationTable)
 				}
