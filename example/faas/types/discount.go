@@ -35,7 +35,8 @@ func (d *Discount) SetValidFrom(date time.Time) error {
 
 func (d Discount) GetValidFrom() (time.Time, error) {
 	if d.isInitialized {
-		fieldValue, _libError := lib.GetFieldOfType[time.Time](lib.GetStateParam{Id: d.Id, TypeName: "Discount", FieldName: "ValidFrom"})
+		fieldValue := *new(time.Time)
+		_libError := lib.GetFieldOfType(lib.GetStateParam{Id: d.Id, TypeName: "Discount", FieldName: "ValidFrom"}, &fieldValue)
 		if _libError != nil {
 			return *new(time.Time), _libError
 		}

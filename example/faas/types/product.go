@@ -48,7 +48,8 @@ func (p *Product) DecreaseAvailabilityBy(decreaseNum int) error {
 
 func (p Product) GetQuantityAvailable() (int, error) {
 	if p.isInitialized {
-		fieldValue, _libError := lib.GetFieldOfType[int](lib.GetStateParam{Id: p.Id, TypeName: "Product", FieldName: "QuantityAvailable"})
+		fieldValue := *new(int)
+		_libError := lib.GetFieldOfType(lib.GetStateParam{Id: p.Id, TypeName: "Product", FieldName: "QuantityAvailable"}, &fieldValue)
 		if _libError != nil {
 			return *new(int), _libError
 		}
@@ -59,7 +60,8 @@ func (p Product) GetQuantityAvailable() (int, error) {
 
 func (p Product) GetName() (string, error) {
 	if p.isInitialized {
-		fieldValue, _libError := lib.GetFieldOfType[string](lib.GetStateParam{Id: p.Id, TypeName: "Product", FieldName: "Name"})
+		fieldValue := *new(string)
+		_libError := lib.GetFieldOfType(lib.GetStateParam{Id: p.Id, TypeName: "Product", FieldName: "Name"}, &fieldValue)
 		if _libError != nil {
 			return *new(string), _libError
 		}
@@ -70,7 +72,8 @@ func (p Product) GetName() (string, error) {
 
 func (p Product) GetSoldBy() (lib.Reference[Shop], error) {
 	if p.isInitialized {
-		fieldValue, _libError := lib.GetFieldOfType[lib.Reference[Shop]](lib.GetStateParam{Id: p.Id, TypeName: "Product", FieldName: "SoldBy"})
+		fieldValue := *new(lib.Reference[Shop])
+		_libError := lib.GetFieldOfType(lib.GetStateParam{Id: p.Id, TypeName: "Product", FieldName: "SoldBy"}, &fieldValue)
 		if _libError != nil {
 			return *new(lib.Reference[Shop]), _libError
 		}

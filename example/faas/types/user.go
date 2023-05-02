@@ -70,7 +70,8 @@ func (u *User) SetLastName(lastName string) error {
 
 func (u *User) GetLastName() (string, error) {
 	if u.isInitialized {
-		fieldValue, _libError := lib.GetFieldOfType[string](lib.GetStateParam{Id: u.Email, TypeName: "User", FieldName: "LastName"})
+		fieldValue := *new(string)
+		_libError := lib.GetFieldOfType(lib.GetStateParam{Id: u.Email, TypeName: "User", FieldName: "LastName"}, &fieldValue)
 		if _libError != nil {
 			return *new(string), _libError
 		}

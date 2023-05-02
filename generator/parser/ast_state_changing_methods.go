@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"errors"
+	"fmt"
 	"go/ast"
 	"go/token"
 	"go/types"
@@ -65,20 +67,65 @@ type getDBStmtsParam struct {
 
 func getGetterDBStmts(fn *ast.FuncDecl, input getDBStmtsParam) ast.IfStmt {
 	isInitializedCheck := getIsInitializeCheck(fn.Recv.List[0].Names[0].Name)
+
+	var fieldValPrep *ast.AssignStmt
+	// the second condition makes sures it's not a map with values of type list
+	if strings.Contains(input.fieldType, "[]") && !strings.HasPrefix(input.fieldType, "map") {
+		fieldValPrep = &ast.AssignStmt{
+			Tok: token.DEFINE,
+			Lhs: []ast.Expr{&ast.Ident{Name: "fieldValue"}},
+			Rhs: []ast.Expr{
+				&ast.CallExpr{
+					Fun:  &ast.Ident{Name: "make"},
+					Args: []ast.Expr{&ast.ArrayType{Elt: &ast.Ident{Name: strings.TrimPrefix(input.fieldType, "[]")}}},
+				},
+			},
+		}
+	} else if strings.Contains(input.fieldType, "map") {
+		key, err := getKeyTypeOfMap(input.fieldType)
+		if err != nil {
+			fmt.Print(err)
+		}
+		value, err := getValueTypeOfMap(input.fieldType, key)
+		if err != nil {
+			fmt.Print(err)
+		}
+
+		fieldValPrep = &ast.AssignStmt{
+			Tok: token.DEFINE,
+			Lhs: []ast.Expr{&ast.Ident{Name: "fieldValue"}},
+			Rhs: []ast.Expr{
+				&ast.CallExpr{
+					Fun: &ast.Ident{Name: "make"},
+					Args: []ast.Expr{
+						&ast.MapType{Key: &ast.Ident{Name: key}, Value: value},
+					},
+				},
+			},
+		}
+	} else {
+		fieldValPrep = &ast.AssignStmt{
+			Tok: token.DEFINE,
+			Lhs: []ast.Expr{&ast.Ident{Name: "fieldValue"}},
+			Rhs: []ast.Expr{
+				&ast.StarExpr{X: &ast.CallExpr{
+					Args: []ast.Expr{&ast.Ident{Name: input.fieldType}},
+					Fun:  &ast.Ident{Name: "new"},
+				}},
+			},
+		}
+	}
+
 	getFieldFromLib := ast.AssignStmt{
 		Tok: token.DEFINE,
 		Lhs: []ast.Expr{
-			&ast.Ident{Name: "fieldValue"},
 			&ast.Ident{Name: LibErrorVariableName},
 		},
 		Rhs: []ast.Expr{
 			&ast.CallExpr{
-				Fun: &ast.IndexExpr{
-					Index: &ast.Ident{Name: input.fieldType},
-					X: &ast.SelectorExpr{
-						X:   &ast.Ident{Name: "lib"},
-						Sel: &ast.Ident{Name: LibraryGetFieldOfType},
-					},
+				Fun: &ast.SelectorExpr{
+					X:   &ast.Ident{Name: "lib"},
+					Sel: &ast.Ident{Name: LibraryGetFieldOfType},
 				},
 				Args: []ast.Expr{
 					&ast.CompositeLit{
@@ -110,6 +157,10 @@ func getGetterDBStmts(fn *ast.FuncDecl, input getDBStmtsParam) ast.IfStmt {
 							},
 						},
 					},
+					&ast.UnaryExpr{
+						Op: token.AND,
+						X:  &ast.Ident{Name: "fieldValue"},
+					},
 				},
 			},
 		}}
@@ -127,8 +178,52 @@ func getGetterDBStmts(fn *ast.FuncDecl, input getDBStmtsParam) ast.IfStmt {
 		},
 	}
 
-	isInitializedCheck.Body.List = []ast.Stmt{&getFieldFromLib, &errorCheck, &fieldAssign}
+	isInitializedCheck.Body.List = []ast.Stmt{fieldValPrep, &getFieldFromLib, &errorCheck, &fieldAssign}
 	return isInitializedCheck
+}
+
+func getValueTypeOfMap(mapType string, mapKey string) (ast.Expr, error) {
+	splitted := strings.Split(mapType, "["+mapKey+"]")
+
+	if len(splitted) > 0 {
+		mapValue := splitted[1]
+
+		if strings.Contains(mapValue, "[]") {
+
+			return &ast.ArrayType{
+				Elt: &ast.Ident{Name: mapValue[2:]},
+			}, nil
+		} else if strings.Contains(mapValue, "map") {
+
+			key, err1 := getKeyTypeOfMap(mapValue)
+			if err1 != nil {
+				return nil, err1
+			}
+			value, err2 := getValueTypeOfMap(mapValue, key)
+			if err2 != nil {
+				return nil, err2
+			}
+
+			return &ast.MapType{
+				Key:   &ast.Ident{Name: key},
+				Value: value,
+			}, nil
+		}
+	}
+
+	return nil, errors.New("error occurred while parsing the field " + mapType)
+}
+
+func getKeyTypeOfMap(mapType string) (string, error) {
+	res := strings.Split(mapType, "[")
+	if len(res) > 0 {
+		keyType := strings.Split(res[1], "]")
+		if keyType != nil {
+			return keyType[0], nil
+		}
+		return "", errors.New("error occurred while parsing the field " + mapType)
+	}
+	return "", errors.New("error occurred while parsing the field " + mapType)
 }
 
 func getReferenceNavigationListDBStmts(fn *ast.FuncDecl) ast.IfStmt {

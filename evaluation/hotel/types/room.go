@@ -27,7 +27,7 @@ func (o Room) GetTypeName() string {
 func (o Room) GetReservations() (map[string][]ReservationInOut, error) {
 	if o.isInitialized {
 		fieldValue := make(map[string][]ReservationInOut)
-		fieldValue, _libError := lib.GetFieldOfType(lib.GetStateParam{Id: o.Id, TypeName: "Room", FieldName: "Reservations"}, &fieldValue)
+		_libError := lib.GetFieldOfType(lib.GetStateParam{Id: o.Id, TypeName: "Room", FieldName: "Reservations"}, &fieldValue)
 		if _libError != nil {
 			return *new(map[string][]ReservationInOut), _libError
 		}

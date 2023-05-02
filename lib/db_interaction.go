@@ -300,9 +300,9 @@ func GetField(param GetStateParam) (interface{}, error) {
 	return nil, err
 }
 
-func GetFieldOfType[N any](param GetStateParam, field *N) (N, error) {
+func GetFieldOfType[N any](param GetStateParam, field *N) error {
 	if err := param.Validate(); err != nil {
-		return *new(N), err
+		return err
 	}
 
 	input := &dynamodb.GetItemInput{
@@ -317,17 +317,17 @@ func GetFieldOfType[N any](param GetStateParam, field *N) (N, error) {
 
 	item, err := dbClient.GetItem(input)
 	if err != nil {
-		return *new(N), err
+		return err
 	}
 
 	if item.Item != nil && item.Item[param.FieldName] != nil &&
 		(item.Item[param.FieldName].NULL == nil ||
 			(item.Item[param.FieldName].NULL != nil && !*item.Item[param.FieldName].NULL)) {
 		err = dynamodbattribute.Unmarshal(item.Item[param.FieldName], &field)
-		return *field, err
+		return err
 	}
 
-	return *field, err
+	return err
 }
 
 func SetField(param SetFieldParam) error {

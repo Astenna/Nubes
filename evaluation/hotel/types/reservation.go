@@ -103,7 +103,7 @@ func ExportReservation(param ReserveParam) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return res.GetId(), err
+	return res.Id, err
 }
 
 func getYearAndMonth(date time.Time) string {
