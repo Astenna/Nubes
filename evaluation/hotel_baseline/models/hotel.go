@@ -25,7 +25,7 @@ type Coordinates struct {
 
 func RecommendHotelsLocation(city string, coordinates Coordinates, count int) ([]Hotel, error) {
 	hotels, err := db.GetItemsByPartitonKey[Hotel](db.HotelTable, "CityName", city)
-	result := make([]Hotel, 0, count)
+	result := make([]Hotel, count)
 
 	if err != nil {
 		return nil, err
@@ -34,17 +34,17 @@ func RecommendHotelsLocation(city string, coordinates Coordinates, count int) ([
 	if len(hotels) <= count {
 		return hotels, err
 	}
-	hotelDists := make([]hotelDist, 0, len(hotels))
+	hotelDists := make([]hotelDist, len(hotels))
 	from := geodist.Coord{Lat: coordinates.Latitude, Lon: coordinates.Longitude}
-	for i, h := range hotels {
+	for i := range hotels {
 
 		to := geodist.Coord{
-			Lat: h.Coordinates.Lat,
-			Lon: h.Coordinates.Lon,
+			Lat: hotels[i].Coordinates.Lat,
+			Lon: hotels[i].Coordinates.Lon,
 		}
 
 		_, km := geodist.HaversineDistance(from, to)
-		hotelDists[i] = hotelDist{hotel: &h, distance: km}
+		hotelDists[i] = hotelDist{hotel: &hotels[i], distance: km}
 	}
 
 	quickSortHotelDist(hotelDists, 0, len(hotelDists))
@@ -55,7 +55,7 @@ func RecommendHotelsLocation(city string, coordinates Coordinates, count int) ([
 	return result, nil
 }
 
-func RecommendHotelsPrice(city string, count int) ([]Hotel, error) {
+func RecommendHotelsRate(city string, count int) ([]Hotel, error) {
 	hotels, err := db.GetItemsByPartitonKey[Hotel](db.HotelTable, "CityName", city)
 
 	if err != nil {
@@ -68,9 +68,9 @@ func RecommendHotelsPrice(city string, count int) ([]Hotel, error) {
 
 	quickSortRate(hotels, 0, len(hotels))
 
-	result := make([]Hotel, 0, count)
+	result := make([]Hotel, count)
 	for i := 0; i < count; i++ {
-		result[i] = hotels[i]
+		result[i] = hotels[len(hotels)-1-i]
 	}
 	return result, nil
 }
@@ -94,7 +94,7 @@ func quickSortHotelDist(arr []hotelDist, from int, to int) {
 func partitionHotelDist(arr []hotelDist, from int, to int) int {
 
 	pivot := arr[from]
-	pivotPos := from - 1
+	pivotPos := from
 
 	for j := from + 1; j < to; j++ {
 		if arr[j].distance < pivot.distance {
@@ -126,7 +126,7 @@ func quickSortRate(arr []Hotel, from int, to int) {
 func partitionRate(arr []Hotel, from int, to int) int {
 
 	pivot := arr[from]
-	pivotPos := from - 1
+	pivotPos := from
 
 	for j := from + 1; j < to; j++ {
 		if arr[j].Rate < pivot.Rate {

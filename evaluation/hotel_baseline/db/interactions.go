@@ -76,7 +76,9 @@ func GetItemsByPartitonKey[T any](tableName, partitionAttribute, partitionValue 
 	}
 
 	parsedItems := make([]T, len(items.Items))
-	err = dynamodbattribute.UnmarshalListOfMaps(items.Items, parsedItems)
+	if len(items.Items) > 0 {
+		err = dynamodbattribute.UnmarshalListOfMaps(items.Items, &parsedItems)
+	}
 	return parsedItems, err
 }
 

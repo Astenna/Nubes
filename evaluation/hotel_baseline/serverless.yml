@@ -51,11 +51,11 @@ functions:
         - bin/recommendHotelsLocation
     maximumRetryAttempts: 0
     maximumEventAge: 60
-  recommendHotelsPrice:
-    name:  recommendHotelsPrice
-    handler: bin/recommendHotelsPrice
+  recommendHotelsRate:
+    name:  recommendHotelsRate
+    handler: bin/recommendHotelsRate
     package:
       include:
-        - bin/recommendHotelsPrice
+        - bin/recommendHotelsRate
     maximumRetryAttempts: 0
     maximumEventAge: 60

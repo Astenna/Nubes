@@ -34,7 +34,7 @@ func (c City) GetHotelsCloseTo(param CloseToParams) ([]Hotel, error) {
 		}
 	}
 	hotels, err := c.Hotels.GetStubs()
-	result := make([]Hotel, 0, param.Count)
+	result := make([]Hotel, param.Count)
 
 	if err != nil {
 		c.invocationDepth--
@@ -45,17 +45,17 @@ func (c City) GetHotelsCloseTo(param CloseToParams) ([]Hotel, error) {
 		c.invocationDepth--
 		return hotels, err
 	}
-	hotelDists := make([]hotelDist, 0, len(hotels))
+	hotelDists := make([]hotelDist, len(hotels))
 	from := geodist.Coord{Lat: param.Latitude, Lon: param.Longitude}
-	for i, h := range hotels {
+	for i := range hotels {
 
 		to := geodist.Coord{
-			Lat: h.Coordinates.Lat,
-			Lon: h.Coordinates.Lon,
+			Lat: hotels[i].Coordinates.Lat,
+			Lon: hotels[i].Coordinates.Lon,
 		}
 
 		_, km := geodist.HaversineDistance(from, to)
-		hotelDists[i] = hotelDist{hotel: &h, distance: km}
+		hotelDists[i] = hotelDist{hotel: &hotels[i], distance: km}
 	}
 
 	quickSortHotelDist(hotelDists, 0, len(hotelDists))
@@ -78,14 +78,14 @@ func (c City) GetHotelsWithBestRates(count int) ([]Hotel, error) {
 		}
 	}
 	hotels, err := c.Hotels.GetStubs()
-	result := make([]Hotel, 0, count)
+	result := make([]Hotel, count)
 
 	if err != nil {
 		c.invocationDepth--
 		return nil, err
 	}
 
-	if len(result) <= count {
+	if len(hotels) <= count {
 		c.invocationDepth--
 		return result, err
 	}
@@ -120,7 +120,7 @@ func quickSortHotelDist(arr []hotelDist, from int, to int) {
 func partitionHotelDist(arr []hotelDist, from int, to int) int {
 
 	pivot := arr[from]
-	pivotPos := from - 1
+	pivotPos := from
 
 	for j := from + 1; j < to; j++ {
 		if arr[j].distance < pivot.distance {
@@ -151,7 +151,7 @@ func quickSortRate(arr []Hotel, from int, to int) {
 func partitionRate(arr []Hotel, from int, to int) int {
 
 	pivot := arr[from]
-	pivotPos := from - 1
+	pivotPos := from
 
 	for j := from + 1; j < to; j++ {
 		if arr[j].Rate < pivot.Rate {

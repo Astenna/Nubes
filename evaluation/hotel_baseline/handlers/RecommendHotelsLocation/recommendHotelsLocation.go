@@ -6,12 +6,13 @@ import (
 )
 
 type RecommendHotelsParam struct {
-	Count int
-	City  string
+	Count       int
+	City        string
+	Coordinates models.Coordinates
 }
 
 func RecommendHotelsLocation(params RecommendHotelsParam) ([]models.Hotel, error) {
-	return models.RecommendHotelsPrice(params.City, params.Count)
+	return models.RecommendHotelsLocation(params.City, params.Coordinates, params.Count)
 }
 
 func main() {
