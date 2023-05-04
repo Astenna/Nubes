@@ -52,10 +52,10 @@ func ReserveRoom(param ReserveParam) error {
 
 	// STEP 2: create reservation
 	err = db.Insert(Reservation{
-		CityHotelNameRoomId: GetReservationPK(param.CityName, param.HotelName, param.RoomId),
-		DateIn:              param.DateIn,
-		DateOut:             param.DateOut,
-		UserEmail:           param.UserEmail,
+		CityHotelRoomId: GetReservationPK(param.CityName, param.HotelName, param.RoomId),
+		DateIn:          param.DateIn,
+		DateOut:         param.DateOut,
+		UserEmail:       param.UserEmail,
 	}, db.ReservationTable)
 	return err
 }

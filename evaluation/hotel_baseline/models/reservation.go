@@ -5,8 +5,8 @@ import (
 )
 
 type Reservation struct {
-	CityHotelNameRoomId string // CityName_HotelName_RoomId
-	DateIn              time.Time
-	DateOut             time.Time
-	UserEmail           string
+	CityHotelRoomId string // CityName_HotelName_RoomId
+	DateIn          time.Time
+	DateOut         time.Time
+	UserEmail       string
 }

@@ -9,9 +9,10 @@ import (
 )
 
 type Reservation struct {
-	Id              string `nubes:"id,readonly" dynamodbav:"Id"` // Id: HotelId_dateIn (dateIn in format "2006-01-02")
+	Id              string
 	Room            lib.Reference[Room]
 	User            lib.Reference[User] `dynamodbav:",omitempty"`
+	DateIn          time.Time
 	DateOut         time.Time
 	isInitialized   bool
 	invocationDepth int
@@ -25,7 +26,6 @@ type ReserveParam struct {
 	DateIn                time.Time
 	DateOut               time.Time
 	User                  lib.Reference[User]
-	HotelId               string
 	RoomId                string
 	SkipAvailabilityCheck bool
 }
@@ -95,9 +95,9 @@ func ExportReservation(param ReserveParam) (string, error) {
 
 	// STEP 3: insert new reservation
 	res, err := lib.Export[Reservation](Reservation{
-		Id:      param.HotelId + "_" + param.DateIn.Format("2006-01-02"),
 		Room:    lib.Reference[Room](room.Id),
 		User:    param.User,
+		DateIn:  param.DateIn,
 		DateOut: param.DateOut,
 	})
 	if err != nil {
@@ -110,9 +110,6 @@ func getYearAndMonth(date time.Time) string {
 	return fmt.Sprintf("%d-%02d", date.Year(), date.Month())
 }
 
-func (receiver Reservation) GetId() string {
-	return receiver.Id
-}
 func (receiver *Reservation) Init() {
 	receiver.isInitialized = true
 }

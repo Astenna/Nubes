@@ -34,12 +34,12 @@ func InitializeTables() {
 		},
 		{
 			TableName:    db.RoomTable,
-			PartitionKey: "HotelName",
+			PartitionKey: "CityHotelName",
 			SortKey:      "RoomId",
 		},
 		{
 			TableName:    db.ReservationTable,
-			PartitionKey: "RoomId",
+			PartitionKey: "CityHotelRoomId",
 			SortKey:      "DateIn",
 			Indexes: []IndexDefinition{
 				{

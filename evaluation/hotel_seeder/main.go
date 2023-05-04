@@ -14,7 +14,7 @@ import (
 
 const UserCount = 50
 const CitiesCount = 5
-const HotelsPerCity = 25
+const HotelsPerCity = 20
 const RoomsPerHotel = 5
 
 const CityPrefix = "Milano_"
@@ -75,7 +75,7 @@ func SeedHotels() {
 			// baseline
 			hotelb := models.Hotel{
 				CityName:   CityPrefix + citySuffix,
-				HotelName:  HotelPrefix + hotelSuffix + "_" + CityPrefix,
+				HotelName:  HotelPrefix + hotelSuffix,
 				Street:     "AwesomeStreet" + hotelSuffix,
 				PostalCode: hotelSuffix,
 				Coordinates: geodist.Coord{
@@ -126,10 +126,10 @@ func SeedRoomsAndReservations() {
 					dateIn := time.Date(ReservationYear, 1, k*8, 0, 0, 0, 0, time.UTC)
 
 					reservationb := models.Reservation{
-						CityHotelNameRoomId: models.GetReservationPK(CityPrefix+citySuffix, HotelPrefix+hotelSuffix, "Room_"+roomSuffix),
-						DateIn:              dateIn,
-						DateOut:             dateIn.AddDate(0, 0, int(k%8)),
-						UserEmail:           "Email_" + strconv.Itoa(int(k%UserCount)),
+						CityHotelRoomId: models.GetReservationPK(CityPrefix+citySuffix, HotelPrefix+hotelSuffix, "Room_"+roomSuffix),
+						DateIn:          dateIn,
+						DateOut:         dateIn.AddDate(0, 0, int(k%8)),
+						UserEmail:       "Email_" + strconv.Itoa(int(k%UserCount)),
 					}
 					insert(reservationb, db.ReservationTable)
 				}
@@ -148,13 +148,11 @@ func SeedRoomsAndReservations() {
 				insert(room, room.GetTypeName())
 				for k := 0; k < ReservationsPerRoom; k++ {
 					dateIn := time.Date(ReservationYear, 1, k*8, 0, 0, 0, 0, time.UTC)
-					hotelId := HotelPrefix + hotelSuffix
 
 					param := types.ReserveParam{
 						DateIn:                dateIn,
 						DateOut:               dateIn.AddDate(0, 0, int(k%8)),
 						User:                  lib.Reference[types.User]("Email_" + strconv.Itoa(int(k%UserCount))),
-						HotelId:               hotelId,
 						RoomId:                room.Id,
 						SkipAvailabilityCheck: true,
 					}
