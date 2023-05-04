@@ -42,6 +42,7 @@ type MethodDefinition struct {
 	OptionalReturnType      string
 	OptionalReturnTypeUpper string
 	IsReturnTypeNobject     bool
+	IsReturnTypeList        bool
 	IsInputParamNobject     bool
 }
 
@@ -89,8 +90,10 @@ func (t *ClientTypesParser) detectAndSetNobjectsReturnTypes() {
 
 			if isReturnTypeDefined(function) && isNobject(function.OptionalReturnType, t.DefinedTypes) {
 				typeDefinition.MemberFunctions[i].IsReturnTypeNobject = true
-				typeDefinition.MemberFunctions[i].OptionalReturnTypeUpper = function.OptionalReturnType
-				typeDefinition.MemberFunctions[i].OptionalReturnType = lowerCasedFirstChar(function.OptionalReturnType)
+				typeDefinition.MemberFunctions[i].OptionalReturnType = function.OptionalReturnType + "Stub"
+			}
+			if isReturnTypeDefined(function) && isReturnTypeList(function.OptionalReturnType) {
+				typeDefinition.MemberFunctions[i].IsReturnTypeList = true
 			}
 			if isOptionalParamNobject(function, t.DefinedTypes) {
 				typeDefinition.MemberFunctions[i].IsInputParamNobject = true
@@ -166,7 +169,12 @@ func isReturnTypeDefined(f MethodDefinition) bool {
 }
 
 func isNobject(typeName string, defTypes map[string]*StructTypeDefinition) bool {
-	return defTypes[typeName] != nil && defTypes[typeName].NobjectImplementation != ""
+	trimmedListPrefix := strings.TrimPrefix(typeName, "[]")
+	return defTypes[trimmedListPrefix] != nil && defTypes[trimmedListPrefix].NobjectImplementation != ""
+}
+
+func isReturnTypeList(typeName string) bool {
+	return strings.HasPrefix(typeName, "[]")
 }
 
 func getFunctionParm(params *ast.FieldList, definedStructs map[string]*StructTypeDefinition) (string, error) {

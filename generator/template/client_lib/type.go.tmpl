@@ -347,9 +347,9 @@ func (s {{$.TypeNameLower}}) Set{{.FieldNameUpper}}(newValue {{if .IsReference}}
 // (STATE-CHANGING) METHODS
 
 {{range .MemberFunctions}}
-func ({{.ReceiverName}} {{$.TypeNameLower}}) {{.FuncName}}({{if .InputParamType}}input {{.InputParamType}}{{if .IsInputParamNobject}}Stub{{end}}{{end}}) {{if .OptionalReturnType}}({{if .IsReturnTypeNobject}}{{.OptionalReturnTypeUpper}}Stub{{else}}{{.OptionalReturnType}}{{end}}, error) {{else}} error {{end}} {
+func ({{.ReceiverName}} {{$.TypeNameLower}}) {{.FuncName}}({{if .InputParamType}}input {{.InputParamType}}{{if .IsInputParamNobject}}Stub{{end}}{{end}}) {{if .OptionalReturnType}}({{.OptionalReturnType}}, error) {{else}} error {{end}} {
 	{{if.ReceiverName}} if {{.ReceiverName}}.id == "" {
-		return {{if .OptionalReturnType}} *new({{if .IsReturnTypeNobject}}{{.OptionalReturnTypeUpper}}Stub{{else}}{{.OptionalReturnType}}{{end}}), {{end}} errors.New("id of the type not set, use  Load{{$.TypeNameOrginalCase}} or Export{{$.TypeNameOrginalCase}} to create new instance of the type")
+		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} errors.New("id of the type not set, use  Load{{$.TypeNameOrginalCase}} or Export{{$.TypeNameOrginalCase}} to create new instance of the type")
 	}{{end}}
 	
 	{{if or .ReceiverName .InputParamType}}params := new(lib.HandlerParameters) {{end}}
@@ -358,27 +358,25 @@ func ({{.ReceiverName}} {{$.TypeNameLower}}) {{.FuncName}}({{if .InputParamType}
 
 	{{if or .ReceiverName .InputParamType}} jsonParam, err := json.Marshal(params)
 	if err != nil {
-		return {{if .OptionalReturnType}} *new({{if .IsReturnTypeNobject}}{{.OptionalReturnTypeUpper}}Stub{{else}}{{.OptionalReturnType}}{{end}}), {{end}} err
+		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} err
 	} {{end}}
 
 	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("{{$.TypeNameOrginalCase}}{{.FuncName}}") {{if or .ReceiverName .InputParamType}}, Payload: jsonParam {{end}}})
 	if _err != nil {
-		return {{if .OptionalReturnType}} *new({{if .IsReturnTypeNobject}}{{.OptionalReturnTypeUpper}}Stub{{else}}{{.OptionalReturnType}}{{end}}), {{end}} _err
+		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} _err
 	}
 	if out.FunctionError != nil {
-		return {{if .OptionalReturnType}} *new({{if .IsReturnTypeNobject}}{{.OptionalReturnTypeUpper}}Stub{{else}}{{.OptionalReturnType}}{{end}}), {{end}} fmt.Errorf(string(out.Payload[:]))
+		return {{if .OptionalReturnType}} *new({{.OptionalReturnType}}), {{end}} fmt.Errorf(string(out.Payload[:]))
 	}
 
     {{if .OptionalReturnType}}
-	{{if .IsReturnTypeNobject}} result := new({{.OptionalReturnTypeUpper}}Stub)
-	{{else}} result := new({{.OptionalReturnType}})
-	{{end}}
-	_err = json.Unmarshal(out.Payload, result)
+	result := {{if .IsReturnTypeList}} make({{.OptionalReturnType}}, 0) {{else}}  new({{.OptionalReturnType}}) {{end}}
+	_err = json.Unmarshal(out.Payload, {{if .IsReturnTypeList}}&{{end}}result)
 	if _err != nil {
-		return *new({{if .IsReturnTypeNobject}}{{.OptionalReturnTypeUpper}}Stub{{else}}{{.OptionalReturnType}}{{end}}), err
+		return *new({{.OptionalReturnType}}), err
 	}{{end}}
 	
-	return {{if .OptionalReturnType}}*result,{{end}} _err
+	return {{if .OptionalReturnType}} {{if not .IsReturnTypeList}}*{{end}}result,{{end}} _err
 } 
 {{end}}
 {{end}} 
