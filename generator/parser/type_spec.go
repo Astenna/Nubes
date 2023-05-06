@@ -7,6 +7,7 @@ import (
 	"go/parser"
 	"go/printer"
 	"go/token"
+	"go/types"
 	"os"
 	"strings"
 
@@ -128,7 +129,7 @@ func (t *TypeSpecParser) detectNobjectTypesAndFunctions(moduleName string) {
 
 					// ignore unexported functions (i.e. starting with lowercase letter)
 					if fn.Name.IsExported() {
-						if retParamsValidator.Valid(fn) {
+						if areReturnParamsValid(fn) {
 							t.detectedFunctions[path] = append(t.detectedFunctions[path], detectedFunction{
 								Function: fn,
 								Imports:  f.Imports,
@@ -191,4 +192,33 @@ func (t TypeSpecParser) saveChangesInAst() {
 			}
 		}
 	}
+}
+
+// areReturnParamsValid returns true if the number of parameters is equal to two or one,
+// If exactly two return parameters are defined, then the second paramater
+// must be an error type.
+// If exactly one return parameter is defined, then the parameter must be
+// an error type.
+// If the above conditions do not hold, it prints relevant error message
+// and returns false.
+func areReturnParamsValid(f *ast.FuncDecl) bool {
+
+	if f.Type.Results == nil || f.Type.Results.List == nil || !isErrorTypeReturned(f) {
+		fmt.Println("error type must be defined as the last return type from type's method. Handler generation for " + f.Name.Name + " skipped")
+		return false
+	}
+	if len(f.Type.Results.List) > 2 {
+		fmt.Println("maximum allowed number of non-error return parameters is 1. Handler generation for " + f.Name.Name + " skipped")
+		return false
+	}
+
+	return true
+}
+
+func isErrorTypeReturned(f *ast.FuncDecl) bool {
+	return len(f.Type.Results.List) > 0 && types.ExprString(f.Type.Results.List[len(f.Type.Results.List)-1].Type) == "error"
+}
+
+func getFunctionReceiverTypeAsString(fieldList *ast.FieldList) string {
+	return strings.TrimPrefix(types.ExprString(fieldList.List[0].Type), "*")
 }

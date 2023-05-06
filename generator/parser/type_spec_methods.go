@@ -34,14 +34,15 @@ func (t TypeSpecParser) modifyAstMethods() {
 								t.fileChanged[path] = true
 							}
 
-							// add invocation of a function that save changes in DB
-							// only if the error returned is nil
 							astutil.Apply(fn, nil, func(c *astutil.Cursor) bool {
 								n := c.Node()
 
 								if x, ok := n.(*ast.ReturnStmt); ok {
 
-									if isErrorToBeReturnedNil(*x) {
+									// add invocation of a function that save changes in DB
+									// (if function uses a pointer receiver - i.e. is not readonly)
+									// decrement invocationDepth
+									if !isFuncReadonly(fn.Recv) && isErrorToBeReturnedNil(*x) {
 										c.InsertBefore(invokeSaveChangesMethodForType(fn, t.Output))
 										if len(x.Results) > 1 {
 											ident := x.Results[1].(*ast.Ident)
@@ -67,6 +68,14 @@ func (t TypeSpecParser) modifyAstMethods() {
 			}
 		}
 	}
+}
+
+func isFuncReadonly(fields *ast.FieldList) bool {
+	return fields.List == nil || fields.List[0].Names == nil || !strings.Contains(fields.List[0].Names[0].Name, "*")
+}
+
+func isFunctionStateless(fields *ast.FieldList) bool {
+	return fields.List == nil || fields.List[0].Names == nil || fields.List[0].Names[0].Name == ""
 }
 
 func isInvocationDepthDecreasedBefore(c *astutil.Cursor) bool {

@@ -76,9 +76,8 @@ func (c City) GetHotelsCloseTo(param CloseToParams) ([]Hotel, error) {
 	for i := 0; i < param.Count; i++ {
 		result[i] = *hotelDists[i].hotel
 	}
-	_libUpsertError := c.saveChangesIfInitialized()
 	c.invocationDepth--
-	return result, _libUpsertError
+	return result, nil
 }
 
 func (c City) GetHotelsWithBestRates(count int) ([]Hotel, error) {
@@ -108,10 +107,9 @@ func (c City) GetHotelsWithBestRates(count int) ([]Hotel, error) {
 	for i := 0; i < count; i++ {
 		result[i] = hotels[len(hotels)-i-1]
 	}
-	_libUpsertError := c.saveChangesIfInitialized()
 	c.invocationDepth--
 
-	return result, _libUpsertError
+	return result, nil
 }
 
 type hotelDist struct {

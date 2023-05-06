@@ -141,7 +141,7 @@ func parseFields(field *ast.Field, fieldType string, structDef *StructTypeDefini
 		newFieldDefinition.IsReference = true
 	}
 
-	if field.Names[0].Name == "id" || (field.Tag != nil && isReadonly(field)) {
+	if field.Names[0].Name == "id" || (field.Tag != nil && isFieldReadonly(field)) {
 		newFieldDefinition.IsReadonly = true
 	}
 	if field.Tag != nil {

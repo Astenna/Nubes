@@ -1,9 +1,12 @@
 package parser
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"go/ast"
+	"go/printer"
+	"go/token"
 	"go/types"
 	"strings"
 )
@@ -72,6 +75,15 @@ func (t *ClientTypesParser) detectFuncs() {
 			}
 		}
 	}
+}
+
+func getFunctionBodyAsString(fset *token.FileSet, body *ast.BlockStmt) (string, error) {
+	var buf bytes.Buffer
+	err := printer.Fprint(&buf, fset, body)
+	if err != nil {
+		return "", fmt.Errorf("error occurred when parsing the function body")
+	}
+	return buf.String(), nil
 }
 
 func parseMethod(fn *ast.FuncDecl) (*MethodDefinition, error) {

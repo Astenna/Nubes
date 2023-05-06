@@ -12,7 +12,7 @@ import (
 )
 
 func ExportHandler(input aws.JSONValue) (string, error) {
-	if input["TypeName"] == "" {
+	if input["TypeName"] == nil || input["TypeName"] == "" {
 		return "", fmt.Errorf("missing TypeName in HandlerParameters")
 	}
 

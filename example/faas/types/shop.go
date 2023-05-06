@@ -39,6 +39,7 @@ func (s Shop) GetNearestOwnerCopy(point Coordinates) (User, error) {
 			return *new(User), _libError
 		}
 	}
+
 	owners, err := s.Owners.GetStubs()
 	if err != nil {
 		s.invocationDepth--
@@ -62,10 +63,9 @@ func (s Shop) GetNearestOwnerCopy(point Coordinates) (User, error) {
 			closestOwner = owner
 		}
 	}
-	_libUpsertError := s.saveChangesIfInitialized()
 	s.invocationDepth--
 
-	return closestOwner, _libUpsertError
+	return closestOwner, nil
 }
 
 // Example of a method returning a Nobject's reference
@@ -101,10 +101,9 @@ func (s Shop) GetNearestOwnerReference(point Coordinates) (lib.Reference[User], 
 			closestOwner = owner
 		}
 	}
-	_libUpsertError := s.saveChangesIfInitialized()
 	s.invocationDepth--
 
-	return *lib.NewReference[User](closestOwner.Email), _libUpsertError
+	return *lib.NewReference[User](closestOwner.Email), nil
 }
 
 // DeleteShop is an example of custom delete implementation

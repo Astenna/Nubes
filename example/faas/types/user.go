@@ -99,13 +99,11 @@ func (u User) VerifyPassword(password string) (bool, error) {
 	}
 
 	if u.Password == password {
-		_libUpsertError := u.saveChangesIfInitialized()
 		u.invocationDepth--
-		return true, _libUpsertError
+		return true, nil
 	}
-	_libUpsertError := u.saveChangesIfInitialized()
 	u.invocationDepth--
-	return false, _libUpsertError
+	return false, nil
 }
 
 func (receiver *User) Init() {
