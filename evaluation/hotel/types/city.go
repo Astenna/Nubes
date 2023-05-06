@@ -18,6 +18,19 @@ func (o City) GetTypeName() string {
 	return "City"
 }
 
+func (o City) GetAllHotels() ([]Hotel, error) {
+	o.invocationDepth++
+	if o.isInitialized && o.invocationDepth == 1 {
+		_libError := lib.GetStub(o.CityName, &o)
+		if _libError != nil {
+			o.invocationDepth--
+			return *new([]Hotel), _libError
+		}
+	}
+	o.invocationDepth--
+	return o.Hotels.GetStubs()
+}
+
 type CloseToParams struct {
 	Longitude float64
 	Latitude  float64

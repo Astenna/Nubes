@@ -84,6 +84,24 @@ functions:
     maximumEventAge: 60
   
 
+  UserVerifyPassword:
+    name:  UserVerifyPassword
+    handler: bin/UserVerifyPassword
+    package:
+      include:
+        - bin/UserVerifyPassword
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
+  CityGetAllHotels:
+    name:  CityGetAllHotels
+    handler: bin/CityGetAllHotels
+    package:
+      include:
+        - bin/CityGetAllHotels
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
   CityGetHotelsCloseTo:
     name:  CityGetHotelsCloseTo
     handler: bin/CityGetHotelsCloseTo
@@ -99,15 +117,6 @@ functions:
     package:
       include:
         - bin/CityGetHotelsWithBestRates
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
-  UserVerifyPassword:
-    name:  UserVerifyPassword
-    handler: bin/UserVerifyPassword
-    package:
-      include:
-        - bin/UserVerifyPassword
     maximumRetryAttempts: 0
     maximumEventAge: 60
 

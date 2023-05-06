@@ -5,7 +5,7 @@ import (
 )
 
 type Room struct {
-	Id              string
+	Id              string `nubes:"Id" dynamodbav:"Id"`
 	Name            string
 	Description     string
 	Hotel           lib.Reference[Hotel] `dynamodbav:",omitempty"`
@@ -58,4 +58,7 @@ func (receiver *Room) saveChangesIfInitialized() error {
 		}
 	}
 	return nil
+}
+func (receiver Room) GetId() string {
+	return receiver.Id
 }

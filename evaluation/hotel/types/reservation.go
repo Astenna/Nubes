@@ -23,15 +23,22 @@ func (o Reservation) GetTypeName() string {
 }
 
 type ReserveParam struct {
-	DateIn                time.Time
-	DateOut               time.Time
+	// date in format YYYY-MM-DD
+	DateIn                string
+	DateOut               string
 	User                  lib.Reference[User]
 	RoomId                string
 	SkipAvailabilityCheck bool
 }
 
 func ExportReservation(param ReserveParam) (string, error) {
-	if param.DateOut.Before(param.DateIn) {
+	dateOut, err1 := time.Parse("2006-01-02", param.DateOut)
+	dateIn, err2 := time.Parse("2006-01-02", param.DateIn)
+	if err1 != nil || err2 != nil {
+		return "", errors.New("failed to parse DateIn or DateOut, the dates must be specified as strings in format YYYY-MM-DD")
+	}
+
+	if dateOut.Before(dateIn) {
 		return "", fmt.Errorf("dateOut can not be before DateIn")
 	}
 
@@ -51,12 +58,12 @@ func ExportReservation(param ReserveParam) (string, error) {
 	if !param.SkipAvailabilityCheck {
 
 		isAlreadyBooked := false
-		for tempStart := param.DateIn; tempStart.Before(param.DateOut) && !isAlreadyBooked; {
+		for tempStart := dateIn; tempStart.Before(dateOut) && !isAlreadyBooked; {
 			inKey := getYearAndMonth(tempStart)
 			reservations := roomReservations[inKey]
-			tempOutDay := param.DateOut.Day()
-			if tempStart.Month() != param.DateOut.Month() {
-				tempOutDay = param.DateOut.AddDate(0, 1, -tempOutDay).Day() + tempOutDay
+			tempOutDay := dateOut.Day()
+			if tempStart.Month() != dateOut.Month() {
+				tempOutDay = dateOut.AddDate(0, 1, -tempOutDay).Day() + tempOutDay
 			}
 
 			for _, r := range reservations {
@@ -75,11 +82,11 @@ func ExportReservation(param ReserveParam) (string, error) {
 	}
 
 	// STEP 2: insert reservation info to the auxiliary struct
-	for tempStart := param.DateIn; tempStart.Before(param.DateOut); {
+	for tempStart := dateIn; tempStart.Before(dateOut); {
 		inKey := getYearAndMonth(tempStart)
-		tempOutDay := param.DateOut.Day()
-		if tempStart.Month() != param.DateOut.Month() {
-			tempOutDay = param.DateOut.AddDate(0, 1, -tempOutDay).Day() + tempOutDay
+		tempOutDay := dateOut.Day()
+		if tempStart.Month() != dateOut.Month() {
+			tempOutDay = dateOut.AddDate(0, 1, -tempOutDay).Day() + tempOutDay
 		}
 
 		if roomReservations[inKey] == nil {
@@ -97,8 +104,8 @@ func ExportReservation(param ReserveParam) (string, error) {
 	res, err := lib.Export[Reservation](Reservation{
 		Room:    lib.Reference[Room](room.Id),
 		User:    param.User,
-		DateIn:  param.DateIn,
-		DateOut: param.DateOut,
+		DateIn:  dateIn,
+		DateOut: dateOut,
 	})
 	if err != nil {
 		return "", err

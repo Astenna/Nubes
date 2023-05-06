@@ -8,7 +8,6 @@ import (
 	"github.com/Astenna/Nubes/evaluation/hotel_baseline/db"
 	"github.com/Astenna/Nubes/evaluation/hotel_baseline/models"
 	"github.com/Astenna/Nubes/lib"
-	"github.com/google/uuid"
 	"github.com/jftuga/geodist"
 )
 
@@ -16,9 +15,10 @@ const UserCount = 50
 const CitiesCount = 5
 const HotelsPerCity = 20
 const RoomsPerHotel = 5
+const ReservationsPerRoom = 40
 
-const CityPrefix = "Milano_"
-const HotelPrefix = "Bruschetti_"
+const CityPrefix = "Milano"
+const HotelPrefix = "Bruschetti"
 const ReservationYear = 2023
 
 func SeedUsers() {
@@ -27,18 +27,18 @@ func SeedUsers() {
 		suffix := strconv.Itoa(i)
 		// baseline
 		userb := models.User{
-			Email:     "Email_" + suffix,
-			FirstName: "Cornell_" + suffix,
-			LastName:  "Baker_" + suffix,
-			Password:  "Password_" + suffix,
+			Email:     "Email" + suffix,
+			FirstName: "Cornell" + suffix,
+			LastName:  "Baker" + suffix,
+			Password:  "Password" + suffix,
 		}
 		insert(userb, db.UserTable)
 		// nubes
 		user := types.User{
-			FirstName: "Cornell_" + suffix,
-			LastName:  "Baker_" + suffix,
-			Email:     "Email_" + suffix,
-			Password:  "Password_" + suffix,
+			FirstName: "Cornell" + suffix,
+			LastName:  "Baker" + suffix,
+			Email:     "Email" + suffix,
+			Password:  "Password" + suffix,
 		}
 		insert(user, user.GetTypeName())
 	}
@@ -87,7 +87,7 @@ func SeedHotels() {
 			insert(hotelb, db.HotelTable)
 			// nubes
 			hotel := types.Hotel{
-				HName:      HotelPrefix + hotelSuffix,
+				HName:      CityPrefix + citySuffix + "_" + HotelPrefix + hotelSuffix,
 				Street:     "AwesomeStreet" + hotelSuffix,
 				PostalCode: hotelSuffix,
 				Coordinates: geodist.Coord{
@@ -103,7 +103,6 @@ func SeedHotels() {
 }
 
 func SeedRoomsAndReservations() {
-	const ReservationsPerRoom = 40
 
 	for c := 0; c < CitiesCount; c++ {
 		citySuffix := strconv.Itoa(c)
@@ -116,8 +115,8 @@ func SeedRoomsAndReservations() {
 				// baseline
 				roomb := models.Room{
 					CityHotelName: CityPrefix + citySuffix + "_" + HotelPrefix + hotelSuffix,
-					RoomId:        "Room_" + roomSuffix,
-					Name:          "Room_" + roomSuffix,
+					RoomId:        "Room" + roomSuffix,
+					Name:          "Room" + roomSuffix,
 					Description:   `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur mauris mi, consequat quis dapibus eu, ullamcorper non metus. Suspendisse sit amet faucibus nisi. Nullam pharetra libero ut dui facilisis semper.`,
 					Price:         float32(i) + 1,
 				}
@@ -126,7 +125,7 @@ func SeedRoomsAndReservations() {
 					dateIn := time.Date(ReservationYear, 1, k*8, 0, 0, 0, 0, time.UTC)
 
 					reservationb := models.Reservation{
-						CityHotelRoomId: models.GetReservationPK(CityPrefix+citySuffix, HotelPrefix+hotelSuffix, "Room_"+roomSuffix),
+						CityHotelRoomId: models.GetReservationPK(CityPrefix+citySuffix, HotelPrefix+hotelSuffix, "Room"+roomSuffix),
 						DateIn:          dateIn,
 						DateOut:         dateIn.AddDate(0, 0, int(k%8)),
 						UserEmail:       "Email_" + strconv.Itoa(int(k%UserCount)),
@@ -137,8 +136,8 @@ func SeedRoomsAndReservations() {
 
 				// nubes
 				room := types.Room{
-					Id:           uuid.New().String(),
-					Name:         "Room_" + roomSuffix,
+					Id:           CityPrefix + citySuffix + "_" + HotelPrefix + hotelSuffix + "_Room" + roomSuffix,
+					Name:         "Room" + roomSuffix,
 					Description:  `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur mauris mi, consequat quis dapibus eu, ullamcorper non metus. Suspendisse sit amet faucibus nisi. Nullam pharetra libero ut dui facilisis semper.`,
 					Hotel:        lib.Reference[types.Hotel](HotelPrefix + hotelSuffix),
 					Reservations: map[string][]types.ReservationInOut{},
@@ -150,9 +149,9 @@ func SeedRoomsAndReservations() {
 					dateIn := time.Date(ReservationYear, 1, k*8, 0, 0, 0, 0, time.UTC)
 
 					param := types.ReserveParam{
-						DateIn:                dateIn,
-						DateOut:               dateIn.AddDate(0, 0, int(k%8)),
-						User:                  lib.Reference[types.User]("Email_" + strconv.Itoa(int(k%UserCount))),
+						DateIn:                dateIn.Format("2006-01-02"),
+						DateOut:               dateIn.AddDate(0, 0, int(k%8)).Format("2006-01-02"),
+						User:                  lib.Reference[types.User]("Email" + strconv.Itoa(int(k%UserCount))),
 						RoomId:                room.Id,
 						SkipAvailabilityCheck: true,
 					}
