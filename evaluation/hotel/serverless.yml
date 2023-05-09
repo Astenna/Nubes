@@ -15,6 +15,7 @@ provider:
   iamRoleStatements:
     - Effect: Allow
       Action:
+        - "lambda:*"
         - "dynamodb:*"
       Resource:
         - "*"
@@ -84,15 +85,6 @@ functions:
     maximumEventAge: 60
   
 
-  UserVerifyPassword:
-    name:  UserVerifyPassword
-    handler: bin/UserVerifyPassword
-    package:
-      include:
-        - bin/UserVerifyPassword
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
   CityGetAllHotels:
     name:  CityGetAllHotels
     handler: bin/CityGetAllHotels
@@ -120,3 +112,20 @@ functions:
     maximumRetryAttempts: 0
     maximumEventAge: 60
 
+  UserVerifyPassword:
+    name:  UserVerifyPassword
+    handler: bin/UserVerifyPassword
+    package:
+      include:
+        - bin/UserVerifyPassword
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
+  Gateway:
+    name:  Gateway
+    handler: bin/Gateway
+    package:
+      include:
+        - bin/Gateway
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
