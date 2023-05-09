@@ -109,9 +109,9 @@ func (g GetItemBySortKey) Verify() error {
 	return nil
 }
 
-func GetItemBeforeSortKey[T any](param GetItemBySortKey) (T, error) {
+func GetItemBeforeSortKey[T any](param GetItemBySortKey) (*T, error) {
 	if err := param.Verify(); err != nil {
-		return *new(T), err
+		return nil, err
 	}
 
 	pkKeyCondition := expression.Key(param.PkName).
@@ -124,7 +124,7 @@ func GetItemBeforeSortKey[T any](param GetItemBySortKey) (T, error) {
 		Build()
 	if errExpression != nil {
 		fmt.Println("error: creating dynamoDB expression ", errExpression)
-		return *new(T), errExpression
+		return nil, errExpression
 	}
 
 	queryInput := &dynamodb.QueryInput{
@@ -138,17 +138,20 @@ func GetItemBeforeSortKey[T any](param GetItemBySortKey) (T, error) {
 
 	items, err := DbClient.Query(queryInput)
 	if err != nil {
-		return *new(T), err
+		return nil, err
 	}
 
-	result := new(T)
-	err = dynamodbattribute.UnmarshalMap(items.Items[0], result)
-	return *result, err
+	if len(items.Items) > 0 {
+		result := new(T)
+		err = dynamodbattribute.UnmarshalMap(items.Items[0], result)
+		return result, err
+	}
+	return nil, err
 }
 
-func GetItemAfterSortKey[T any](param GetItemBySortKey) (T, error) {
+func GetItemAfterSortKey[T any](param GetItemBySortKey) (*T, error) {
 	if err := param.Verify(); err != nil {
-		return *new(T), err
+		return nil, err
 	}
 
 	pkKeyCondition := expression.Key(param.PkName).
@@ -161,7 +164,7 @@ func GetItemAfterSortKey[T any](param GetItemBySortKey) (T, error) {
 		Build()
 	if errExpression != nil {
 		fmt.Println("error: creating dynamoDB expression ", errExpression)
-		return *new(T), errExpression
+		return nil, errExpression
 	}
 
 	queryInput := &dynamodb.QueryInput{
@@ -174,12 +177,15 @@ func GetItemAfterSortKey[T any](param GetItemBySortKey) (T, error) {
 
 	items, err := DbClient.Query(queryInput)
 	if err != nil {
-		return *new(T), err
+		return nil, err
 	}
 
-	result := new(T)
-	err = dynamodbattribute.UnmarshalMap(items.Items[0], result)
-	return *result, err
+	if len(items.Items) > 0 {
+		result := new(T)
+		err = dynamodbattribute.UnmarshalMap(items.Items[0], result)
+		return result, err
+	}
+	return nil, err
 }
 
 func Insert(toInsert any, tableName string) error {

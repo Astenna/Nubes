@@ -24,10 +24,10 @@ local function login()
     local id = math.random(0, max_user_suffix)
     local method = "GET"
     local param = {
-        FunctionName = "UserVerifyPassword",
+        FunctionName = "login",
         Input = {
-            Id = email_prefix .. tostring(id),
-            Parameter = "Password" .. tostring(id)
+            Email = email_prefix .. tostring(id),
+            Password = "Password" .. tostring(id)
         }
     }
     local body = JSON:encode(param)
@@ -47,20 +47,20 @@ local function recommend()
     if recommend_rate == 0 then
         path = gateway
         param = {
-            FunctionName = "CityGetHotelsWithBestRates",
+            FunctionName = "recommendHotelsRate",
             Input = {
-                Id = "Milano" .. tostring(city_id),
-                Parameter =  6
+                City = "Milano" .. tostring(city_id),
+                Count =  6
             }
         }
     else
         path = gateway
         param = {
-            FunctionName = "CityGetHotelsCloseTo",
+            FunctionName = "recommendHotelsLocation",
             Input = {
-                Id = "Milano" .. tostring(city_id),
-                Parameter = { 
-                    Count = 6,
+                City = "Milano" .. tostring(city_id),
+                Count = 6,
+                Coordinates = { 
                     Longitude = (-1)*math.random(0, 90) + math.random(0, 89) + math.random(),
                     Latitude =  (-1)*math.random(0, 180) + math.random(0, 179) + math.random()
                 }
@@ -79,10 +79,8 @@ local function search_hotel()
     local city_id = math.random(0, max_city_suffix)
     local method = "GET"
     local param = {
-        FunctionName = "CityGetAllHotels",
-        Input = {
-            Id = "Milano" .. tostring(city_id)
-        }
+        FunctionName = "getHotelsInCity",
+        Input = "Milano" .. tostring(city_id)
     }
     local body = JSON:encode(param)
     local headers = {}
@@ -174,15 +172,14 @@ local function reserve()
 
     local method = "GET"
     local param = {
-        FunctionName = "Export",
+        FunctionName = "reserveRoom",
         Input = {
-            TypeName = "Reservation",
-            Parameter = {
-                DateIn = date1,
-                DateOut = date2,
-                User = email_prefix .. tostring(email_id),
-                RoomId = city_prefix .. tostring(city_id) .. "_" .. hotel_prefix .. tostring(hotel_id) .. "_" .. "Room" .. tostring(room_id)
-            }
+            DateIn = date1,
+            DateOut = date2,
+            UserEmail = email_prefix .. tostring(email_id),
+            HotelName = hotel_prefix .. tostring(hotel_id),
+            CityName = city_prefix .. tostring(city_id),
+            RoomId = "Room" .. tostring(room_id)
         }
     }
 

@@ -15,6 +15,7 @@ provider:
   iamRoleStatements:
     - Effect: Allow
       Action:
+        - "lambda:*"
         - "dynamodb:*"
       Resource:
         - "*"
@@ -57,5 +58,21 @@ functions:
     package:
       include:
         - bin/recommendHotelsRate
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+  reserveRoom:
+    name:  reserveRoom
+    handler: bin/reserveRoom
+    package:
+      include:
+        - bin/reserveRoom
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+  gateway-baseline:
+    name:  gateway-baseline
+    handler: bin/gateway
+    package:
+      include:
+        - bin/gateway
     maximumRetryAttempts: 0
     maximumEventAge: 60

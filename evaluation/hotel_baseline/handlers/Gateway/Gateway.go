@@ -23,30 +23,56 @@ type GatewayParam struct {
 }
 
 func GatewayHandler(param aws.JSONValue) (interface{}, error) {
-	reqBody := param["body"].(aws.JSONValue)
-	eventJson, _ := json.Marshal(reqBody)
-	log.Printf("INPUT: %s", eventJson)
+	reqBody := new(GatewayParam)
 
-	switch reqBody["FunctionName"] {
+	bodyString := param["body"].(string)
+	err := json.Unmarshal([]byte(bodyString), &reqBody)
+	if err != nil {
+		log.Printf("error occurred while umarshalling request body")
+	}
 
-	case "GetHotelsInCity":
-		return LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("CityGetAllHotels"), Payload: reqBody["Parameter"].([]byte)})
+	marshalledInput, err := json.Marshal(reqBody.Input)
+	if err != nil {
+		log.Printf("error occurred while arshalling lambda input")
+	}
 
-	case "Login":
-		return LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("UserVerifyPassword"), Payload: reqBody["Parameter"].([]byte)})
+	switch reqBody.FunctionName {
 
-	case "RecommendHotelsLocation":
-		return LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("CityGetHotelsCloseTo"), Payload: reqBody["Parameter"].([]byte)})
-
-	case "RecommendHotelsRate":
+	case "getHotelsInCity":
+		log.Printf("INVOKING: getHotelsInCity")
 		return LambdaClient.Invoke(&lambda.InvokeInput{
-			FunctionName: aws.String("CityGetHotelsWithBestRates"),
-			Payload:      (reqBody["Parameter"].([]byte)),
+			FunctionName: aws.String("getHotelsInCity"), Payload: marshalledInput,
+		})
+
+	case "login":
+		log.Printf("INVOKING: login")
+		return LambdaClient.Invoke(&lambda.InvokeInput{
+			FunctionName: aws.String("login"), Payload: marshalledInput,
+		})
+
+	case "recommendHotelsLocation":
+		log.Printf("INVOKING: recommendHotelsLocation")
+		return LambdaClient.Invoke(&lambda.InvokeInput{
+			FunctionName: aws.String("recommendHotelsLocation"), Payload: marshalledInput,
+		})
+
+	case "recommendHotelsRate":
+		log.Printf("INVOKING: recommendHotelsRate")
+		return LambdaClient.Invoke(&lambda.InvokeInput{
+			FunctionName: aws.String("recommendHotelsRate"),
+			Payload:      marshalledInput,
+		})
+
+	case "reserveRoom":
+		log.Printf("INVOKING: reserveRoom")
+		return LambdaClient.Invoke(&lambda.InvokeInput{
+			FunctionName: aws.String("reserveRoom"),
+			Payload:      marshalledInput,
 		})
 
 	default:
-		return "", fmt.Errorf("%s not supported", reqBody["FunctionName"])
-
+		log.Printf("DEFAULT: " + reqBody.FunctionName)
+		return "", fmt.Errorf("%s not supported", reqBody.FunctionName)
 	}
 }
 
