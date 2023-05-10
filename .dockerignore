@@ -1,0 +1,6 @@
+.VSCodeCounter/
+.vscode/
+docker/
+images/
+**/.serverless/
+**/bin/

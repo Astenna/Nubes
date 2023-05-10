@@ -27,4 +27,5 @@
 **/client_lib/*
 
 !generator/template/client_lib/*
+!evaluation/hotel/generated/Gateway/
 !example/client_lib/*

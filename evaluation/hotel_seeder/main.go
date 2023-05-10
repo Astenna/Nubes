@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -11,17 +12,25 @@ import (
 	"github.com/jftuga/geodist"
 )
 
-const UserCount = 50
-const CitiesCount = 5
-const HotelsPerCity = 20
+const UserCount = 20
+const CitiesCount = 3
+const HotelsPerCity = 10
 const RoomsPerHotel = 5
-const ReservationsPerRoom = 40
+const ReservationsPerRoom = 35
+
+// const UserCount = 50
+// const CitiesCount = 5
+// const HotelsPerCity = 20
+// const RoomsPerHotel = 5
+// const ReservationsPerRoom = 40
 
 const CityPrefix = "Milano"
 const HotelPrefix = "Bruschetti"
 const ReservationYear = 2023
 
 func SeedUsers() {
+
+	fmt.Println("Seeding USERS")
 
 	for i := 0; i < UserCount; i++ {
 		suffix := strconv.Itoa(i)
@@ -46,6 +55,8 @@ func SeedUsers() {
 
 func SeedCities() {
 
+	fmt.Println("Seeding CITIES")
+
 	for i := 0; i < CitiesCount; i++ {
 		suffix := strconv.Itoa(i)
 		// baseline
@@ -65,6 +76,8 @@ func SeedCities() {
 }
 
 func SeedHotels() {
+
+	fmt.Println("Seeding HOTELS")
 
 	for i := 0; i < CitiesCount; i++ {
 		citySuffix := strconv.Itoa(i)
@@ -106,8 +119,11 @@ func SeedRoomsAndReservations() {
 
 	for c := 0; c < CitiesCount; c++ {
 		citySuffix := strconv.Itoa(c)
+		fmt.Println("Seeding ROOMS and RESERVATIONS for city " + citySuffix + "out of " + strconv.Itoa(CitiesCount))
+
 		for j := 0; j < HotelsPerCity; j++ {
 			hotelSuffix := strconv.Itoa(j)
+			fmt.Println("------------------------------ in hotel " + hotelSuffix + "out of " + strconv.Itoa(HotelsPerCity))
 
 			for i := 0; i < RoomsPerHotel; i++ {
 				roomSuffix := strconv.Itoa(i)

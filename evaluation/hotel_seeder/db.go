@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -13,10 +15,11 @@ var _session = session.Must(session.NewSessionWithOptions(session.Options{
 
 var dbClient = dynamodb.New(_session)
 
-func insert[T any](toBeInserted T, tableName string) error {
+func insert[T any](toBeInserted T, tableName string) {
 	var attributeVals, err = dynamodbattribute.MarshalMap(toBeInserted)
 	if err != nil {
-		return err
+		fmt.Println(err)
+		return
 	}
 
 	input := &dynamodb.PutItemInput{
@@ -26,8 +29,7 @@ func insert[T any](toBeInserted T, tableName string) error {
 
 	_, err = dbClient.PutItem(input)
 	if err != nil {
-		return err
+		fmt.Println(err)
+		return
 	}
-
-	return nil
 }
