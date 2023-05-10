@@ -71,7 +71,11 @@ func (t TypeSpecParser) modifyAstMethods() {
 }
 
 func isFuncReadonly(fields *ast.FieldList) bool {
-	return fields.List == nil || fields.List[0].Names == nil || !strings.Contains(fields.List[0].Names[0].Name, "*")
+	if fields.List == nil || fields.List[0].Names == nil {
+		return true
+	}
+	_, ok := fields.List[0].Type.(*ast.StarExpr)
+	return !ok
 }
 
 func isFunctionStateless(fields *ast.FieldList) bool {
