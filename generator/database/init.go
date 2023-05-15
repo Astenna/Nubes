@@ -19,11 +19,7 @@ func CreateTypeTables(parsedPackage parser.ParsedPackage) {
 	for typeName, isNobjectType := range parsedPackage.IsNobjectInOrginalPackage {
 		if isNobjectType {
 			createTableInput := &dynamodb.CreateTableInput{
-				BillingMode: aws.String("PROVISIONED"),
-				ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
-					ReadCapacityUnits:  aws.Int64(1),
-					WriteCapacityUnits: aws.Int64(1),
-				},
+				BillingMode: aws.String("PAY_PER_REQUEST"),
 				AttributeDefinitions: []*dynamodb.AttributeDefinition{
 					{
 						AttributeName: aws.String("Id"),
@@ -53,10 +49,6 @@ func CreateTypeTables(parsedPackage parser.ParsedPackage) {
 							Projection: &dynamodb.Projection{
 								ProjectionType: aws.String("KEYS_ONLY"),
 							},
-							ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
-								ReadCapacityUnits:  aws.Int64(1),
-								WriteCapacityUnits: aws.Int64(1),
-							},
 						},
 					}
 					createTableInput.AttributeDefinitions = append(createTableInput.AttributeDefinitions,
@@ -85,11 +77,7 @@ func CreateTypeTables(parsedPackage parser.ParsedPackage) {
 
 			if _, exists := tableCreated[relationship.TableName]; !exists {
 				joinTable := &dynamodb.CreateTableInput{
-					BillingMode: aws.String("PROVISIONED"),
-					ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
-						ReadCapacityUnits:  aws.Int64(1),
-						WriteCapacityUnits: aws.Int64(1),
-					},
+					BillingMode: aws.String("PAY_PER_REQUEST"),
 					AttributeDefinitions: []*dynamodb.AttributeDefinition{
 						{
 							AttributeName: aws.String(relationship.PartionKeyName),
@@ -122,10 +110,6 @@ func CreateTypeTables(parsedPackage parser.ParsedPackage) {
 							},
 							Projection: &dynamodb.Projection{
 								ProjectionType: aws.String("KEYS_ONLY"),
-							},
-							ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
-								ReadCapacityUnits:  aws.Int64(1),
-								WriteCapacityUnits: aws.Int64(1),
 							},
 						},
 					},

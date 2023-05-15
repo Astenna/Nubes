@@ -1,10 +1,9 @@
 package client_lib
 
-
 import (
 	"encoding/json"
-	"fmt"
 	"errors"
+	"fmt"
 
 	"github.com/Astenna/Nubes/lib"
 	"github.com/aws/aws-sdk-go/aws"

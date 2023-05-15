@@ -17,6 +17,9 @@ RUN tar -C /usr/local -xpf go1.18.10.linux-amd64.tar.gz \
      && rm go1.18.10.linux-amd64.tar.gz
 
 ENV PATH="/usr/local/go/bin:$PATH"
+ENV GOPATH /root/go
+ENV PATH $GOPATH/bin:$PATH
+
 # goimports
 RUN go install golang.org/x/tools/cmd/goimports@latest
 

@@ -3,10 +3,10 @@ package types
 import "github.com/Astenna/Nubes/lib"
 
 type Category struct {
-	CName		string					`nubes:"id" dynamodbav:"Id"`
-	Movies		lib.ReferenceNavigationList[Movie]	`nubes:"hasOne-Category" dynamodbav:"-"`
-	isInitialized	bool
-	invocationDepth	int
+	CName           string                             `nubes:"id" dynamodbav:"Id"`
+	Movies          lib.ReferenceNavigationList[Movie] `nubes:"hasOne-Category" dynamodbav:"-"`
+	isInitialized   bool
+	invocationDepth int
 }
 
 func (Category) GetTypeName() string {

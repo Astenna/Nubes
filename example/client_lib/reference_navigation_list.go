@@ -1,6 +1,5 @@
 package client_lib
 
-
 import (
 	"encoding/json"
 	"fmt"

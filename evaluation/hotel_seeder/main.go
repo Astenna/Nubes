@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/Astenna/Nubes/evaluation/hotel/types"
@@ -116,6 +117,7 @@ func SeedHotels() {
 }
 
 func SeedRoomsAndReservations() {
+	var wg sync.WaitGroup
 
 	for c := 0; c < CitiesCount; c++ {
 		citySuffix := strconv.Itoa(c)
@@ -125,57 +127,64 @@ func SeedRoomsAndReservations() {
 			hotelSuffix := strconv.Itoa(j)
 			fmt.Println("------------------------------ in hotel " + hotelSuffix + "out of " + strconv.Itoa(HotelsPerCity))
 
-			for i := 0; i < RoomsPerHotel; i++ {
-				roomSuffix := strconv.Itoa(i)
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
 
-				// baseline
-				roomb := models.Room{
-					CityHotelName: CityPrefix + citySuffix + "_" + HotelPrefix + hotelSuffix,
-					RoomId:        "Room" + roomSuffix,
-					Name:          "Room" + roomSuffix,
-					Description:   `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur mauris mi, consequat quis dapibus eu, ullamcorper non metus. Suspendisse sit amet faucibus nisi. Nullam pharetra libero ut dui facilisis semper.`,
-					Price:         float32(i) + 1,
-				}
+				for i := 0; i < RoomsPerHotel; i++ {
+					roomSuffix := strconv.Itoa(i)
 
-				for k := 0; k < ReservationsPerRoom; k++ {
-					dateIn := time.Date(ReservationYear, 1, k*8, 0, 0, 0, 0, time.UTC)
-
-					reservationb := models.Reservation{
-						CityHotelRoomId: models.GetReservationPK(CityPrefix+citySuffix, HotelPrefix+hotelSuffix, "Room"+roomSuffix),
-						DateIn:          dateIn,
-						DateOut:         dateIn.AddDate(0, 0, int(k%8)),
-						UserEmail:       "Email_" + strconv.Itoa(int(k%UserCount)),
+					// baseline
+					roomb := models.Room{
+						CityHotelName: CityPrefix + citySuffix + "_" + HotelPrefix + hotelSuffix,
+						RoomId:        "Room" + roomSuffix,
+						Name:          "Room" + roomSuffix,
+						Description:   `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur mauris mi, consequat quis dapibus eu, ullamcorper non metus. Suspendisse sit amet faucibus nisi. Nullam pharetra libero ut dui facilisis semper.`,
+						Price:         float32(i) + 1,
 					}
-					insert(reservationb, db.ReservationTable)
-				}
-				insert(roomb, db.RoomTable)
+					insert(roomb, db.RoomTable)
 
-				// nubes
-				room := types.Room{
-					Id:           CityPrefix + citySuffix + "_" + HotelPrefix + hotelSuffix + "_Room" + roomSuffix,
-					Name:         "Room" + roomSuffix,
-					Description:  `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur mauris mi, consequat quis dapibus eu, ullamcorper non metus. Suspendisse sit amet faucibus nisi. Nullam pharetra libero ut dui facilisis semper.`,
-					Hotel:        lib.Reference[types.Hotel](HotelPrefix + hotelSuffix),
-					Reservations: map[string][]types.ReservationInOut{},
-					Price:        float32(i),
-				}
+					for k := 0; k < ReservationsPerRoom; k++ {
+						dateIn := time.Date(ReservationYear, 1, k*8, 0, 0, 0, 0, time.UTC)
 
-				insert(room, room.GetTypeName())
-				for k := 0; k < ReservationsPerRoom; k++ {
-					dateIn := time.Date(ReservationYear, 1, k*8, 0, 0, 0, 0, time.UTC)
-
-					param := types.ReserveParam{
-						DateIn:                dateIn.Format("2006-01-02"),
-						DateOut:               dateIn.AddDate(0, 0, int(k%8)).Format("2006-01-02"),
-						User:                  lib.Reference[types.User]("Email" + strconv.Itoa(int(k%UserCount))),
-						RoomId:                room.Id,
-						SkipAvailabilityCheck: true,
+						reservationb := models.Reservation{
+							CityHotelRoomId: models.GetReservationPK(CityPrefix+citySuffix, HotelPrefix+hotelSuffix, "Room"+roomSuffix),
+							DateIn:          dateIn,
+							DateOut:         dateIn.AddDate(0, 0, int(k%8)),
+							UserEmail:       "Email_" + strconv.Itoa(int(k%UserCount)),
+						}
+						insert(reservationb, db.ReservationTable)
 					}
-					types.ExportReservation(param)
+
+					// nubes
+					room := types.Room{
+						Id:           CityPrefix + citySuffix + "_" + HotelPrefix + hotelSuffix + "_Room" + roomSuffix,
+						Name:         "Room" + roomSuffix,
+						Description:  `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur mauris mi, consequat quis dapibus eu, ullamcorper non metus. Suspendisse sit amet faucibus nisi. Nullam pharetra libero ut dui facilisis semper.`,
+						Hotel:        lib.Reference[types.Hotel](HotelPrefix + hotelSuffix),
+						Reservations: map[string][]types.ReservationInOut{},
+						Price:        float32(i),
+					}
+
+					insert(room, room.GetTypeName())
+					for k := 0; k < ReservationsPerRoom; k++ {
+						dateIn := time.Date(ReservationYear, 1, k*8, 0, 0, 0, 0, time.UTC)
+
+						param := types.ReserveParam{
+							DateIn:                dateIn.Format("2006-01-02"),
+							DateOut:               dateIn.AddDate(0, 0, int(k%8)).Format("2006-01-02"),
+							User:                  lib.Reference[types.User]("Email" + strconv.Itoa(int(k%UserCount))),
+							RoomId:                room.Id,
+							SkipAvailabilityCheck: true,
+						}
+						types.ExportReservation(param)
+						fmt.Print(",")
+					}
 				}
-			}
+			}()
 		}
 	}
+	wg.Wait()
 }
 
 func main() {

@@ -52,11 +52,8 @@ func InitializeTables() {
 
 	for _, tableDefinition := range tableDefinitions {
 		createTableInput := &dynamodb.CreateTableInput{
-			BillingMode: aws.String("PROVISIONED"),
-			ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
-				ReadCapacityUnits:  aws.Int64(1),
-				WriteCapacityUnits: aws.Int64(1),
-			},
+			BillingMode: aws.String("PAY_PER_REQUEST"),
+
 			AttributeDefinitions: []*dynamodb.AttributeDefinition{
 				{
 					AttributeName: aws.String(tableDefinition.PartitionKey),
@@ -106,10 +103,6 @@ func InitializeTables() {
 						},
 						Projection: &dynamodb.Projection{
 							ProjectionType: aws.String("ALL"),
-						},
-						ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
-							ReadCapacityUnits:  aws.Int64(1),
-							WriteCapacityUnits: aws.Int64(1),
 						},
 					},
 				)

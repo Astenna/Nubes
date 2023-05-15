@@ -3,13 +3,13 @@ package types
 import "github.com/Astenna/Nubes/lib"
 
 type Movie struct {
-	Id		string
-	Title		string
-	ProductionYear	int
-	Category	lib.Reference[Category]			`dynamodbav:",omitempty"`
-	Reviews		lib.ReferenceNavigationList[Review]	`nubes:"hasOne-Movie" dynamodbav:"-"`
-	isInitialized	bool
-	invocationDepth	int
+	Id              string
+	Title           string
+	ProductionYear  int
+	Category        lib.Reference[Category]             `dynamodbav:",omitempty"`
+	Reviews         lib.ReferenceNavigationList[Review] `nubes:"hasOne-Movie" dynamodbav:"-"`
+	isInitialized   bool
+	invocationDepth int
 }
 
 func (Movie) GetTypeName() string {
