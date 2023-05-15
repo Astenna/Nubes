@@ -2,8 +2,8 @@ FROM ubuntu:23.04
 
 # packages
 RUN apt-get -y update \
-    && apt-get -y install build-essential libssl-dev git zlib1g-dev 
-RUN apt-get -y install unzip wget lua5.2 liblua5.2 vim curl
+    && apt-get -y install build-essential libssl-dev git zlib1g-dev python3 python3-pip fish
+RUN apt-get -y install unzip wget lua5.2 liblua5.2 vim curl nano
 
 # wrk2
 RUN git clone https://github.com/giltene/wrk2.git wrk2 \
@@ -29,10 +29,13 @@ RUN curl -o- -L https://slss.io/install | bash
 
 RUN export PATH="$HOME/.serverless/bin:$PATH" >> $HOME/.bashrc
 
-# copy entire project
-COPY . /nubes
+# python deps
+RUN pip3 install boto3 numpy --break-system-packages
 
-RUN cd /nubes/evaluation/scripts \
-    && wget https://raw.githubusercontent.com/tiye/json-lua/main/JSON.lua
+# # copy entire project
+# COPY . /nubes
+
+# RUN cd /nubes/evaluation/scripts \
+#     && wget https://raw.githubusercontent.com/tiye/json-lua/main/JSON.lua
 
 HEALTHCHECK CMD exit 0
