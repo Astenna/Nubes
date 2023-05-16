@@ -12,9 +12,9 @@ RUN git clone https://github.com/giltene/wrk2.git wrk2 \
     && mv wrk /usr/local/bin/wrk2
 
 # go 1.18.10
-RUN wget https://go.dev/dl/go1.18.10.linux-amd64.tar.gz 
-RUN tar -C /usr/local -xpf go1.18.10.linux-amd64.tar.gz \
-     && rm go1.18.10.linux-amd64.tar.gz
+RUN wget https://go.dev/dl/go1.20.4.linux-amd64.tar.gz 
+RUN tar -C /usr/local -xpf go1.20.4.linux-amd64.tar.gz \
+     && rm go1.20.4.linux-amd64.tar.gz
 
 ENV PATH="/usr/local/go/bin:$PATH"
 ENV GOPATH /root/go

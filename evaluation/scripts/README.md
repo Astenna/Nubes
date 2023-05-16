@@ -26,6 +26,9 @@
    `./deploy.sh`
 7. [in docker container, this directory]:As the last step before benchmarking, assign URL to *Gateway* and *gateway_baseline* lambda functions on aws.
 Fill the corresponding *gateway* variables in the corresponding lua scripts in this directory (*hotel.lua* and *hotel_baseline.lua*)
+
+> `wget https://raw.githubusercontent.com/tiye/json-lua/main/JSON.lua`
+
 8. [in docker container, this directory]: Invoke the wrk2:
    For the baseline:
  `wrk2 -R<request_rate> -d<duration_of_test_seconds>s -s hotel_baseline.lua <URL_to_gateway_baseline>`
