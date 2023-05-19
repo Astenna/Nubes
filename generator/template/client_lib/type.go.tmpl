@@ -72,10 +72,22 @@ func (u *{{.TypeNameLower}})setId(id string) {
 
 func (r *{{.TypeNameLower}}) init() {
 	{{range .OneToManyRelationships}}
-	r.{{.FromFieldNameUpper}} = *newReferenceNavigationList[{{.TypeNameLower}}, {{.TypeName}}Stub](r.id, r.GetTypeName(), "{{.FieldName}}", false)
+	r.{{.FromFieldNameUpper}} = *newReferenceNavigationList[{{.TypeNameLower}}, {{.TypeName}}Stub](lib.ReferenceNavigationListParam{
+		OwnerId:            r.id,
+		OwnerTypeName:      r.GetTypeName(),
+		OtherTypeName:      (*new({{.TypeNameLower}})).GetTypeName(),
+		ReferringFieldName: "{{.FieldName}}",
+		IsManyToMany:       false,
+		})
 	{{end}}
 	{{range .ManyToManyRelationships}}
-	r.{{.FromFieldNameUpper}} = *newReferenceNavigationList[{{.TypeNameLower}}, {{.TypeName}}Stub](r.id, r.GetTypeName(), "", true)
+	r.{{.FromFieldNameUpper}} = *newReferenceNavigationList[{{.TypeNameLower}}, {{.TypeName}}Stub](lib.ReferenceNavigationListParam{
+		OwnerId:            r.id,
+		OwnerTypeName:      r.GetTypeName(),
+		OtherTypeName:      (*new({{.TypeNameLower}})).GetTypeName(),
+		ReferringFieldName: "{{.FieldName}}",
+		IsManyToMany:       true,
+		})
 	{{end}}
 }
 

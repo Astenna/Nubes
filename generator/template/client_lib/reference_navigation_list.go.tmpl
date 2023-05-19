@@ -1,6 +1,5 @@
 package {{.PackageName}}
 
-
 import (
 	"encoding/json"
 	"fmt"
@@ -16,66 +15,94 @@ type setId interface {
 }
 
 type referenceNavigationList[T lib.Nobject, Stub any] struct {
-	setup lib.ReferenceNavigationListSetup[T]
+	param lib.ReferenceNavigationListParam
 }
 
-func newReferenceNavigationList[T lib.Nobject, Stub any](ownerId, ownerTypeName, referringFieldName string, isManyToMany bool) *referenceNavigationList[T, Stub] {
+func newReferenceNavigationList[T lib.Nobject, Stub any](param lib.ReferenceNavigationListParam) *referenceNavigationList[T, Stub] {
 	r := new(referenceNavigationList[T, Stub])
-	r.setup = lib.NewReferenceNavigationListSetup[T](ownerId, ownerTypeName, referringFieldName, isManyToMany)
+	r.param = param
 	return r
 }
 
 func (r referenceNavigationList[T, Stub]) GetIds() ([]string, error) {
-
-	if r.setup.UsesIndex {
-		out, err := r.getByIndex()
-		return out, err
-	}
-
-	if r.setup.IsManyToMany && !r.setup.UsesIndex {
-		out, err := r.getSortKeysByPartitionKey()
-		return out, err
-	}
-
-	return nil, fmt.Errorf("invalid initialization of ReferenceNavigationList")
-}
-
-func (r referenceNavigationList[T, Stub]) Get() ([]T, error) {
-	ids, err := r.GetIds()
+	jsonParam, err := json.Marshal(r.param)
 	if err != nil {
 		return nil, err
 	}
 
-	return loadBatch[T](ids)
-}
-
-func (r referenceNavigationList[T, Stub]) GetStubs() ([]Stub, error) {
-	ids, err := r.GetIds()
-	if err != nil {
-		return nil, err
-	}
-
-	if len(ids) < 1 {
-		return nil, nil
-	}
-
-	params := lib.GetBatchParam{
-		Ids:      ids,
-		TypeName: (*new(T)).GetTypeName(),
-	}
-	jsonParam, err := json.Marshal(params)
-	if err != nil {
-		return nil, err
-	}
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("GetBatch"), Payload: jsonParam})
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("ReferenceGetIds"), Payload: jsonParam})
 	if _err != nil {
 		return nil, _err
 	}
 	if out.FunctionError != nil {
-		return nil, fmt.Errorf("lambda function designed to the objects' states failed. Error: %s", string(out.Payload))
+		return nil, fmt.Errorf(string(out.Payload[:]))
 	}
 
-	stubs := make([]Stub, len(ids))
+	var result []string
+	err = json.Unmarshal(out.Payload, &result)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (r referenceNavigationList[T, Stub]) Get() ([]T, error) {
+	jsonParam, err := json.Marshal(r.param)
+	if err != nil {
+		return nil, err
+	}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("ReferenceGet"), Payload: jsonParam})
+	if out.FunctionError != nil {
+		return nil, fmt.Errorf("lambda function designed to verify if instance exists failed. Error: %s", string(out.Payload))
+	}
+
+	var notFoundError lib.NotFoundError
+	if _err != nil {
+		casted := false
+		if notFoundError, casted = err.(lib.NotFoundError); !casted {
+			return nil, err
+		}
+	}
+
+	var foundIds []string
+	err = json.Unmarshal(out.Payload, &foundIds)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(notFoundError.Ids) > 0 {
+		foundIds = difference(foundIds, notFoundError.Ids)
+	}
+
+	result := make([]T, len(foundIds))
+	for i, id := range foundIds {
+		newInstance := new(T)
+		casted := any(newInstance)
+		setIdInterf, _ := casted.(setId)
+		setIdInterf.setId(id)
+		setIdInterf.init()
+		result[i] = *newInstance
+	}
+	return result, err
+}
+
+func (r referenceNavigationList[T, Stub]) GetStubs() ([]Stub, error) {
+	jsonParam, err := json.Marshal(r.param)
+	if err != nil {
+		return nil, err
+	}
+
+	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("ReferenceGetStubs"), Payload: jsonParam})
+	if _err != nil {
+		return nil, _err
+	}
+	if out.FunctionError != nil {
+		return nil, fmt.Errorf("lambda function designed to the retrieve objects' states failed. Error: %s", string(out.Payload))
+	}
+
+	var stubs []Stub
 	err = json.Unmarshal(out.Payload, &stubs)
 	if err != nil {
 		return nil, err
@@ -89,12 +116,10 @@ func (r referenceNavigationList[T, Stub]) AddToManyToMany(newId string) error {
 		return fmt.Errorf("missing id")
 	}
 
-	if r.setup.IsManyToMany {
-		typeName := (*new(T)).GetTypeName()
+	if r.param.IsManyToMany {
 		params := lib.AddToManyToManyParam{
-			TypeName:                     typeName,
-			NewId:                        newId,
-			InsertToManyToManyTableParam: r.setup.GetInsertToManyToManyTableParam(newId),
+			RefNavListParam: r.param,
+			NewId:           newId,
 		}
 
 		jsonParam, err := json.Marshal(params)
@@ -121,15 +146,19 @@ func (r referenceNavigationList[T, Stub]) DeleteFromManyToMany(ids []string) err
 		return fmt.Errorf("missing ids to delete")
 	}
 
-	if r.setup.IsManyToMany {
-		params := r.setup.GetDeleteFromManyToManyParam(ids)
-
-		jsonParam, err := json.Marshal(params)
+	if r.param.IsManyToMany {
+		jsonParam, err := json.Marshal(lib.DeleteFromManyToManyParam{
+			RefNavListParam: r.param,
+			IdsToDelete:     ids,
+		})
 		if err != nil {
 			return err
 		}
 
-		out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("ReferenceDelteFromManyToMany"), Payload: jsonParam})
+		out, _err := LambdaClient.Invoke(&lambda.InvokeInput{
+			FunctionName: aws.String("ReferenceDeleteFromManyToMany"),
+			Payload:      jsonParam,
+		})
 		if _err != nil {
 			return _err
 		}
@@ -141,56 +170,4 @@ func (r referenceNavigationList[T, Stub]) DeleteFromManyToMany(ids []string) err
 	}
 
 	return fmt.Errorf("can not delete elements in ReferenceNavigationList of OneToMany relationship")
-}
-
-func (r referenceNavigationList[T, Stub]) getByIndex() ([]string, error) {
-
-	jsonParam, err := json.Marshal(r.setup.GetQueryByIndexParam())
-	if err != nil {
-		return nil, err
-	}
-
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("ReferenceGetByIndex"), Payload: jsonParam})
-	if _err != nil {
-		return nil, _err
-	}
-	if out.FunctionError != nil {
-		return nil, fmt.Errorf(string(out.Payload[:]))
-	}
-
-	var result []string
-	err = json.Unmarshal(out.Payload, &result)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
-}
-
-func (r referenceNavigationList[T, Stub]) getSortKeysByPartitionKey() ([]string, error) {
-
-	param, err := r.setup.GetQueryByPartitionKeyParam()
-	if err != nil {
-		return nil, err
-	}
-	jsonParam, err := json.Marshal(param)
-	if err != nil {
-		return nil, err
-	}
-
-	out, _err := LambdaClient.Invoke(&lambda.InvokeInput{FunctionName: aws.String("ReferenceGetSortKeysByPartitionKey"), Payload: jsonParam})
-	if _err != nil {
-		return nil, _err
-	}
-	if out.FunctionError != nil {
-		return nil, fmt.Errorf(string(out.Payload[:]))
-	}
-
-	var result []string
-	err = json.Unmarshal(out.Payload, &result)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
 }

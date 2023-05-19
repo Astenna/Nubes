@@ -1,0 +1,18 @@
+package main
+
+import (
+	lib "github.com/Astenna/Nubes/lib"
+	"github.com/aws/aws-lambda-go/lambda"
+)
+
+func GetStubsHandler(input lib.ReferenceNavigationListParam) ([]interface{}, error) {
+	if err := input.Verify(); err != nil {
+		return nil, err
+	}
+	ref := lib.NewReferenceNavigationListHandlers(input)
+	return ref.GetStubs()
+}
+
+func main() {
+	lambda.Start(GetStubsHandler)
+}

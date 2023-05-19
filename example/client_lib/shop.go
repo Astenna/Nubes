@@ -64,9 +64,21 @@ func (u *shop) setId(id string) {
 
 func (r *shop) init() {
 
-	r.Products = *newReferenceNavigationList[product, ProductStub](r.id, r.GetTypeName(), "SoldBy", false)
+	r.Products = *newReferenceNavigationList[product, ProductStub](lib.ReferenceNavigationListParam{
+		OwnerId:            r.id,
+		OwnerTypeName:      r.GetTypeName(),
+		OtherTypeName:      (*new(product)).GetTypeName(),
+		ReferringFieldName: "SoldBy",
+		IsManyToMany:       false,
+	})
 
-	r.Owners = *newReferenceNavigationList[user, UserStub](r.id, r.GetTypeName(), "", true)
+	r.Owners = *newReferenceNavigationList[user, UserStub](lib.ReferenceNavigationListParam{
+		OwnerId:            r.id,
+		OwnerTypeName:      r.GetTypeName(),
+		OtherTypeName:      (*new(user)).GetTypeName(),
+		ReferringFieldName: "owners",
+		IsManyToMany:       true,
+	})
 
 }
 
@@ -217,7 +229,6 @@ func (s shop) GetNearestOwnerCopy(input Coordinates) (UserStub, error) {
 	}
 
 	result := new(UserStub)
-
 	_err = json.Unmarshal(out.Payload, result)
 	if _err != nil {
 		return *new(UserStub), err
@@ -249,7 +260,6 @@ func (s shop) GetNearestOwnerReference(input Coordinates) (lib.Reference[user], 
 	}
 
 	result := new(lib.Reference[user])
-
 	_err = json.Unmarshal(out.Payload, result)
 	if _err != nil {
 		return *new(lib.Reference[user]), err

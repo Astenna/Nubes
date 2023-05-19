@@ -62,7 +62,13 @@ func (u *user) setId(id string) {
 
 func (r *user) init() {
 
-	r.Shops = *newReferenceNavigationList[shop, ShopStub](r.id, r.GetTypeName(), "", true)
+	r.Shops = *newReferenceNavigationList[shop, ShopStub](lib.ReferenceNavigationListParam{
+		OwnerId:            r.id,
+		OwnerTypeName:      r.GetTypeName(),
+		OtherTypeName:      (*new(shop)).GetTypeName(),
+		ReferringFieldName: "shops",
+		IsManyToMany:       true,
+	})
 
 }
 
@@ -547,7 +553,6 @@ func (u user) VerifyPassword(input string) (bool, error) {
 	}
 
 	result := new(bool)
-
 	_err = json.Unmarshal(out.Payload, result)
 	if _err != nil {
 		return *new(bool), err

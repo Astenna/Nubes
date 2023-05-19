@@ -21,6 +21,7 @@ const LibraryReferenceNavigationList = "lib.ReferenceNavigationList"
 const IsInitializedFieldName = "isInitialized"
 const InvocationDepthFieldName = "invocationDepth"
 const SetFieldParam = "SetFieldParam"
+const ReferenceNavigationListParam = "ReferenceNavigationListParam"
 
 // TAGS
 const NubesTagKey = "nubes"

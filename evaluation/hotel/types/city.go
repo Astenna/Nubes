@@ -184,7 +184,7 @@ func (receiver City) GetId() string {
 }
 func (receiver *City) Init() {
 	receiver.isInitialized = true
-	receiver.Hotels = *lib.NewReferenceNavigationList[Hotel](receiver.CityName, receiver.GetTypeName(), "City", false)
+	receiver.Hotels = *lib.NewReferenceNavigationList[Hotel](lib.ReferenceNavigationListParam{OwnerId: receiver.CityName, OwnerTypeName: receiver.GetTypeName(), OtherTypeName: (*new(Hotel)).GetTypeName(), ReferringFieldName: "City", IsManyToMany: false})
 }
 func (receiver *City) saveChangesIfInitialized() error {
 	if receiver.isInitialized && receiver.invocationDepth == 1 {

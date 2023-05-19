@@ -10,8 +10,8 @@ func DeleteFromManyToManyHandler(input lib.DeleteFromManyToManyParam) error {
 	if err := input.Verify(); err != nil {
 		return err
 	}
-
-	return lib.DeleteFromManyToManyTable(input)
+	ref := lib.NewReferenceNavigationListHandlers(input.RefNavListParam)
+	return ref.DeleteBatchFromManyToMany(input.IdsToDelete)
 }
 
 func main() {

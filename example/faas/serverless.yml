@@ -74,12 +74,28 @@ functions:
         - bin/SetField
     maximumRetryAttempts: 0
     maximumEventAge: 60
-  ReferenceGetByIndex:
-    name: ReferenceGetByIndex
-    handler: bin/ReferenceGetByIndex
+  ReferenceGet:
+    name: ReferenceGet
+    handler: bin/ReferenceGet
     package:
       include:
-        - bin/ReferenceGetByIndex
+        - bin/ReferenceGet
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+  ReferenceGetIds:
+    name: ReferenceGetIds
+    handler: bin/ReferenceGetIds
+    package:
+      include:
+        - bin/ReferenceGetIds
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+  ReferenceGetStubs:
+    name: ReferenceGetStubs
+    handler: bin/ReferenceGetStubs
+    package:
+      include:
+        - bin/ReferenceGetStubs
     maximumRetryAttempts: 0
     maximumEventAge: 60
   
@@ -97,15 +113,16 @@ functions:
     package:
       include:
         - bin/ReferenceDeleteFromManyToMany
-  ReferenceGetSortKeysByPartitionKey:
-    name: ReferenceGetSortKeysByPartitionKey
-    handler: bin/ReferenceGetSortKeysByPartitionKey
+
+
+  UserVerifyPassword:
+    name:  UserVerifyPassword
+    handler: bin/UserVerifyPassword
     package:
       include:
-        - bin/ReferenceGetSortKeysByPartitionKey
+        - bin/UserVerifyPassword
     maximumRetryAttempts: 0
     maximumEventAge: 60
-
 
   ProductDecreaseAvailabilityBy:
     name:  ProductDecreaseAvailabilityBy
@@ -149,15 +166,6 @@ functions:
     package:
       include:
         - bin/ShopGetNearestOwnerReference
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
-  UserVerifyPassword:
-    name:  UserVerifyPassword
-    handler: bin/UserVerifyPassword
-    package:
-      include:
-        - bin/UserVerifyPassword
     maximumRetryAttempts: 0
     maximumEventAge: 60
 

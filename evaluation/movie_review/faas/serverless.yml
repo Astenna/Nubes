@@ -74,15 +74,40 @@ functions:
         - bin/SetField
     maximumRetryAttempts: 0
     maximumEventAge: 60
-  ReferenceGetByIndex:
-    name: ReferenceGetByIndex
-    handler: bin/ReferenceGetByIndex
+  ReferenceGet:
+    name: ReferenceGet
+    handler: bin/ReferenceGet
     package:
       include:
-        - bin/ReferenceGetByIndex
+        - bin/ReferenceGet
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+  ReferenceGetIds:
+    name: ReferenceGetByIds
+    handler: bin/ReferenceGetIds
+    package:
+      include:
+        - bin/ReferenceGetIds
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+  ReferenceGetStubs:
+    name: ReferenceGetStubs
+    handler: bin/ReferenceGetStubs
+    package:
+      include:
+        - bin/ReferenceGetStubs
     maximumRetryAttempts: 0
     maximumEventAge: 60
   
+
+  AccountVerifyPassword:
+    name:  AccountVerifyPassword
+    handler: bin/AccountVerifyPassword
+    package:
+      include:
+        - bin/AccountVerifyPassword
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
 
   ReviewDownvote:
     name:  ReviewDownvote
@@ -99,15 +124,6 @@ functions:
     package:
       include:
         - bin/ReviewUpvote
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-
-  AccountVerifyPassword:
-    name:  AccountVerifyPassword
-    handler: bin/AccountVerifyPassword
-    package:
-      include:
-        - bin/AccountVerifyPassword
     maximumRetryAttempts: 0
     maximumEventAge: 60
 

@@ -128,11 +128,10 @@ func DeleteShop(id string) error {
 
 	return lib.Delete[Shop](id)
 }
-
 func (receiver *Shop) Init() {
 	receiver.isInitialized = true
-	receiver.Products = *lib.NewReferenceNavigationList[Product](receiver.Id, receiver.GetTypeName(), "SoldBy", false)
-	receiver.Owners = *lib.NewReferenceNavigationList[User](receiver.Id, receiver.GetTypeName(), "", true)
+	receiver.Products = *lib.NewReferenceNavigationList[Product](lib.ReferenceNavigationListParam{OwnerId: receiver.Id, OwnerTypeName: receiver.GetTypeName(), OtherTypeName: (*new(Product)).GetTypeName(), ReferringFieldName: "SoldBy", IsManyToMany: false})
+	receiver.Owners = *lib.NewReferenceNavigationList[User](lib.ReferenceNavigationListParam{OwnerId: receiver.Id, OwnerTypeName: receiver.GetTypeName(), OtherTypeName: (*new(User)).GetTypeName(), ReferringFieldName: "Owners", IsManyToMany: true})
 }
 func (receiver *Shop) saveChangesIfInitialized() error {
 	if receiver.isInitialized && receiver.invocationDepth == 1 {

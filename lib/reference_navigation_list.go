@@ -7,13 +7,38 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 )
 
-type ReferenceNavigationList[T Nobject] struct {
-	setup ReferenceNavigationListSetup[T]
+type ReferenceNavigationListParam struct {
+	OwnerId            string
+	OwnerTypeName      string
+	OtherTypeName      string
+	ReferringFieldName string
+	IsManyToMany       bool
 }
 
-func NewReferenceNavigationList[T Nobject](ownerId, ownerTypeName, referringFieldName string, isManyToMany bool) *ReferenceNavigationList[T] {
+func (l ReferenceNavigationListParam) Verify() error {
+	if l.OwnerId == "" {
+		return fmt.Errorf("missing OwnerId")
+	}
+	if l.OwnerTypeName == "" {
+		return fmt.Errorf("missing OwnerTypeName")
+	}
+	if l.OtherTypeName == "" {
+		return fmt.Errorf("missing OtherTypeName")
+	}
+	if l.ReferringFieldName == "" {
+		return fmt.Errorf("missing ReferringFieldName")
+	}
+
+	return nil
+}
+
+type ReferenceNavigationList[T Nobject] struct {
+	setup referenceNavigationListSetup
+}
+
+func NewReferenceNavigationList[T Nobject](param ReferenceNavigationListParam) *ReferenceNavigationList[T] {
 	r := new(ReferenceNavigationList[T])
-	r.setup = NewReferenceNavigationListSetup[T](ownerId, ownerTypeName, referringFieldName, isManyToMany)
+	r.setup = newReferenceNavigationListSetup(param)
 	r.setup.build()
 	return r
 }
@@ -112,34 +137,14 @@ func (r ReferenceNavigationList[T]) DeleteBatchFromManyToMany(ids []string) erro
 	return DeleteFromManyToManyTable(param)
 }
 
-type InsertToManyToManyTableParam struct {
+type InsertToManyToManyTableLibParam struct {
 	PartitionKeyName  string
 	SortKeyName       string
 	PartitionKeyValue string
 	SortKeyValue      string
 }
 
-func (i InsertToManyToManyTableParam) Verify() error {
-	if i.PartitionKeyName == "" {
-		return fmt.Errorf("missing PartitionKeyName")
-	}
-	if i.SortKeyName == "" {
-		return fmt.Errorf("missing SortKeyName")
-	}
-	if i.PartitionKeyValue == "" {
-		return fmt.Errorf("missing PartitionKeyValue")
-	}
-	if i.SortKeyValue == "" {
-		return fmt.Errorf("missing SortKeyValue")
-	}
-
-	return nil
-}
-
-func InsertToManyToManyTable(param InsertToManyToManyTableParam) error {
-	if err := param.Verify(); err != nil {
-		return err
-	}
+func InsertToManyToManyTable(param InsertToManyToManyTableLibParam) error {
 
 	input := &dynamodb.PutItemInput{
 		TableName: aws.String(param.PartitionKeyName + param.SortKeyName),
@@ -157,10 +162,7 @@ func InsertToManyToManyTable(param InsertToManyToManyTableParam) error {
 	return err
 }
 
-func DeleteFromManyToManyTable(param DeleteFromManyToManyParam) error {
-	if err := param.Verify(); err != nil {
-		return err
-	}
+func DeleteFromManyToManyTable(param DeleteFromManyToManyLibParam) error {
 
 	input := dynamodb.BatchWriteItemInput{
 		RequestItems: map[string][]*dynamodb.WriteRequest{

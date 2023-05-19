@@ -1,0 +1,18 @@
+package main
+
+import (
+	lib "github.com/Astenna/Nubes/lib"
+	"github.com/aws/aws-lambda-go/lambda"
+)
+
+func GetIdsHandler(input lib.ReferenceNavigationListParam) ([]string, error) {
+	if err := input.Verify(); err != nil {
+		return nil, err
+	}
+	ref := lib.NewReferenceNavigationListHandlers(input)
+	return ref.GetIds()
+}
+
+func main() {
+	lambda.Start(GetIdsHandler)
+}

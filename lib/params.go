@@ -13,19 +13,33 @@ type HandlerParameters struct {
 }
 
 type AddToManyToManyParam struct {
-	TypeName                     string
-	NewId                        string
-	InsertToManyToManyTableParam InsertToManyToManyTableParam
+	RefNavListParam ReferenceNavigationListParam
+	NewId           string
 }
 
 func (a AddToManyToManyParam) Verify() error {
-	if a.TypeName == "" {
-		return fmt.Errorf("missing TypeName")
+	if err := a.RefNavListParam.Verify(); err != nil {
+		return err
 	}
 	if a.NewId == "" {
 		return fmt.Errorf("missing NewId")
 	}
-	return a.InsertToManyToManyTableParam.Verify()
+	return nil
+}
+
+type DeleteFromManyToManyParam struct {
+	RefNavListParam ReferenceNavigationListParam
+	IdsToDelete     []string
+}
+
+func (a DeleteFromManyToManyParam) Verify() error {
+	if err := a.RefNavListParam.Verify(); err != nil {
+		return err
+	}
+	if len(a.IdsToDelete) == 0 {
+		return fmt.Errorf("missing IdsToDelete")
+	}
+	return nil
 }
 
 type LoadBatchParam struct {

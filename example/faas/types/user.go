@@ -105,10 +105,9 @@ func (u User) VerifyPassword(password string) (bool, error) {
 	u.invocationDepth--
 	return false, nil
 }
-
 func (receiver *User) Init() {
 	receiver.isInitialized = true
-	receiver.Shops = *lib.NewReferenceNavigationList[Shop](receiver.Email, receiver.GetTypeName(), "", true)
+	receiver.Shops = *lib.NewReferenceNavigationList[Shop](lib.ReferenceNavigationListParam{OwnerId: receiver.Email, OwnerTypeName: receiver.GetTypeName(), OtherTypeName: (*new(Shop)).GetTypeName(), ReferringFieldName: "Shops", IsManyToMany: true})
 }
 func (receiver *User) saveChangesIfInitialized() error {
 	if receiver.isInitialized && receiver.invocationDepth == 1 {

@@ -17,7 +17,7 @@ func (Movie) GetTypeName() string {
 }
 func (receiver *Movie) Init() {
 	receiver.isInitialized = true
-	receiver.Reviews = *lib.NewReferenceNavigationList[Review](receiver.Id, receiver.GetTypeName(), "Movie", false)
+	receiver.Reviews = *lib.NewReferenceNavigationList[Review](lib.ReferenceNavigationListParam{OwnerId: receiver.Id, OwnerTypeName: receiver.GetTypeName(), OtherTypeName: (*new(Review)).GetTypeName(), ReferringFieldName: "Movie", IsManyToMany: false})
 }
 func (receiver *Movie) saveChangesIfInitialized() error {
 	if receiver.isInitialized && receiver.invocationDepth == 1 {

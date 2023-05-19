@@ -38,7 +38,7 @@ func (receiver User) GetId() string {
 }
 func (receiver *User) Init() {
 	receiver.isInitialized = true
-	receiver.Reservations = *lib.NewReferenceNavigationList[Reservation](receiver.Email, receiver.GetTypeName(), "User", false)
+	receiver.Reservations = *lib.NewReferenceNavigationList[Reservation](lib.ReferenceNavigationListParam{OwnerId: receiver.Email, OwnerTypeName: receiver.GetTypeName(), OtherTypeName: (*new(Reservation)).GetTypeName(), ReferringFieldName: "User", IsManyToMany: false})
 }
 func (receiver *User) saveChangesIfInitialized() error {
 	if receiver.isInitialized && receiver.invocationDepth == 1 {

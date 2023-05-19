@@ -145,16 +145,22 @@ func generateGenericHandlers(path string, parsedPkg parser.ParsedPackage) {
 	tp.CreateFile("template/type_spec/delete_template.go.tmpl", deleteTemplInput, deletePath)
 	tp.RunGoimportsOnFile(generationDestPath)
 
-	generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "reference", "GetByIndex"))
+	generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "reference", "Get"))
 	os.MkdirAll(generationDestPath, 0777)
-	referenceIndexPath := filepath.Join(generationDestPath, "ReferenceGetByIndex.go")
-	tp.CreateFile("template/type_spec/reference_get_by_index.go.tmpl", nil, referenceIndexPath)
+	referenceIndexPath := filepath.Join(generationDestPath, "ReferenceGet.go")
+	tp.CreateFile("template/type_spec/reference_get.go.tmpl", nil, referenceIndexPath)
+
+	generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "reference", "GetIds"))
+	os.MkdirAll(generationDestPath, 0777)
+	referenceGetIdsPath := filepath.Join(generationDestPath, "ReferenceGetIds.go")
+	tp.CreateFile("template/type_spec/reference_get_ids.go.tmpl", nil, referenceGetIdsPath)
+
+	generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "reference", "GetStubs"))
+	os.MkdirAll(generationDestPath, 0777)
+	referenceGetStubsPath := filepath.Join(generationDestPath, "ReferenceGetStubs.go")
+	tp.CreateFile("template/type_spec/reference_get_stubs.go.tmpl", nil, referenceGetStubsPath)
 
 	if len(parsedPkg.ManyToManyRelationships) > 0 {
-		generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "reference", "GetSortKeysByPartionKey"))
-		os.MkdirAll(generationDestPath, 0777)
-		referenceSortKeyPath := filepath.Join(generationDestPath, "ReferenceGetSortKeysByPartitionKey.go")
-		tp.CreateFile("template/type_spec/reference_get_sort_key.go.tmpl", nil, referenceSortKeyPath)
 
 		generationDestPath = tp.MakePathAbosoluteOrExitOnError(filepath.Join(path, "generated", "reference", "AddToManyToMany"))
 		os.MkdirAll(generationDestPath, 0777)

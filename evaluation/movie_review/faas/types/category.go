@@ -12,13 +12,12 @@ type Category struct {
 func (Category) GetTypeName() string {
 	return "Category"
 }
-
-func (u Category) GetId() string {
-	return u.CName
+func (receiver Category) GetId() string {
+	return receiver.CName
 }
 func (receiver *Category) Init() {
 	receiver.isInitialized = true
-	receiver.Movies = *lib.NewReferenceNavigationList[Movie](receiver.CName, receiver.GetTypeName(), "Category", false)
+	receiver.Movies = *lib.NewReferenceNavigationList[Movie](lib.ReferenceNavigationListParam{OwnerId: receiver.CName, OwnerTypeName: receiver.GetTypeName(), OtherTypeName: (*new(Movie)).GetTypeName(), ReferringFieldName: "Category", IsManyToMany: false})
 }
 func (receiver *Category) saveChangesIfInitialized() error {
 	if receiver.isInitialized && receiver.invocationDepth == 1 {
