@@ -100,15 +100,21 @@ functions:
     maximumRetryAttempts: 0
     maximumEventAge: 60
   
-
-  UserVerifyPassword:
-    name:  UserVerifyPassword
-    handler: bin/UserVerifyPassword
+  ReferenceAddToManyToMany:
+    name: ReferenceAddToManyToMany
+    handler: bin/ReferenceAddToManyToMany
     package:
       include:
-        - bin/UserVerifyPassword
+        - bin/ReferenceAddToManyToMany
     maximumRetryAttempts: 0
     maximumEventAge: 60
+  ReferenceDeleteFromManyToMany:
+    name: ReferenceDeleteFromManyToMany
+    handler: bin/ReferenceDeleteFromManyToMany
+    package:
+      include:
+        - bin/ReferenceDeleteFromManyToMany
+
 
   CityGetHotelsCloseTo:
     name:  CityGetHotelsCloseTo
@@ -125,6 +131,15 @@ functions:
     package:
       include:
         - bin/CityGetHotelsWithBestRates
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+
+  UserVerifyPassword:
+    name:  UserVerifyPassword
+    handler: bin/UserVerifyPassword
+    package:
+      include:
+        - bin/UserVerifyPassword
     maximumRetryAttempts: 0
     maximumEventAge: 60
 

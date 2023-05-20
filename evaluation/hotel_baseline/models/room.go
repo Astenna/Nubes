@@ -76,12 +76,22 @@ func ReserveRoom(param ReserveParam) error {
 	}
 
 	// STEP 2: create reservation
+	reservationPK := GetReservationPK(param.CityName, param.HotelName, param.RoomId)
 	err = db.Insert(Reservation{
-		CityHotelRoomId: GetReservationPK(param.CityName, param.HotelName, param.RoomId),
+		CityHotelRoomId: reservationPK,
 		DateIn:          dateIn,
 		DateOut:         dateOut,
-		UserEmail:       param.UserEmail,
 	}, db.ReservationTable)
+
+	if err != nil {
+		return err
+	}
+
+	err = db.Insert(db.UserReservationsJoinTableEntry{
+		UserId:          param.UserEmail,
+		CityHotelRoomId: reservationPK,
+		DateIn:          dateIn,
+	}, db.UserResevationsJoinTable)
 	return err
 }
 

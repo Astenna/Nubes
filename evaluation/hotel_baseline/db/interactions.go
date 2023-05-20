@@ -203,24 +203,31 @@ func Insert(toInsert any, tableName string) error {
 	return err
 }
 
-func DeleteUser(email string) error {
-	if email == "" {
-		return fmt.Errorf("missing email of user to delete")
+func DeleteByPartitionKey(pkValue, pkName, tableName string) error {
+	if pkValue == "" {
+		return fmt.Errorf("missing pkValue of item to delete")
+	}
+	if pkName == "" {
+		return fmt.Errorf("missing pkName of item to delete")
+	}
+
+	if tableName == "" {
+		return fmt.Errorf("missing tableName of user to delete")
 	}
 
 	input := &dynamodb.DeleteItemInput{
-		TableName: aws.String(UserTable),
+		TableName: aws.String(tableName),
 		Key: map[string]*dynamodb.AttributeValue{
-			"Email": {
-				S: aws.String(email),
+			pkName: {
+				S: aws.String(pkValue),
 			},
 		},
-		ConditionExpression: aws.String("attribute_exists(Email)"),
+		ConditionExpression: aws.String("attribute_exists(" + pkName + ")"),
 	}
 
 	_, err := DbClient.DeleteItem(input)
 	if _, ok := err.(*dynamodb.ConditionalCheckFailedException); ok {
-		return fmt.Errorf("delete failed. Instance of User with email: %s not found", email)
+		return fmt.Errorf("delete failed. Instance of item with pk: %s not found in table %s", pkValue, tableName)
 	}
 	return err
 }
@@ -259,4 +266,90 @@ func SetHotelField[T any](cityName, hotelName, fieldName string, fieldValue T) e
 	})
 
 	return err
+}
+
+type UserReservationsJoinTableEntry struct {
+	UserId          string
+	CityHotelRoomId string
+	DateIn          time.Time
+}
+
+func GetUserReservationsCompositeKeys(userEmail string) ([]CompositeKey, error) {
+	if userEmail == "" {
+		return nil, fmt.Errorf("missing userEmail")
+	}
+
+	keyCondition := expression.Key("UserId").Equal(expression.Value(userEmail))
+	projection := expression.NamesList(expression.Name("CityHotelRoomId"), expression.Name("DateIn"))
+	expr, errExpression := expression.NewBuilder().
+		WithKeyCondition(keyCondition).
+		WithProjection(projection).
+		Build()
+	if errExpression != nil {
+		fmt.Println("error: creating dynamoDB expression ", errExpression)
+		return nil, errExpression
+	}
+	input := &dynamodb.QueryInput{
+		TableName:                 aws.String(UserResevationsJoinTable),
+		ExpressionAttributeNames:  expr.Names(),
+		KeyConditionExpression:    expr.KeyCondition(),
+		ExpressionAttributeValues: expr.Values(),
+		ProjectionExpression:      expr.Projection(),
+	}
+
+	items, err := DbClient.Query(input)
+	if err != nil {
+		return nil, err
+	}
+
+	var compositeKeys = make([]CompositeKey, len(items.Items))
+	for i, item := range items.Items {
+		compositeKeys[i] = CompositeKey{
+			PartitionKey: *item["CityHotelRoomId"].S,
+			SortKey:      *item["DateIn"].S,
+		}
+	}
+	return compositeKeys, nil
+}
+
+type CompositeKey struct {
+	PartitionKey string
+	SortKey      string
+}
+
+func GetBatchItemsUsingCompositeKeys[T any](keys []CompositeKey, tableName, pkAttributeName, skAttributeName string) ([]T, error) {
+
+	keysToRetrieve := make([]map[string]*dynamodb.AttributeValue, len(keys))
+	for i, key := range keys {
+		keysToRetrieve[i] = map[string]*dynamodb.AttributeValue{
+			pkAttributeName: {
+				S: aws.String(key.PartitionKey),
+			},
+			skAttributeName: {
+				S: aws.String(key.SortKey),
+			},
+		}
+	}
+
+	input := &dynamodb.BatchGetItemInput{
+		RequestItems: map[string]*dynamodb.KeysAndAttributes{
+			tableName: {
+				Keys: keysToRetrieve,
+			},
+		},
+	}
+
+	items, err := DbClient.BatchGetItem(input)
+	if err != nil {
+		return nil, err
+	}
+
+	var parsedItem []T
+	if items.Responses[tableName] != nil {
+
+		err = dynamodbattribute.UnmarshalListOfMaps(items.Responses[tableName], &parsedItem)
+		return parsedItem, err
+	}
+
+	return nil, err
 }

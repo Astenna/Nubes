@@ -13,13 +13,13 @@ import (
 	"github.com/jftuga/geodist"
 )
 
-const UserCount = 20
+const UserCount = 400
 const CitiesCount = 3
 const HotelsPerCity = 10
 const RoomsPerHotel = 5
 const ReservationsPerRoom = 35
 
-// const UserCount = 50
+// const UserCount = 800
 // const CitiesCount = 5
 // const HotelsPerCity = 20
 // const RoomsPerHotel = 5
@@ -151,9 +151,13 @@ func SeedRoomsAndReservations() {
 							CityHotelRoomId: models.GetReservationPK(CityPrefix+citySuffix, HotelPrefix+hotelSuffix, "Room"+roomSuffix),
 							DateIn:          dateIn,
 							DateOut:         dateIn.AddDate(0, 0, int(k%8)),
-							UserEmail:       "Email_" + strconv.Itoa(int(k%UserCount)),
 						}
 						insert(reservationb, db.ReservationTable)
+						insert(db.UserReservationsJoinTableEntry{
+							UserId:          "Email_" + strconv.Itoa(int(k%UserCount)),
+							CityHotelRoomId: reservationb.CityHotelRoomId,
+							DateIn:          dateIn,
+						}, db.UserResevationsJoinTable)
 					}
 
 					// nubes

@@ -12,7 +12,7 @@ local gateway = ""
 
 -- according to counts specified in the seeder
 
-local max_user_suffix = 19 --49
+local max_user_suffix = 399 --799
 local max_city_suffix = 2 --4
 local max_hotel_suffix = 9 --19
 local max_room_suffix = 4
@@ -192,7 +192,6 @@ local function reserve()
     return wrk.format(method, gateway, headers, body)
 end
 
-
 local function add_user() 
     local city_id = math.random(0, max_city_suffix)
     local method = "GET"
@@ -240,6 +239,20 @@ local function set_hotel_rate()
             CityName = city_prefix .. tostring(city_id),
             HotelName = hotel_prefix .. tostring(hotel_id)
         }
+    }
+    local body = JSON:encode(param)
+    local headers = {}
+    headers["Content-Type"] = "application/json"
+
+    return wrk.format(method, gateway, headers, body)
+end
+
+local function get_user_reservations() 
+    local user_id = math.random(0, max_user_suffix)
+    local method = "GET"
+    local param = {
+        FunctionName = "getUserReservations",
+        Input = email_prefix .. tostring(user_id)
     }
     local body = JSON:encode(param)
     local headers = {}

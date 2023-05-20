@@ -11,7 +11,7 @@ type User struct {
 	LastName        string
 	Email           string `nubes:"id,readonly" dynamodbav:"Id"`
 	Password        string
-	Reservations    lib.ReferenceNavigationList[Reservation] `nubes:"hasOne-User" dynamodbav:"-"`
+	Reservations    lib.ReferenceNavigationList[Reservation] `nubes:"hasMany-Users" dynamodbav:"-"`
 	isInitialized   bool
 	invocationDepth int
 }
@@ -64,7 +64,7 @@ func (receiver User) GetId() string {
 }
 func (receiver *User) Init() {
 	receiver.isInitialized = true
-	receiver.Reservations = *lib.NewReferenceNavigationList[Reservation](lib.ReferenceNavigationListParam{OwnerId: receiver.Email, OwnerTypeName: receiver.GetTypeName(), OtherTypeName: (*new(Reservation)).GetTypeName(), ReferringFieldName: "User", IsManyToMany: false})
+	receiver.Reservations = *lib.NewReferenceNavigationList[Reservation](lib.ReferenceNavigationListParam{OwnerId: receiver.Email, OwnerTypeName: receiver.GetTypeName(), OtherTypeName: (*new(Reservation)).GetTypeName(), ReferringFieldName: "Reservations", IsManyToMany: true})
 }
 func (receiver *User) saveChangesIfInitialized() error {
 	if receiver.isInitialized && receiver.invocationDepth == 1 {

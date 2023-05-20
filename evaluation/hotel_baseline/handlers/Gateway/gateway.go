@@ -91,6 +91,13 @@ func GatewayHandler(param aws.JSONValue) (interface{}, error) {
 			Payload:      marshalledInput,
 		})
 
+	case "getUserReservations":
+		log.Printf("INVOKING: getUserReservations")
+		return LambdaClient.Invoke(&lambda.InvokeInput{
+			FunctionName: aws.String("getUserReservations"),
+			Payload:      marshalledInput,
+		})
+
 	default:
 		log.Printf("DEFAULT: " + reqBody.FunctionName)
 		return "", fmt.Errorf("%s not supported", reqBody.FunctionName)

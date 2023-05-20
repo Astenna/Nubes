@@ -11,7 +11,7 @@ import (
 type Reservation struct {
 	Id              string
 	Room            lib.Reference[Room]
-	User            lib.Reference[User] `dynamodbav:",omitempty"`
+	Users           lib.ReferenceNavigationList[User] `nubes:"hasMany-Reservations" dynamodbav:"-"`
 	DateIn          time.Time
 	DateOut         time.Time
 	isInitialized   bool
@@ -103,12 +103,16 @@ func ExportReservation(param ReserveParam) (string, error) {
 	// STEP 3: insert new reservation
 	res, err := lib.Export[Reservation](Reservation{
 		Room:    lib.Reference[Room](room.Id),
-		User:    param.User,
 		DateIn:  dateIn,
 		DateOut: dateOut,
 	})
 	if err != nil {
 		return "", err
+	}
+
+	err = res.Users.AddToManyToMany(param.User.Id())
+	if err != nil {
+		fmt.Println(err)
 	}
 	return res.Id, err
 }
@@ -116,9 +120,9 @@ func ExportReservation(param ReserveParam) (string, error) {
 func getYearAndMonth(date time.Time) string {
 	return fmt.Sprintf("%d-%02d", date.Year(), date.Month())
 }
-
 func (receiver *Reservation) Init() {
 	receiver.isInitialized = true
+	receiver.Users = *lib.NewReferenceNavigationList[User](lib.ReferenceNavigationListParam{OwnerId: receiver.Id, OwnerTypeName: receiver.GetTypeName(), OtherTypeName: (*new(User)).GetTypeName(), ReferringFieldName: "Users", IsManyToMany: true})
 }
 func (receiver *Reservation) saveChangesIfInitialized() error {
 	if receiver.isInitialized && receiver.invocationDepth == 1 {

@@ -9,8 +9,9 @@ import (
 )
 
 type IndexDefinition struct {
-	Column    string
-	IndexName string
+	PartitionKeyColumn string
+	SortKeyColumn      string
+	IndexName          string
 }
 
 type TableDefinition struct {
@@ -41,19 +42,21 @@ func InitializeTables() {
 			TableName:    db.ReservationTable,
 			PartitionKey: "CityHotelRoomId",
 			SortKey:      "DateIn",
-			Indexes: []IndexDefinition{
-				{
-					IndexName: db.UsersReservationsIndex,
-					Column:    "UserId",
-				},
-			},
+		},
+		{
+			TableName:    db.UserResevationsJoinTable,
+			PartitionKey: "UserId",
+			Indexes: []IndexDefinition{{
+				PartitionKeyColumn: "CityHotelRoomId",
+				SortKeyColumn:      "DateIn",
+				IndexName:          db.UserResevationsJoinTable + "Reversed",
+			}},
 		},
 	}
 
 	for _, tableDefinition := range tableDefinitions {
 		createTableInput := &dynamodb.CreateTableInput{
 			BillingMode: aws.String("PAY_PER_REQUEST"),
-
 			AttributeDefinitions: []*dynamodb.AttributeDefinition{
 				{
 					AttributeName: aws.String(tableDefinition.PartitionKey),
@@ -88,7 +91,11 @@ func InitializeTables() {
 			for _, indexDefinition := range tableDefinition.Indexes {
 				createTableInput.AttributeDefinitions = append(createTableInput.AttributeDefinitions,
 					&dynamodb.AttributeDefinition{
-						AttributeName: aws.String(indexDefinition.Column),
+						AttributeName: aws.String(indexDefinition.PartitionKeyColumn),
+						AttributeType: aws.String("S"),
+					},
+					&dynamodb.AttributeDefinition{
+						AttributeName: aws.String(indexDefinition.SortKeyColumn),
 						AttributeType: aws.String("S"),
 					},
 				)
@@ -97,8 +104,12 @@ func InitializeTables() {
 						IndexName: aws.String(indexDefinition.IndexName),
 						KeySchema: []*dynamodb.KeySchemaElement{
 							{
-								AttributeName: aws.String(indexDefinition.Column),
+								AttributeName: aws.String(indexDefinition.PartitionKeyColumn),
 								KeyType:       aws.String("HASH"),
+							},
+							{
+								AttributeName: aws.String(indexDefinition.SortKeyColumn),
+								KeyType:       aws.String("RANGE"),
 							},
 						},
 						Projection: &dynamodb.Projection{

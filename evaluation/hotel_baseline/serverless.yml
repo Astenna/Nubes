@@ -88,6 +88,14 @@ functions:
         - bin/deleteUser
     maximumRetryAttempts: 0
     maximumEventAge: 60
+  getUserReservations:
+    name:  getUserReservations
+    handler: bin/getUserReservations
+    package:
+      include:
+        - bin/getUserReservations
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
   gateway-baseline:
     name:  gateway-baseline
     handler: bin/gateway

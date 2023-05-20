@@ -13,7 +13,7 @@ local gateway = ""
 
 -- according to counts specified in the seeder
 
-local max_user_suffix = 19 --49
+local max_user_suffix = 399 --799
 local max_city_suffix = 2 --4
 local max_hotel_suffix = 9 --19
 local max_room_suffix = 4
