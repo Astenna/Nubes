@@ -14,6 +14,10 @@ type Hotel struct {
 	Rate        float32
 }
 
+func SetHotelRate(cityName, hotelName string, rate float32) error {
+	return db.SetHotelField(cityName, hotelName, "Rate", rate)
+}
+
 func GetHotelsInCity(city string) ([]Hotel, error) {
 	return db.GetItemsByPartitonKey[Hotel](db.HotelTable, "CityName", city)
 }

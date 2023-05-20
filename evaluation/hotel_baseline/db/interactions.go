@@ -202,3 +202,61 @@ func Insert(toInsert any, tableName string) error {
 	_, err = DbClient.PutItem(input)
 	return err
 }
+
+func DeleteUser(email string) error {
+	if email == "" {
+		return fmt.Errorf("missing email of user to delete")
+	}
+
+	input := &dynamodb.DeleteItemInput{
+		TableName: aws.String(UserTable),
+		Key: map[string]*dynamodb.AttributeValue{
+			"Email": {
+				S: aws.String(email),
+			},
+		},
+		ConditionExpression: aws.String("attribute_exists(Email)"),
+	}
+
+	_, err := DbClient.DeleteItem(input)
+	if _, ok := err.(*dynamodb.ConditionalCheckFailedException); ok {
+		return fmt.Errorf("delete failed. Instance of User with email: %s not found", email)
+	}
+	return err
+}
+
+func SetHotelField[T any](cityName, hotelName, fieldName string, fieldValue T) error {
+	if fieldName == "" {
+		return fmt.Errorf("missing fieldName")
+	}
+	if hotelName == "" {
+		return fmt.Errorf("missing keyValue")
+	}
+	if cityName == "" {
+		return fmt.Errorf("missing keyValue")
+	}
+
+	update := expression.UpdateBuilder{}
+	update = update.Set(expression.Name(fieldName), expression.Value(fieldValue))
+	expr, err := expression.NewBuilder().WithUpdate(update).Build()
+	if err != nil {
+		return fmt.Errorf("error occurred when building dynamodb update expression %w", err)
+	}
+
+	_, err = DbClient.UpdateItem(&dynamodb.UpdateItemInput{
+		TableName: aws.String(HotelTable),
+		Key: map[string]*dynamodb.AttributeValue{
+			"CityName": {
+				S: aws.String(cityName),
+			},
+			"HotelName": {
+				S: aws.String(hotelName),
+			},
+		},
+		UpdateExpression:          expr.Update(),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+	})
+
+	return err
+}

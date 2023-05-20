@@ -10,14 +10,14 @@
 `docker build -t nubes-bench:latest  -f ./Dockerfile ../../`
 2. Run docker file - choose preferable option:
  i. Detached mode (run the next commands in a terminal available in docker GUI or using docker exec )
-    `docker build -dit nubes-bench:latest`
+    `docker run -dit nubes-bench:latest`
  ii. Run commands in the same terminal
-    `docker build -it nubes-bench:latest`
+    `docker run -it nubes-bench:latest`
 3. [in docker container]: Configure aws account
    `aws configure`
    The command will ask for the access keys, generate the them here:
    ![aws configure screenshot](.//../../images/aws-configure.png)
-   Note that the credentials must belong to a user with    **AmazonDynamoDBFullAccess**, **AWSCloudFormationFullAccess**, **AmazonS3FullAccess** and **AWSLambda_FullAccess** permissions to the user.
+   Note that the credentials must belong to a user with **AmazonDynamoDBFullAccess**, **AWSCloudFormationFullAccess**, **AmazonS3FullAccess** and **AWSLambda_FullAccess** permissions.
 4. [in docker container]: Move to the scripts folder copied to the docker container
    `cd /nubes/evaluation/scripts`
 5.  [in docker container, this directory]: Initialize & seed DynamoDB

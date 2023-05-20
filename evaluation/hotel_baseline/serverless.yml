@@ -29,7 +29,7 @@ package:
 
 functions:
   login:
-    name:  login
+    name: login
     handler: bin/login
     package:
       include:
@@ -66,6 +66,26 @@ functions:
     package:
       include:
         - bin/reserveRoom
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+  setHotelRate:
+    name:  setHotelRate
+    handler: bin/setHotelRate
+    package:
+      include:
+        - bin/setHotelRate
+  registerUser:
+    name:  registerUser
+    handler: bin/registerUser
+    package:
+      include:
+        - bin/registerUser
+  deleteUser:
+    name:  deleteUser
+    handler: bin/deleteUser
+    package:
+      include:
+        - bin/deleteUser
     maximumRetryAttempts: 0
     maximumEventAge: 60
   gateway-baseline:

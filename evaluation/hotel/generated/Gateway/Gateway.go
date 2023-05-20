@@ -37,12 +37,6 @@ func GatewayHandler(param map[string]interface{}) (interface{}, error) {
 	}
 
 	switch reqBody.FunctionName {
-	case "CityGetAllHotels":
-		log.Printf("INVOKING: CityGetAllHotels")
-		return LambdaClient.Invoke(&lambda.InvokeInput{
-			FunctionName: aws.String("CityGetAllHotels"),
-			Payload:      marshalledInput,
-		})
 
 	case "UserVerifyPassword":
 		log.Printf("INVOKING: UserVerifyPassword")
@@ -68,6 +62,24 @@ func GatewayHandler(param map[string]interface{}) (interface{}, error) {
 		log.Printf("INVOKING: Export")
 		return LambdaClient.Invoke(&lambda.InvokeInput{
 			FunctionName: aws.String("Export"),
+			Payload:      marshalledInput,
+		})
+	case "Delete":
+		log.Printf("INVOKING: Delete")
+		return LambdaClient.Invoke(&lambda.InvokeInput{
+			FunctionName: aws.String("Delete"),
+			Payload:      marshalledInput,
+		})
+	case "ReferenceGetStubs":
+		log.Printf("INVOKING: ReferenceGetStubs (Get all hotels in a city OR Get users' reservations)")
+		return LambdaClient.Invoke(&lambda.InvokeInput{
+			FunctionName: aws.String("ReferenceGetStubs"),
+			Payload:      marshalledInput,
+		})
+	case "SetField":
+		log.Printf("INVOKING: SetField (set hotel rate)")
+		return LambdaClient.Invoke(&lambda.InvokeInput{
+			FunctionName: aws.String("SetField"),
 			Payload:      marshalledInput,
 		})
 

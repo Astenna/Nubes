@@ -70,6 +70,27 @@ func GatewayHandler(param aws.JSONValue) (interface{}, error) {
 			Payload:      marshalledInput,
 		})
 
+	case "deleteUser":
+		log.Printf("INVOKING: deleteUser")
+		return LambdaClient.Invoke(&lambda.InvokeInput{
+			FunctionName: aws.String("deleteUser"),
+			Payload:      marshalledInput,
+		})
+
+	case "registerUser":
+		log.Printf("INVOKING: registerUser")
+		return LambdaClient.Invoke(&lambda.InvokeInput{
+			FunctionName: aws.String("registerUser"),
+			Payload:      marshalledInput,
+		})
+
+	case "setHotelRate":
+		log.Printf("INVOKING: setHotelRate")
+		return LambdaClient.Invoke(&lambda.InvokeInput{
+			FunctionName: aws.String("setHotelRate"),
+			Payload:      marshalledInput,
+		})
+
 	default:
 		log.Printf("DEFAULT: " + reqBody.FunctionName)
 		return "", fmt.Errorf("%s not supported", reqBody.FunctionName)

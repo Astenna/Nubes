@@ -1,6 +1,10 @@
 package types
 
-import "github.com/Astenna/Nubes/lib"
+import (
+	"fmt"
+
+	"github.com/Astenna/Nubes/lib"
+)
 
 type User struct {
 	FirstName       string
@@ -32,6 +36,28 @@ func (u User) VerifyPassword(password string) (bool, error) {
 	}
 	u.invocationDepth--
 	return false, nil
+}
+
+type DeleteParam struct {
+	Email    string
+	Password string
+}
+
+func DeleteUser(param DeleteParam) error {
+	userToBeDeleted, err := lib.Load[User](param.Email)
+	if err != nil {
+		return err
+	}
+
+	passwordOk, err := userToBeDeleted.VerifyPassword(param.Password)
+	if err != nil {
+		return err
+	}
+	if passwordOk {
+		return lib.Delete[User](param.Email)
+	}
+
+	return fmt.Errorf("invalid password")
 }
 func (receiver User) GetId() string {
 	return receiver.Email

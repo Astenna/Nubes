@@ -1,3 +1,4 @@
+---@diagnostic disable: lowercase-global
 package.path = package.path .. "/scripts"
 
 --require "socket"
@@ -19,6 +20,9 @@ local max_room_suffix = 4
 local email_prefix = "Email"
 local city_prefix = "Milano"
 local hotel_prefix = "Bruschetti"
+
+local registeredUserEmail = "registeredUserEmail"
+local registeredUserPassword = "registeredUserPassword"
 
 local function login()
     local id = math.random(0, max_user_suffix)
@@ -79,9 +83,13 @@ local function search_hotel()
     local city_id = math.random(0, max_city_suffix)
     local method = "GET"
     local param = {
-        FunctionName = "CityGetAllHotels",
+        FunctionName = "ReferenceGetStubs",
         Input = {
-            Id = "Milano" .. tostring(city_id)
+            OwnerId = "Milano" .. tostring(city_id),
+            OwnerTypeName = "City",
+            OtherTypeName = "Hotel",
+            ReferringFieldName ="City",
+            IsManyToMany = false
         }
     }
     local body = JSON:encode(param)
@@ -192,12 +200,94 @@ local function reserve()
     return wrk.format(method, gateway, headers, body)
 end
 
+local function add_user() 
+    local city_id = math.random(0, max_city_suffix)
+    local method = "GET"
+    local param = {
+        FunctionName = "Export",
+        Input = {
+            TypeName = "User",
+            Parameter = {
+                FirstName = "NewFirstName",
+                LastName = "NewLastName",
+                Email = registeredUserEmail,
+                Password = registeredUserPassword
+            }
+        }
+    }
+    local body = JSON:encode(param)
+    local headers = {}
+    headers["Content-Type"] = "application/json"
+
+    return wrk.format(method, gateway, headers, body)
+end
+
+
+local function delete_user() 
+    local method = "GET"
+    local param = {
+        FunctionName = "Delete",
+        Input = {
+            TypeName = "User",
+            Parameter = {
+                Email = registeredUserEmail,
+                Password = registeredUserPassword
+            }
+        }
+    }
+    local body = JSON:encode(param)
+    local headers = {}
+    headers["Content-Type"] = "application/json"
+
+    return wrk.format(method, gateway, headers, body)
+end
+
+local function set_hotel_rate() 
+    local city_id = math.random(0, max_city_suffix)
+    local hotel_id = math.random(0, max_hotel_suffix)
+    local method = "GET"
+    local param = {
+        FunctionName = "SetField",
+        Input = {
+            Id = city_prefix .. tostring(city_id) .. "_" .. hotel_prefix .. tostring(hotel_id),
+            FieldName = "Rate",
+            TypeName = "Hotel",
+            Value = city_id % 6
+        }
+    }
+    local body = JSON:encode(param)
+    local headers = {}
+    headers["Content-Type"] = "application/json"
+
+    return wrk.format(method, gateway, headers, body)
+end
+
+local function get_user_reservations() 
+    local user_id = math.random(0, max_user_suffix)
+    local method = "GET"
+    local param = {
+        FunctionName = "ReferenceGetStubs",
+        Input = {
+            OwnerId = email_prefix .. tostring(user_id),
+            OwnerTypeName = "User",
+            OtherTypeName = "Reservation",
+            ReferringFieldName ="Reservations",
+            IsManyToMany = true
+        }
+    }
+    local body = JSON:encode(param)
+    local headers = {}
+    headers["Content-Type"] = "application/json"
+
+    return wrk.format(method, gateway, headers, body)
+end
+
 request = function ()
     local search_ratio = 0.6
     local recommend_ratio = 0.2
     local login_ratio = 0.1
     --local reserve_ratio = 0.1
-
+    
     local coin = math.random()
     if coin < search_ratio then
         return search_hotel()

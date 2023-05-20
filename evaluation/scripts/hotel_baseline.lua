@@ -20,6 +20,9 @@ local email_prefix = "Email"
 local city_prefix = "Milano"
 local hotel_prefix = "Bruschetti"
 
+local registeredUserEmail = "registeredUserEmail"
+local registeredUserPassword = "registeredUserPassword"
+
 local function login()
     local id = math.random(0, max_user_suffix)
     local method = "GET"
@@ -189,6 +192,63 @@ local function reserve()
     return wrk.format(method, gateway, headers, body)
 end
 
+
+local function add_user() 
+    local city_id = math.random(0, max_city_suffix)
+    local method = "GET"
+    local param = {
+        FunctionName = "registerUser",
+        Input = {
+            FirstName = "NewFirstName",
+            LastName = "NewLastName",
+            Email = registeredUserEmail,
+            Password = registeredUserPassword
+        }
+    }
+    local body = JSON:encode(param)
+    local headers = {}
+    headers["Content-Type"] = "application/json"
+
+    return wrk.format(method, gateway, headers, body)
+end
+
+
+local function delete_user() 
+    local method = "GET"
+    local param = {
+        FunctionName = "deleteUser",
+        Input = {
+            Email = registeredUserEmail,
+            Password = registeredUserPassword
+        }
+    }
+    local body = JSON:encode(param)
+    local headers = {}
+    headers["Content-Type"] = "application/json"
+
+    return wrk.format(method, gateway, headers, body)
+end
+
+local function set_hotel_rate() 
+    local city_id = math.random(0, max_city_suffix)
+    local hotel_id = math.random(0, max_hotel_suffix)
+    local method = "GET"
+    local param = {
+        FunctionName = "setHotelRate",
+        Input = {
+            Rate = city_id % 6,
+            CityName = city_prefix .. tostring(city_id),
+            HotelName = hotel_prefix .. tostring(hotel_id)
+        }
+    }
+    local body = JSON:encode(param)
+    local headers = {}
+    headers["Content-Type"] = "application/json"
+
+    return wrk.format(method, gateway, headers, body)
+end
+
+---@diagnostic disable-next-line: lowercase-global
 request = function ()
     local search_ratio = 0.6
     local recommend_ratio = 0.2
