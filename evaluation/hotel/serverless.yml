@@ -75,24 +75,46 @@ functions:
         - bin/SetField
     maximumRetryAttempts: 0
     maximumEventAge: 60
-  ReferenceGetByIndex:
-    name: ReferenceGetByIndex
-    handler: bin/ReferenceGetByIndex
+  ReferenceGet:
+    name: ReferenceGet
+    handler: bin/ReferenceGet
     package:
       include:
-        - bin/ReferenceGetByIndex
+        - bin/ReferenceGet
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+  ReferenceGetIds:
+    name: ReferenceGetIds
+    handler: bin/ReferenceGetIds
+    package:
+      include:
+        - bin/ReferenceGetIds
+    maximumRetryAttempts: 0
+    maximumEventAge: 60
+  ReferenceGetStubs:
+    name: ReferenceGetStubs
+    handler: bin/ReferenceGetStubs
+    package:
+      include:
+        - bin/ReferenceGetStubs
     maximumRetryAttempts: 0
     maximumEventAge: 60
   
-
-  CityGetAllHotels:
-    name:  CityGetAllHotels
-    handler: bin/CityGetAllHotels
+  ReferenceAddToManyToMany:
+    name: ReferenceAddToManyToMany
+    handler: bin/ReferenceAddToManyToMany
     package:
       include:
-        - bin/CityGetAllHotels
+        - bin/ReferenceAddToManyToMany
     maximumRetryAttempts: 0
     maximumEventAge: 60
+  ReferenceDeleteFromManyToMany:
+    name: ReferenceDeleteFromManyToMany
+    handler: bin/ReferenceDeleteFromManyToMany
+    package:
+      include:
+        - bin/ReferenceDeleteFromManyToMany
+
 
   CityGetHotelsCloseTo:
     name:  CityGetHotelsCloseTo
@@ -120,12 +142,13 @@ functions:
         - bin/UserVerifyPassword
     maximumRetryAttempts: 0
     maximumEventAge: 60
-
+  
   Gateway:
-    name:  Gateway
+    name: Gateway
     handler: bin/Gateway
     package:
       include:
         - bin/Gateway
     maximumRetryAttempts: 0
     maximumEventAge: 60
+
