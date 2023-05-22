@@ -1,0 +1,41 @@
+name = "nubes"
+
+[[functions]]
+lambda = "Gateway"
+task = "gateway"
+
+[[functions]]
+lambda = "Export"
+task = "reserve"
+
+[[functions]]
+lambda = "Export"
+task = "user-registration"
+
+[[functions]]
+lambda = "Delete"
+task = "delete-user"
+
+[[functions]]
+lambda = "CityGetHotelsCloseTo"
+task = "recommend-location"
+
+[[functions]]
+lambda = "CityGetHotelsWithBestRates"
+task = "recommend-price"
+
+[[functions]]
+lambda = "UserVerifyPassword"
+task = "login"
+
+[[functions]]
+lambda = "ReferenceGetStubs"
+task = "get-hotels"
+
+[[functions]]
+lambda = "ReferenceGetStubs"
+task = "get-user-reservations"
+
+[[functions]]
+lambda = "SetField"
+task = "set-hotel-rate"
