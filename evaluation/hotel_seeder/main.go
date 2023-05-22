@@ -13,17 +13,11 @@ import (
 	"github.com/jftuga/geodist"
 )
 
-const UserCount = 400
-const CitiesCount = 3
+const UserCount = 2000
+const CitiesCount = 25
 const HotelsPerCity = 10
-const RoomsPerHotel = 5
-const ReservationsPerRoom = 35
-
-// const UserCount = 800
-// const CitiesCount = 5
-// const HotelsPerCity = 20
-// const RoomsPerHotel = 5
-// const ReservationsPerRoom = 40
+const RoomsPerHotel = 10
+const ReservationsPerRoom = 20
 
 const CityPrefix = "Milano"
 const HotelPrefix = "Bruschetti"
@@ -116,6 +110,10 @@ func SeedHotels() {
 	}
 }
 
+func nextUser(q int, mod int) int {
+	return (q*364526735 + 23562367) % mod
+}
+
 func SeedRoomsAndReservations() {
 	var wg sync.WaitGroup
 
@@ -123,10 +121,12 @@ func SeedRoomsAndReservations() {
 		citySuffix := strconv.Itoa(c)
 		fmt.Println("Seeding ROOMS and RESERVATIONS for city " + citySuffix + "out of " + strconv.Itoa(CitiesCount))
 
+		cc := c
 		for j := 0; j < HotelsPerCity; j++ {
 			hotelSuffix := strconv.Itoa(j)
 			fmt.Println("------------------------------ in hotel " + hotelSuffix + "out of " + strconv.Itoa(HotelsPerCity))
 
+			jj := j
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
@@ -135,6 +135,7 @@ func SeedRoomsAndReservations() {
 					roomSuffix := strconv.Itoa(i)
 
 					// baseline
+					next := nextUser(cc*101+jj*19+i*7, UserCount)
 					roomb := models.Room{
 						CityHotelName: CityPrefix + citySuffix + "_" + HotelPrefix + hotelSuffix,
 						RoomId:        "Room" + roomSuffix,
@@ -152,6 +153,8 @@ func SeedRoomsAndReservations() {
 							DateIn:          dateIn,
 							DateOut:         dateIn.AddDate(0, 0, int(k%8)),
 						}
+						next = nextUser(next, UserCount)
+
 						insert(reservationb, db.ReservationTable)
 						insert(db.UserReservationsJoinTableEntry{
 							UserId:          "Email_" + strconv.Itoa(int(k%UserCount)),
@@ -161,6 +164,7 @@ func SeedRoomsAndReservations() {
 					}
 
 					// nubes
+					next = nextUser(cc*101+jj*19+i*7, UserCount)
 					room := types.Room{
 						Id:           CityPrefix + citySuffix + "_" + HotelPrefix + hotelSuffix + "_Room" + roomSuffix,
 						Name:         "Room" + roomSuffix,
@@ -177,12 +181,14 @@ func SeedRoomsAndReservations() {
 						param := types.ReserveParam{
 							DateIn:                dateIn.Format("2006-01-02"),
 							DateOut:               dateIn.AddDate(0, 0, int(k%8)).Format("2006-01-02"),
-							User:                  lib.Reference[types.User]("Email" + strconv.Itoa(int(k%UserCount))),
+							User:                  lib.Reference[types.User]("Email" + strconv.Itoa(int(next))),
 							RoomId:                room.Id,
 							SkipAvailabilityCheck: true,
 						}
+						next = nextUser(next, UserCount)
+
 						types.ExportReservation(param)
-						fmt.Print(",")
+						// fmt.Print(",")
 					}
 				}
 			}()

@@ -32,6 +32,4 @@ func insert[T any](toBeInserted T, tableName string) {
 		fmt.Println(err)
 		return
 	}
-
-	fmt.Print(".") // Remove if there is too much output
 }

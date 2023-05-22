@@ -3,20 +3,16 @@ package.path = package.path .. "/scripts"
 
 --require "socket"
 local JSON = require("JSON")
-math.randomseed(os.time())
---math.randomseed(socket.gettime() * 1000)
-math.random();
-math.random();
-math.random()
+math.randomseed(0xdeadbeef)
 
-local gateway = ""
+local gateway = "AAAA"
 
 -- according to counts specified in the seeder
 
-local max_user_suffix = 399 --799
-local max_city_suffix = 2 --4
+local max_user_suffix = 1999
+local max_city_suffix = 24
 local max_hotel_suffix = 9 --19
-local max_room_suffix = 4
+local max_room_suffix = 9
 local email_prefix = "Email"
 local city_prefix = "Milano"
 local hotel_prefix = "Bruschetti"
