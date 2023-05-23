@@ -35,7 +35,7 @@ local function recommend()
         param = {
             FunctionName = "recommendHotelsRateSimple",
             Input = {
-                City = "Milano" .. tostring(city_id),
+                City = city_prefix .. tostring(city_id),
                 Count =  6
             }
         }
@@ -44,7 +44,7 @@ local function recommend()
         param = {
             FunctionName = "recommendHotelsLocationSimple",
             Input = {
-                City = "Milano" .. tostring(city_id),
+                City = city_prefix .. tostring(city_id),
                 Count = 6,
                 Coordinates = { 
                     Longitude = (-1)*math.random(0, 90) + math.random(0, 89) + math.random(),
