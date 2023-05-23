@@ -1,6 +1,6 @@
 frameworkVersion: '>3.24.0'
 
-service: hotel-baseline
+service: hotel-baseline-simple
 provider:
   name: aws
   runtime: go1.x
@@ -28,76 +28,32 @@ package:
 
 
 functions:
-  login:
-    name: login
-    handler: bin/login
-    package:
-      include:
-        - bin/login
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-  getHotelsInCity:
-    name:  getHotelsInCity
+  getHotelsInCitySimple:
+    name:  getHotelsInCitySimple
     handler: bin/getHotelsInCity
     package:
       include:
         - bin/getHotelsInCity
     maximumRetryAttempts: 0
     maximumEventAge: 60
-  recommendHotelsLocation:
-    name:  recommendHotelsLocation
+  recommendHotelsLocationSimple:
+    name:  recommendHotelsLocationSimple
     handler: bin/recommendHotelsLocation
     package:
       include:
         - bin/recommendHotelsLocation
     maximumRetryAttempts: 0
     maximumEventAge: 60
-  recommendHotelsRate:
-    name:  recommendHotelsRate
+  recommendHotelsRateSimple:
+    name:  recommendHotelsRateSimple
     handler: bin/recommendHotelsRate
     package:
       include:
         - bin/recommendHotelsRate
     maximumRetryAttempts: 0
     maximumEventAge: 60
-  reserveRoom:
-    name:  reserveRoom
-    handler: bin/reserveRoom
-    package:
-      include:
-        - bin/reserveRoom
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-  setHotelRate:
-    name:  setHotelRate
-    handler: bin/setHotelRate
-    package:
-      include:
-        - bin/setHotelRate
-  registerUser:
-    name:  registerUser
-    handler: bin/registerUser
-    package:
-      include:
-        - bin/registerUser
-  deleteUser:
-    name:  deleteUser
-    handler: bin/deleteUser
-    package:
-      include:
-        - bin/deleteUser
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-  getUserReservations:
-    name:  getUserReservations
-    handler: bin/getUserReservations
-    package:
-      include:
-        - bin/getUserReservations
-    maximumRetryAttempts: 0
-    maximumEventAge: 60
-  gatewayBaseline:
-    name:  gatewayBaseline
+  gatewayBaselineSimple:
+    name:  gatewayBaselineSimple
     handler: bin/gateway
     package:
       include:

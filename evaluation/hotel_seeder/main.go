@@ -9,6 +9,8 @@ import (
 	"github.com/Astenna/Nubes/evaluation/hotel/types"
 	"github.com/Astenna/Nubes/evaluation/hotel_baseline/db"
 	"github.com/Astenna/Nubes/evaluation/hotel_baseline/models"
+	db_simple "github.com/Astenna/Nubes/evaluation/hotel_baseline_simple/db"
+	models_simple "github.com/Astenna/Nubes/evaluation/hotel_baseline_simple/models"
 	"github.com/Astenna/Nubes/lib"
 	"github.com/jftuga/geodist"
 )
@@ -73,6 +75,12 @@ func SeedCities() {
 		cityb.Region = "Lombardia" + suffix
 		cityb.Description = `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce scelerisque eu risus non lacinia. Nullam at ligula gravida, vehicula justo ac, feugiat est. Fusce hendrerit, orci sed fermentum molestie, odio felis laoreet tellus, non vulputate urna diam eu nibh. Etiam quis pharetra sem. Sed non lorem id lacus pellentesque egestas vel vitae metus. Quisque at magna massa. Praesent viverra velit dui, ac porta libero molestie sed. `
 		insert(cityb, db.CityTable)
+		// simple baseline
+		citybs := models_simple.City{}
+		citybs.CityName = CityPrefix + suffix
+		citybs.Region = "Lombardia" + suffix
+		citybs.Description = `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce scelerisque eu risus non lacinia. Nullam at ligula gravida, vehicula justo ac, feugiat est. Fusce hendrerit, orci sed fermentum molestie, odio felis laoreet tellus, non vulputate urna diam eu nibh. Etiam quis pharetra sem. Sed non lorem id lacus pellentesque egestas vel vitae metus. Quisque at magna massa. Praesent viverra velit dui, ac porta libero molestie sed. `
+		insert(citybs, db_simple.CityTable)
 		// nubes
 		city := types.City{}
 		city.CityName = CityPrefix + suffix
@@ -112,6 +120,19 @@ func SeedHotels() {
 					Rate: float32(jj % 6),
 				}
 				insert(hotelb, db.HotelTable)
+				// simple baseline
+				hotelbs := models_simple.Hotel{
+					CityName:   CityPrefix + citySuffix,
+					HotelName:  CityPrefix + citySuffix + "_" + HotelPrefix + hotelSuffix,
+					Street:     "AwesomeStreet" + hotelSuffix,
+					PostalCode: hotelSuffix,
+					Coordinates: geodist.Coord{
+						Lat: float64(j%91) - 21.43,
+						Lon: float64(j%181) - 12.45,
+					},
+					Rate: float32(j % 6),
+				}
+				insert(hotelbs, db_simple.HotelTable)
 				// nubes
 				hotel := types.Hotel{
 					HName:      CityPrefix + citySuffix + "_" + HotelPrefix + hotelSuffix,

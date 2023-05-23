@@ -1,0 +1,17 @@
+name = "baseline"
+
+[[functions]]
+lambda = "gatewayBaselineSimple"
+task = "gateway"
+
+[[functions]]
+lambda = "recommendHotelsLocationSimple"
+task = "recommend-location"
+
+[[functions]]
+lambda = "recommendHotelsRateSimple"
+task = "recommend-price"
+
+[[functions]]
+lambda = "getHotelsInCitySimple"
+task = "get-hotels"

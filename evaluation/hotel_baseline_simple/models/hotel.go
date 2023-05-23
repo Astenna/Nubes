@@ -1,25 +1,26 @@
 package models
 
 import (
-	"github.com/Astenna/Nubes/evaluation/hotel_baseline/db"
+	"github.com/Astenna/Nubes/evaluation/hotel_baseline_simple/db"
 	"github.com/jftuga/geodist"
 )
 
 type Hotel struct {
-	CityName    string
 	HotelName   string
+	CityName    string
 	Street      string
 	PostalCode  string
 	Coordinates geodist.Coord `nubes:"readonly"`
 	Rate        float32
 }
 
-func SetHotelRate(cityName, hotelName string, rate float32) error {
-	return db.SetHotelField(cityName, hotelName, "Rate", rate)
-}
-
 func GetHotelsInCity(city string) ([]Hotel, error) {
-	return db.GetItemsByPartitonKey[Hotel](db.HotelTable, "CityName", city)
+	hotelIds, err := db.GetHotelIdsInCityByIndex(city)
+
+	if err != nil {
+		return nil, err
+	}
+	return db.GetItemsByPartitonKeys[Hotel](db.HotelTable, "CityName", hotelIds)
 }
 
 type Coordinates struct {
@@ -28,7 +29,13 @@ type Coordinates struct {
 }
 
 func RecommendHotelsLocation(city string, coordinates Coordinates, count int) ([]Hotel, error) {
-	hotels, err := db.GetItemsByPartitonKey[Hotel](db.HotelTable, "CityName", city)
+	hotels, err := GetHotelsInCity(city)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]Hotel, count)
+
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +58,6 @@ func RecommendHotelsLocation(city string, coordinates Coordinates, count int) ([
 
 	quickSortHotelDist(hotelDists, 0, len(hotelDists))
 
-	result := make([]Hotel, count)
 	for i := 0; i < count; i++ {
 		result[i] = *hotelDists[i].hotel
 	}
@@ -59,7 +65,7 @@ func RecommendHotelsLocation(city string, coordinates Coordinates, count int) ([
 }
 
 func RecommendHotelsRate(city string, count int) ([]Hotel, error) {
-	hotels, err := db.GetItemsByPartitonKey[Hotel](db.HotelTable, "CityName", city)
+	hotels, err := GetHotelsInCity(city)
 	if err != nil {
 		return nil, err
 	}

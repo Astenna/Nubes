@@ -1,7 +1,6 @@
 ---@diagnostic disable: lowercase-global
 package.path = package.path .. "/scripts"
 
---require "socket"
 local JSON = require("JSON")
 math.randomseed(os.time())
 
@@ -53,8 +52,8 @@ local function recommend()
         param = {
             FunctionName = "CityGetHotelsWithBestRates",
             Input = {
-                Id = "Milano" .. tostring(city_id),
-                Parameter = 6
+                Id = city_prefix .. tostring(city_id),
+                Parameter =  6
             }
         }
     else
@@ -62,8 +61,8 @@ local function recommend()
         param = {
             FunctionName = "CityGetHotelsCloseTo",
             Input = {
-                Id = "Milano" .. tostring(city_id),
-                Parameter = {
+                Id = city_prefix .. tostring(city_id),
+                Parameter = { 
                     Count = 6,
                     Longitude = (-1) * math.random(0, 90) + math.random(0, 89) + math.random(),
                     Latitude = (-1) * math.random(0, 180) + math.random(0, 179) + math.random()
@@ -85,7 +84,7 @@ local function search_hotel()
     local param = {
         FunctionName = "ReferenceGetStubs",
         Input = {
-            OwnerId = "Milano" .. tostring(city_id),
+            OwnerId = city_prefix .. tostring(city_id),
             OwnerTypeName = "City",
             OtherTypeName = "Hotel",
             ReferringFieldName = "City",

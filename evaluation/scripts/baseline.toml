@@ -1,7 +1,7 @@
 name = "baseline"
 
 [[functions]]
-lambda = "gateway-baseline"
+lambda = "gatewayBaseline"
 task = "gateway"
 
 [[functions]]

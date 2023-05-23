@@ -33,7 +33,7 @@ func GatewayHandler(param aws.JSONValue) (interface{}, error) {
 
 	marshalledInput, err := json.Marshal(reqBody.Input)
 	if err != nil {
-		log.Printf("error occurred while arshalling lambda input")
+		log.Printf("error occurred while marshalling lambda input")
 	}
 
 	switch reqBody.FunctionName {

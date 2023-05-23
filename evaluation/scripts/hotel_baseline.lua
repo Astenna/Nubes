@@ -1,6 +1,5 @@
 package.path = package.path .. "/scripts"
 
---require "socket"
 local JSON = require("JSON")
 math.randomseed(os.time())
 
@@ -52,8 +51,8 @@ local function recommend()
         param = {
             FunctionName = "recommendHotelsRate",
             Input = {
-                City = "Milano" .. tostring(city_id),
-                Count = 6
+                City = city_prefix .. tostring(city_id),
+                Count =  6
             }
         }
     else
@@ -61,7 +60,7 @@ local function recommend()
         param = {
             FunctionName = "recommendHotelsLocation",
             Input = {
-                City = "Milano" .. tostring(city_id),
+                City = city_prefix .. tostring(city_id),
                 Count = 6,
                 Coordinates = {
                     Longitude = (-1) * math.random(0, 90) + math.random(0, 89) + math.random(),
@@ -83,7 +82,7 @@ local function search_hotel()
     local method = "GET"
     local param = {
         FunctionName = "getHotelsInCity",
-        Input = "Milano" .. tostring(city_id)
+        Input = city_prefix .. tostring(city_id)
     }
     local body = JSON:encode(param)
     local headers = {}
