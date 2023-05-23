@@ -13,39 +13,51 @@ import (
 	"github.com/jftuga/geodist"
 )
 
-const UserCount = 2000
+const UserCount = 50000
 const CitiesCount = 25
-const HotelsPerCity = 10
-const RoomsPerHotel = 10
+const HotelsPerCity = 100
+const RoomsPerHotel = 25
 const ReservationsPerRoom = 20
 
 const CityPrefix = "Milano"
 const HotelPrefix = "Bruschetti"
 const ReservationYear = 2023
 
+const K = 32
+
 func SeedUsers() {
 
 	fmt.Println("Seeding USERS")
+	var wg sync.WaitGroup
 
-	for i := 0; i < UserCount; i++ {
-		suffix := strconv.Itoa(i)
-		// baseline
-		userb := models.User{
-			Email:     "Email" + suffix,
-			FirstName: "Cornell" + suffix,
-			LastName:  "Baker" + suffix,
-			Password:  "Password" + suffix,
-		}
-		insert(userb, db.UserTable)
-		// nubes
-		user := types.User{
-			FirstName: "Cornell" + suffix,
-			LastName:  "Baker" + suffix,
-			Email:     "Email" + suffix,
-			Password:  "Password" + suffix,
-		}
-		insert(user, user.GetTypeName())
+	for j := 0; j < K; j++ {
+		wg.Add(1)
+		i_start := j
+		go func() {
+			defer wg.Done()
+			for i := i_start; i < UserCount; i += K {
+				suffix := strconv.Itoa(i)
+				// baseline
+				userb := models.User{
+					Email:     "Email" + suffix,
+					FirstName: "Cornell" + suffix,
+					LastName:  "Baker" + suffix,
+					Password:  "Password" + suffix,
+				}
+				insert(userb, db.UserTable)
+				// nubes
+				user := types.User{
+					FirstName: "Cornell" + suffix,
+					LastName:  "Baker" + suffix,
+					Email:     "Email" + suffix,
+					Password:  "Password" + suffix,
+				}
+				insert(user, user.GetTypeName())
+			}
+		}()
 	}
+
+	wg.Wait()
 }
 
 func SeedCities() {
@@ -77,36 +89,46 @@ func SeedHotels() {
 	for i := 0; i < CitiesCount; i++ {
 		citySuffix := strconv.Itoa(i)
 
-		for j := 0; j < HotelsPerCity; j++ {
-			hotelSuffix := strconv.Itoa(j)
+		var wg sync.WaitGroup
 
-			// baseline
-			hotelb := models.Hotel{
-				CityName:   CityPrefix + citySuffix,
-				HotelName:  HotelPrefix + hotelSuffix,
-				Street:     "AwesomeStreet" + hotelSuffix,
-				PostalCode: hotelSuffix,
-				Coordinates: geodist.Coord{
-					Lat: float64(j%91) - 21.43,
-					Lon: float64(j%181) - 12.45,
-				},
-				Rate: float32(j % 6),
-			}
-			insert(hotelb, db.HotelTable)
-			// nubes
-			hotel := types.Hotel{
-				HName:      CityPrefix + citySuffix + "_" + HotelPrefix + hotelSuffix,
-				Street:     "AwesomeStreet" + hotelSuffix,
-				PostalCode: hotelSuffix,
-				Coordinates: geodist.Coord{
-					Lat: float64(j%91) - 21.43,
-					Lon: float64(j%181) - 12.45,
-				},
-				Rate: float32(j % 6),
-				City: *lib.NewReference[types.City](CityPrefix + citySuffix),
-			}
-			insert(hotel, hotel.GetTypeName())
+		for j := 0; j < HotelsPerCity; j++ {
+			jj := j
+
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				hotelSuffix := strconv.Itoa(jj)
+
+				// baseline
+				hotelb := models.Hotel{
+					CityName:   CityPrefix + citySuffix,
+					HotelName:  HotelPrefix + hotelSuffix,
+					Street:     "AwesomeStreet" + hotelSuffix,
+					PostalCode: hotelSuffix,
+					Coordinates: geodist.Coord{
+						Lat: float64(jj%91) - 21.43,
+						Lon: float64(jj%181) - 12.45,
+					},
+					Rate: float32(jj % 6),
+				}
+				insert(hotelb, db.HotelTable)
+				// nubes
+				hotel := types.Hotel{
+					HName:      CityPrefix + citySuffix + "_" + HotelPrefix + hotelSuffix,
+					Street:     "AwesomeStreet" + hotelSuffix,
+					PostalCode: hotelSuffix,
+					Coordinates: geodist.Coord{
+						Lat: float64(jj%91) - 21.43,
+						Lon: float64(jj%181) - 12.45,
+					},
+					Rate: float32(jj % 6),
+					City: *lib.NewReference[types.City](CityPrefix + citySuffix),
+				}
+				insert(hotel, hotel.GetTypeName())
+			}()
 		}
+
+		wg.Wait()
 	}
 }
 

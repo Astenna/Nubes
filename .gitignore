@@ -34,3 +34,5 @@ result/
 !example/client_lib/*
 
 /sync.sh
+generator/main
+evaluation/scripts/JSON.lua

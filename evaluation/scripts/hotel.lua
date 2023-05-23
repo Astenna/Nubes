@@ -3,22 +3,26 @@ package.path = package.path .. "/scripts"
 
 --require "socket"
 local JSON = require("JSON")
-math.randomseed(0xdeadbeef)
+math.randomseed(os.time())
 
 local gateway = "AAAA"
 
 -- according to counts specified in the seeder
 
-local max_user_suffix = 1999
+local max_user_suffix = 49999
 local max_city_suffix = 24
-local max_hotel_suffix = 9 --19
-local max_room_suffix = 9
+local max_hotel_suffix = 99
+local max_room_suffix = 24
 local email_prefix = "Email"
 local city_prefix = "Milano"
 local hotel_prefix = "Bruschetti"
 
-local registeredUserEmail = "registeredUserEmail"
-local registeredUserPassword = "registeredUserPassword"
+local registeredUserEmail = "registeredUserEmail" .. tostring(math.random(10))
+local registeredUserPassword = "registeredUserPassword" .. tostring(math.random(10))
+
+local function_n = 8
+
+Id = math.random(function_n)
 
 local function login()
     local id = math.random(0, max_user_suffix)
@@ -50,7 +54,7 @@ local function recommend()
             FunctionName = "CityGetHotelsWithBestRates",
             Input = {
                 Id = "Milano" .. tostring(city_id),
-                Parameter =  6
+                Parameter = 6
             }
         }
     else
@@ -59,15 +63,15 @@ local function recommend()
             FunctionName = "CityGetHotelsCloseTo",
             Input = {
                 Id = "Milano" .. tostring(city_id),
-                Parameter = { 
+                Parameter = {
                     Count = 6,
-                    Longitude = (-1)*math.random(0, 90) + math.random(0, 89) + math.random(),
-                    Latitude =  (-1)*math.random(0, 180) + math.random(0, 179) + math.random()
+                    Longitude = (-1) * math.random(0, 90) + math.random(0, 89) + math.random(),
+                    Latitude = (-1) * math.random(0, 180) + math.random(0, 179) + math.random()
                 }
             }
         }
     end
-    
+
     local body = JSON:encode(param)
     local headers = {}
     headers["Content-Type"] = "application/json"
@@ -84,7 +88,7 @@ local function search_hotel()
             OwnerId = "Milano" .. tostring(city_id),
             OwnerTypeName = "City",
             OtherTypeName = "Hotel",
-            ReferringFieldName ="City",
+            ReferringFieldName = "City",
             IsManyToMany = false
         }
     }
@@ -97,7 +101,7 @@ end
 
 local function get_two_consecutive_days_in_year(year, length)
     local day1 = math.random(1, 28)
-    local month1 = math.random(1,12)
+    local month1 = math.random(1, 12)
     local month2 = month1
     local day2 = day1 + length
     local year2 = year
@@ -110,8 +114,8 @@ local function get_two_consecutive_days_in_year(year, length)
             month2 = 1
             year2 = year + 1
         end
-    elseif day2 > 28 and month1==2 then
-        if (year%400==0) or ((year%4==0) and (year%100~=0)) then
+    elseif day2 > 28 and month1 == 2 then
+        if (year % 400 == 0) or ((year % 4 == 0) and (year % 100 ~= 0)) then
             -- leap year
             if day2 > 29 then
                 day2 = day2 - 29
@@ -142,22 +146,23 @@ local function get_two_consecutive_days_in_year(year, length)
     local day1_str = tostring(day1)
     local day2_str = tostring(day2)
     if day1 < 10 then
-        day1_str = "0" .. day1_str 
+        day1_str = "0" .. day1_str
     end
     if day2 < 10 then
-        day2_str = "0" .. day2_str 
+        day2_str = "0" .. day2_str
     end
 
     local month1_str = tostring(month1)
     local month2_str = tostring(month2)
     if month1 < 10 then
-        month1_str = "0" .. month1_str 
+        month1_str = "0" .. month1_str
     end
     if month2 < 10 then
-        month2_str = "0" .. month2_str 
+        month2_str = "0" .. month2_str
     end
 
-    return tostring(year) .. "-" .. month1_str .. "-" .. day1_str , tostring(year2) .. "-" .. month2_str .. "-" .. day2_str
+    return tostring(year) .. "-" .. month1_str .. "-" .. day1_str,
+        tostring(year2) .. "-" .. month2_str .. "-" .. day2_str
 end
 
 local function reserve()
@@ -167,13 +172,13 @@ local function reserve()
     local room_id = math.random(0, max_room_suffix)
 
     -- in 50% of cases try to reserve a room in dates
-    -- where the room is likely to be fully booked 
+    -- where the room is likely to be fully booked
     local coin = math.random()
     local date1, date2 = "", ""
     if coin < 0.5 then
-        date1, date2 = get_two_consecutive_days_in_year(2023, math.random(1,14))
+        date1, date2 = get_two_consecutive_days_in_year(2023, math.random(1, 14))
     else
-        date1, date2 = get_two_consecutive_days_in_year(2024, math.random(1,14))
+        date1, date2 = get_two_consecutive_days_in_year(2024, math.random(1, 14))
     end
 
     local method = "GET"
@@ -185,7 +190,8 @@ local function reserve()
                 DateIn = date1,
                 DateOut = date2,
                 User = email_prefix .. tostring(email_id),
-                RoomId = city_prefix .. tostring(city_id) .. "_" .. hotel_prefix .. tostring(hotel_id) .. "_" .. "Room" .. tostring(room_id)
+                RoomId = city_prefix ..
+                tostring(city_id) .. "_" .. hotel_prefix .. tostring(hotel_id) .. "_" .. "Room" .. tostring(room_id)
             }
         }
     }
@@ -196,8 +202,7 @@ local function reserve()
     return wrk.format(method, gateway, headers, body)
 end
 
-local function add_user() 
-    local city_id = math.random(0, max_city_suffix)
+local function add_user()
     local method = "GET"
     local param = {
         FunctionName = "Export",
@@ -219,7 +224,7 @@ local function add_user()
 end
 
 
-local function delete_user() 
+local function delete_user()
     local method = "GET"
     local param = {
         FunctionName = "Delete",
@@ -238,7 +243,7 @@ local function delete_user()
     return wrk.format(method, gateway, headers, body)
 end
 
-local function set_hotel_rate() 
+local function set_hotel_rate()
     local city_id = math.random(0, max_city_suffix)
     local hotel_id = math.random(0, max_hotel_suffix)
     local method = "GET"
@@ -258,7 +263,7 @@ local function set_hotel_rate()
     return wrk.format(method, gateway, headers, body)
 end
 
-local function get_user_reservations() 
+local function get_user_reservations()
     local user_id = math.random(0, max_user_suffix)
     local method = "GET"
     local param = {
@@ -267,7 +272,7 @@ local function get_user_reservations()
             OwnerId = email_prefix .. tostring(user_id),
             OwnerTypeName = "User",
             OtherTypeName = "Reservation",
-            ReferringFieldName ="Reservations",
+            ReferringFieldName = "Reservations",
             IsManyToMany = true
         }
     }
@@ -278,20 +283,32 @@ local function get_user_reservations()
     return wrk.format(method, gateway, headers, body)
 end
 
-request = function ()
-    local search_ratio = 0.6
-    local recommend_ratio = 0.2
-    local login_ratio = 0.1
-    --local reserve_ratio = 0.1
-    
-    local coin = math.random()
-    if coin < search_ratio then
-        return search_hotel()
-    elseif coin < search_ratio + recommend_ratio then
-        return recommend()
-    elseif coin < search_ratio + recommend_ratio + login_ratio then
+---@diagnostic disable-next-line: lowercase-global
+request = function()
+    local req = Id
+    Id = (Id + 1) % function_n
+
+    if req == 0 then
         return login()
-    else
+    elseif req == 1 then
+        return recommend()
+    elseif req == 2 then
+        return search_hotel()
+    elseif req == 3 then
         return reserve()
+    elseif req == 4 then
+        return add_user()
+    elseif req == 5 then
+        return delete_user()
+    elseif req == 6 then
+        return set_hotel_rate()
+    elseif req == 7 then
+        return get_user_reservations()
     end
 end
+
+-- ---@diagnostic disable-next-line: lowercase-global
+-- response = function(code, header, body)
+--     print(code)
+--     print(body)
+-- end

@@ -16,11 +16,11 @@ def get_metric(cloudwatch, metric, fname, duration, unit=None):
     metric = cloudwatch.Metric("AWS/Lambda", metric)
     response = metric.get_statistics(
         Dimensions=[{"Name": "FunctionName", "Value": fname}] if fname is not None  else [],
-        Statistics=["Sum", "Average", "Maximum"],
+        Statistics=["Sum", "Average", "Maximum", "Minimum"],
         ExtendedStatistics=["p01", "p10", "p50", "p90", "p99"],
         StartTime=end_time - timedelta(minutes=duration + 1),
         EndTime=end_time + timedelta(minutes=1),
-        Period=120,
+        Period=300,
         Unit=unit,
     )
     points = response["Datapoints"]
@@ -34,6 +34,7 @@ def get_metric(cloudwatch, metric, fname, duration, unit=None):
                 point["Average"],
                 point["Sum"],
                 point["Maximum"],
+                point["Minimum"],
                 percs["p01"],
                 percs["p10"],
                 percs["p50"],
@@ -59,7 +60,7 @@ def dump_metric(experiment, config, task, metric, data, path="result/"):
         f"{path}/{experiment}-{task}-{config}-{metric.lower()}.csv", "w"
     ) as f:
         w = csv.writer(f)
-        w.writerow(["experiment", "task", "config", "timestamp", "avg", "sum", "max", "p01", "p10", "p50", "p90", "p99"])
+        w.writerow(["experiment", "task", "config", "timestamp", "avg", "sum", "max", "min", "p01", "p10", "p50", "p90", "p99"])
         for r in data:
             w.writerow([experiment, task, config, *r])
 

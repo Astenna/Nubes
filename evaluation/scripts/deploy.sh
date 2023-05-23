@@ -11,6 +11,15 @@ echo "============  Build baseline handlers ============ ";
 echo "============  Deploy baseline ============ ";
 sls deploy 
 
+# OPTIMISED
+cd ./../hotel_optimised/
+
+echo "============  Build optimised handlers ============ ";
+./build_handlers.sh handlers/
+
+echo "============  Deploy optimised ============ ";
+sls deploy 
+
 
 # NUBES
 cd ./../hotel/

@@ -10,16 +10,16 @@ set -euxo pipefail
 # const ReservationsPerRoom = 20
 
 GATEWAY_NUBES=AAAA
-GATEWAY_BASELINE=AAAA
-DURATION=80
+GATEWAY_BASELINE=BBBB
+DURATION=330
 RATE=10
-CONFIG=medium-${DURATION}s-r${RATE}
+CONFIG=medium-r${RATE}-${DURATION}s
 
 mkdir -p result
 
 # Align to even minutes - 15s
 align() {
-    sleep $(( ($(date +%s) / 120 + 1) * 120 - $(date +%s) - 15 ))
+    sleep $(( ($(date +%s) / 300 + 1) * 300 - $(date +%s) - 15 ))
 }
 
 align
