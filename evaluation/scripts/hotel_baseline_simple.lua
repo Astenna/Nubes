@@ -9,6 +9,8 @@ local gateway = "CCC"
 local max_city_suffix = 24
 local city_prefix = "Milano"
 
+local function_n = 2
+
 local function search_hotel()
     local city_id = math.random(0, max_city_suffix)
     local method = "GET"
@@ -36,7 +38,7 @@ local function recommend()
             FunctionName = "recommendHotelsRateSimple",
             Input = {
                 City = city_prefix .. tostring(city_id),
-                Count =  6
+                Count = 6
             }
         }
     else
@@ -46,14 +48,14 @@ local function recommend()
             Input = {
                 City = city_prefix .. tostring(city_id),
                 Count = 6,
-                Coordinates = { 
-                    Longitude = (-1)*math.random(0, 90) + math.random(0, 89) + math.random(),
-                    Latitude =  (-1)*math.random(0, 180) + math.random(0, 179) + math.random()
+                Coordinates = {
+                    Longitude = (-1) * math.random(0, 90) + math.random(0, 89) + math.random(),
+                    Latitude = (-1) * math.random(0, 180) + math.random(0, 179) + math.random()
                 }
             }
         }
     end
-    
+
     local body = JSON:encode(param)
     local headers = {}
     headers["Content-Type"] = "application/json"
@@ -61,14 +63,22 @@ local function recommend()
     return wrk.format(method, path, headers, body)
 end
 
----@diagnostic disable-next-line: lowercase-global
-request = function ()
-    local search_ratio = 0.5
+Id = math.random(function_n)
 
-    local coin = math.random()
-    if coin < search_ratio then
-        return search_hotel()
-    else
+---@diagnostic disable-next-line: lowercase-global
+request = function()
+    Id = (Id + 1) % function_n
+    local req = Id
+
+    if req == 0 then
         return recommend()
+    elseif req == 1 then
+        return search_hotel()
     end
 end
+
+-- ---@diagnostic disable-next-line: lowercase-global
+-- response = function(code, header, body)
+--     print(code)
+--     print(body)
+-- end

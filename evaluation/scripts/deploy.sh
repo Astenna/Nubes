@@ -11,13 +11,13 @@ echo "============  Build baseline handlers ============ ";
 echo "============  Deploy baseline ============ ";
 sls deploy 
 
-# OPTIMISED
-cd ./../hotel_optimised/
+# SIMPLE
+cd ./../hotel_baseline_simple/
 
-echo "============  Build optimised handlers ============ ";
+echo "============  Build simple handlers ============ ";
 ./build_handlers.sh handlers/
 
-echo "============  Deploy optimised ============ ";
+echo "============  Deploy simple ============ ";
 sls deploy 
 
 
