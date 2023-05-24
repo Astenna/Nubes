@@ -11,7 +11,6 @@ type ReferenceNavigationListHandlers struct {
 func NewReferenceNavigationListHandlers(param ReferenceNavigationListParam) *ReferenceNavigationListHandlers {
 	r := new(ReferenceNavigationListHandlers)
 	r.setup = newReferenceNavigationListSetup(param)
-	r.setup.build()
 	return r
 }
 
