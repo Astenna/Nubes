@@ -1,4 +1,4 @@
-name = "baseline"
+name = "baseline-simple"
 
 [[functions]]
 lambda = "gatewayBaselineSimple"
