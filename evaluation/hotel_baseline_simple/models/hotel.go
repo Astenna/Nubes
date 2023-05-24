@@ -20,7 +20,7 @@ func GetHotelsInCity(city string) ([]Hotel, error) {
 	if err != nil {
 		return nil, err
 	}
-	return db.GetItemsByPartitonKeys[Hotel](db.HotelTable, "CityName", hotelIds)
+	return db.GetItemsByPartitonKeys[Hotel](db.HotelTable, "HotelName", hotelIds)
 }
 
 type Coordinates struct {

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/Astenna/Nubes/evaluation/hotel_baseline/models"
+	"github.com/Astenna/Nubes/evaluation/hotel_baseline_simple/models"
 	"github.com/aws/aws-lambda-go/lambda"
 )
 
