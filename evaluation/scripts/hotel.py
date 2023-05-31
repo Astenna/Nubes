@@ -12,6 +12,9 @@ cloudwatch = boto3.resource("cloudwatch")
 
 
 def get_metric(cloudwatch, metric, fname, duration, unit=None):
+    if duration not in [60, 120, 300]:
+        raise Exception("Only supports 60, 120, 300 durations!!")
+
     end_time = datetime.utcnow()
     metric = cloudwatch.Metric("AWS/Lambda", metric)
     response = metric.get_statistics(
@@ -20,7 +23,7 @@ def get_metric(cloudwatch, metric, fname, duration, unit=None):
         ExtendedStatistics=["p01", "p10", "p50", "p90", "p99"],
         StartTime=end_time - timedelta(minutes=duration + 1),
         EndTime=end_time + timedelta(minutes=1),
-        Period=300,
+        Period=duration,
         Unit=unit,
     )
     points = response["Datapoints"]
