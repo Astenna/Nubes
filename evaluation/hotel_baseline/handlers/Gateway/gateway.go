@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 
 	lambdaHandler "github.com/aws/aws-lambda-go/lambda"
@@ -100,7 +99,10 @@ func GatewayHandler(param aws.JSONValue) (interface{}, error) {
 
 	default:
 		log.Printf("DEFAULT: " + reqBody.FunctionName)
-		return "", fmt.Errorf("%s not supported", reqBody.FunctionName)
+		return LambdaClient.Invoke(&lambda.InvokeInput{
+			FunctionName: aws.String("___AAA___"),
+			Payload:      marshalledInput,
+		})
 	}
 }
 

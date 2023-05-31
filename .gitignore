@@ -36,3 +36,6 @@ result/
 /sync.sh
 generator/main
 evaluation/scripts/JSON.lua
+evaluation/scripts/plot/all-mediumallr100all-duration.pdf
+evaluation/scripts/plot/all-small-r100-120s-duration.pdf
+evaluation/scripts/plot/all-small-r1000-120s-duration.pdf

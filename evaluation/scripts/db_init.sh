@@ -1,7 +1,9 @@
-#!/bin/sh
+#!/bin/bash
+set -euxo pipefail
 
 echo "============ Build and run database initialization for the baseline ============  ";
 go run ../hotel_baseline/db/init/setup.go;
+go run ../hotel_baseline_simple/db/init/setup.go;
 
 echo "============ Run nubes generator to initialize database for the nubes project ============ ";
 export PATH=${PATH}:`go env GOPATH`/bin
