@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 
 	lambdaHandler "github.com/aws/aws-lambda-go/lambda"
@@ -36,8 +35,11 @@ func GatewayHandler(param map[string]interface{}) (interface{}, error) {
 		log.Printf("error occurred while arshalling lambda input")
 	}
 
-	switch reqBody.FunctionName {
+	return invokeLambda(reqBody, marshalledInput)
+}
 
+func invokeLambda(reqBody *GatewayParam, marshalledInput []byte) (interface{}, error) {
+	switch reqBody.FunctionName {
 	case "UserVerifyPassword":
 		log.Printf("INVOKING: UserVerifyPassword")
 		return LambdaClient.Invoke(&lambda.InvokeInput{
@@ -71,7 +73,7 @@ func GatewayHandler(param map[string]interface{}) (interface{}, error) {
 			Payload:      marshalledInput,
 		})
 	case "ReferenceGetStubs":
-		log.Printf("INVOKING: ReferenceGetStubs (Get all hotels in a city OR Get users' reservations)")
+		log.Printf("INVOKING: ReferenceGetStubs (Get all hotels in a City OR Get Users' reservations)")
 		return LambdaClient.Invoke(&lambda.InvokeInput{
 			FunctionName: aws.String("ReferenceGetStubs"),
 			Payload:      marshalledInput,
@@ -85,8 +87,10 @@ func GatewayHandler(param map[string]interface{}) (interface{}, error) {
 
 	default:
 		log.Printf("DEFAULT: " + reqBody.FunctionName)
-		return "", fmt.Errorf(reqBody.FunctionName + " not supported")
-
+		return LambdaClient.Invoke(&lambda.InvokeInput{
+			FunctionName: aws.String("___AAA___"),
+			Payload:      marshalledInput,
+		})
 	}
 }
 

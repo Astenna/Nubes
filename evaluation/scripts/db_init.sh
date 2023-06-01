@@ -12,4 +12,4 @@ go build -o ./../../generator/main ./../../generator/main.go
 sleep 30
 
 echo "============ Seed the database for the nubes project ============ ";
-go run ../hotel_seeder/*.go
+# go run ../hotel_seeder/*.go

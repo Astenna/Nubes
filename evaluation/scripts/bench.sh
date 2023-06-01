@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euxo pipefail
+set -uxo pipefail
 
 ## medium
 
@@ -16,8 +16,8 @@ DURATION=120
 EXTRA_TIME=15
 WRK_DURATION=$((${DURATION} + 2 * ${EXTRA_TIME}))
 RATE=1000
-RATE_SIMPLE=$(( $RATE / 4 ))
-CONFIG=small-r${RATE}-${DURATION}s
+RATE_FORTH=$(( $RATE / 4 ))
+CONFIG=large-r${RATE}-${DURATION}s
 WRK_ARGS="-c 100 -t 8"
 
 mkdir -p result
@@ -27,17 +27,60 @@ align() {
     sleep $(( ($(date +%s) / ${DURATION} + 1) * ${DURATION} - $(date +%s) - ${EXTRA_TIME} ))
 }
 
-align
-wrk2 ${WRK_ARGS} --latency -R "${RATE}" -d "${WRK_DURATION}s" -s hotel.lua ${GATEWAY_NUBES} | tee "result/wrk-nubes-${CONFIG}.log"
-sleep 60
-./hotel.py --experiment "nubes.toml" --config "${CONFIG}" --duration "${DURATION}"
+# Retry function
+retry_command() {
+    local command="$1"
+    local max_attempts="$2"
+    local out_file="$3"
+    local attempt=1
+
+    # Loop until successful execution or reaching the maximum number of attempts
+    while [ $attempt -le $max_attempts ]; do
+        # Execute the command in a subshell to isolate it from the main script
+        $command 2>&1 | tee $out_file
+
+        # Check the exit status of the command
+        if [ $? -eq 0 ]; then
+            return 0  # Success
+        else
+            echo "Command failed. Retrying..."
+            sleep 1
+            ((attempt++))
+        fi
+    done
+
+    echo "Maximum number of attempts reached. Exiting."
+    return 1  # Failure
+}
+
+
+### NUBES
 
 align
-wrk2 ${WRK_ARGS} --latency -R "${RATE}" -d "${WRK_DURATION}s" -s hotel_baseline.lua ${GATEWAY_BASELINE} | tee "result/wrk-baseline-${CONFIG}.log"
+retry_command "wrk2 ${WRK_ARGS} --latency -R ${RATE} -d ${WRK_DURATION}s -s hotel-full.lua ${GATEWAY_NUBES}" 15 "result/wrk-nubes-${CONFIG}.log"
 sleep 60
-./hotel.py --experiment "baseline.toml" --config "${CONFIG}" --duration "${DURATION}"
+./hotel.py --experiment "nubes-full.toml" --config "${CONFIG}" --duration "${DURATION}"
 
 align
-wrk2 ${WRK_ARGS} --latency -R "${RATE_SIMPLE}" -d "${WRK_DURATION}s" -s hotel_baseline_simple.lua ${GATEWAY_SIMPLE} | tee "result/wrk-simple-${CONFIG}.log"
+retry_command "wrk2 ${WRK_ARGS} --latency -R "${RATE_FORTH}" -d ${WRK_DURATION}s -s hotel-s1.lua ${GATEWAY_NUBES}" 15 "result/wrk-nubes-s1-${CONFIG}.log"
 sleep 60
-./hotel.py --experiment "baseline_simple.toml" --config "${CONFIG}" --duration "${DURATION}"
+./hotel.py --experiment "nubes-s1.toml" --config "${CONFIG}" --duration "${DURATION}"
+
+align
+retry_command "wrk2 ${WRK_ARGS} --latency -R "${RATE_FORTH}" -d ${WRK_DURATION}s -s hotel-s2.lua ${GATEWAY_NUBES}" 15 "result/wrk-nubes-s2-${CONFIG}.log"
+sleep 60
+./hotel.py --experiment "nubes-s2.toml" --config "${CONFIG}" --duration "${DURATION}"
+
+### BASELINE
+
+align
+retry_command "wrk2 ${WRK_ARGS} --latency -R ${RATE} -d ${WRK_DURATION}s -s hotel_baseline-full.lua ${GATEWAY_BASELINE}" 15 "result/wrk-baseline-${CONFIG}.log"
+sleep 60
+./hotel.py --experiment "baseline-full.toml" --config "${CONFIG}" --duration "${DURATION}"
+
+### BASELINE SIMPLE
+
+align
+retry_command "wrk2 ${WRK_ARGS} --latency -R ${RATE} -d ${WRK_DURATION}s -s hotel_baseline_simple-full.lua ${GATEWAY_SIMPLE}" 15 "result/wrk-mixed-${CONFIG}.log"
+sleep 60
+./hotel.py --experiment "baseline_simple-full.toml" --config "${CONFIG}" --duration "${DURATION}"

@@ -1,0 +1,44 @@
+name = "baseline-simple"
+
+[[functions]]
+lambda = "deleteUser"
+task = "delete-user"
+
+[[functions]]
+lambda = "login"
+task = "login"
+
+[[functions]]
+lambda = "setHotelRate"
+task = "set-hotel-rate"
+
+[[functions]]
+lambda = "reserveRoom"
+task = "reserve"
+
+[[functions]]
+lambda = "getUserReservations"
+task = "get-user-reservations"
+
+[[functions]]
+lambda = "registerUser"
+task = "user-registration"
+
+
+# ----
+
+[[functions]]
+lambda = "gatewayBaselineSimple"
+task = "gateway"
+
+[[functions]]
+lambda = "recommendHotelsLocationSimple"
+task = "recommend-location"
+
+[[functions]]
+lambda = "recommendHotelsRateSimple"
+task = "recommend-price"
+
+[[functions]]
+lambda = "getHotelsInCitySimple"
+task = "get-hotels"

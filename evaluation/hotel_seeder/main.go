@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"sync"
@@ -13,10 +14,11 @@ import (
 	models_simple "github.com/Astenna/Nubes/evaluation/hotel_baseline_simple/models"
 	"github.com/Astenna/Nubes/lib"
 	"github.com/jftuga/geodist"
+	"golang.org/x/sync/semaphore"
 )
 
 const UserCount = 50000
-const CitiesCount = 25
+const CitiesCount = 5
 const HotelsPerCity = 100
 const RoomsPerHotel = 25
 const ReservationsPerRoom = 20
@@ -159,6 +161,8 @@ func nextUser(q int, mod int) int {
 
 func SeedRoomsAndReservations() {
 	var wg sync.WaitGroup
+	sem := semaphore.NewWeighted(K)
+	ctx := context.TODO()
 
 	for c := 0; c < CitiesCount; c++ {
 		citySuffix := strconv.Itoa(c)
@@ -167,12 +171,14 @@ func SeedRoomsAndReservations() {
 		cc := c
 		for j := 0; j < HotelsPerCity; j++ {
 			hotelSuffix := strconv.Itoa(j)
-			fmt.Println("------------------------------ in hotel " + hotelSuffix + "out of " + strconv.Itoa(HotelsPerCity))
 
 			jj := j
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
+				defer sem.Release(1)
+				sem.Acquire(ctx, 1)
+				fmt.Println("------------------------------ in hotel " + hotelSuffix + "out of " + strconv.Itoa(HotelsPerCity))
 
 				for i := 0; i < RoomsPerHotel; i++ {
 					roomSuffix := strconv.Itoa(i)
